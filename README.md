@@ -3,6 +3,8 @@
 Ứng dụng web nội bộ: Node.js 22 · Express 5 · Handlebars · Tailwind CSS 4 · SQLite.
 
 ## Chạy trên máy
+**Windows, không cần gõ lệnh:** cài Node.js (bản LTS ở nodejs.org), rồi bấm đúp `chay-app.bat`.
+
 ```bash
 npm install
 cp .env.example .env      # rồi sửa SESSION_SECRET
