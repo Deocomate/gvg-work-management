@@ -1,0 +1,42 @@
+{
+  "name": "lich-cong-viec",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lịch công việc",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "imports": {
+    "#config": "./src/config/index.js",
+    "#db": "./src/db/client.js",
+    "#lib/*": "./src/lib/*",
+    "#middleware/*": "./src/middleware/*",
+    "#modules/*": "./src/modules/*"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,css -c blue,magenta \"node --watch --env-file-if-exists=.env src/server.js\" \"npm:css:watch\"",
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "build": "npm run css:build",
+    "css:build": "tailwindcss -i src/styles/app.css -o public/css/app.css --minify",
+    "css:watch": "tailwindcss -i src/styles/app.css -o public/css/app.css --watch",
+    "migrate": "node --env-file-if-exists=.env src/db/migrate.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "check": "bash scripts/check.sh",
+    "share": "bash scripts/share.sh"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "cookie-session": "^2.1.1",
+    "express": "^5.1.0",
+    "express-handlebars": "^9.0.0",
+    "helmet": "^8.1.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "concurrently": "^9.2.0",
+    "supertest": "^7.1.0",
+    "tailwindcss": "^4.1.0"
+  }
+}

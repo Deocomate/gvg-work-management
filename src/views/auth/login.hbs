@@ -1,0 +1,14 @@
+<div class="mx-auto max-w-sm">
+  <h1 class="mb-6 text-center text-2xl font-semibold text-slate-900">Đăng nhập</h1>
+  <form method="post" action="/login" class="card card-body space-y-5" novalidate>
+    {{> form/csrf}}
+    <input type="hidden" name="next" value="{{next}}">
+    {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+    {{> form/field name="email" label="Email" type="email" value=values.email error=errors.email required=true}}
+    {{> form/field name="password" label="Mật khẩu" type="password" error=errors.password required=true}}
+    <button type="submit" class="btn-primary w-full">Đăng nhập</button>
+  </form>
+  {{#if allowSignup}}
+    <p class="mt-4 text-center text-sm text-slate-500">Chưa có tài khoản? <a href="/signup" class="font-medium text-brand-600 hover:underline">Đăng ký</a></p>
+  {{/if}}
+</div>

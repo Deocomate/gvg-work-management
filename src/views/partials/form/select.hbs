@@ -1,0 +1,12 @@
+{{!-- Dùng: {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status}}
+     options là mảng [{ value: 'todo', label: 'Cần làm' }, ...] --}}
+<div class="field">
+  <label for="f-{{name}}" class="label">{{label}}{{#if required}} <span class="text-red-600" aria-hidden="true">*</span>{{/if}}</label>
+  <select id="f-{{name}}" name="{{name}}" class="input{{#if error}} input-error{{/if}}" {{#if required}}required{{/if}}>
+    {{#if placeholder}}<option value="">{{placeholder}}</option>{{/if}}
+    {{#each options}}
+      <option value="{{this.value}}" {{selected this.value ../value}}>{{this.label}}</option>
+    {{/each}}
+  </select>
+  {{#if error}}<p class="field-error">{{error}}</p>{{/if}}
+</div>

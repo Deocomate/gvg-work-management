@@ -1,0 +1,12 @@
+{{!-- Dùng: {{> form/field name="title" label="Tiêu đề" value=values.title error=errors.title required=true}}
+     Tham số khác: type (text|email|number|date|password...), placeholder, hint --}}
+<div class="field">
+  <label for="f-{{name}}" class="label">{{label}}{{#if required}} <span class="text-red-600" aria-hidden="true">*</span>{{/if}}</label>
+  <input id="f-{{name}}" name="{{name}}" type="{{default type 'text'}}" value="{{value}}"
+    class="input{{#if error}} input-error{{/if}}"
+    {{#if required}}required{{/if}}
+    {{#if placeholder}}placeholder="{{placeholder}}"{{/if}}
+    {{#if error}}aria-invalid="true" aria-describedby="f-{{name}}-error"{{/if}}>
+  {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+  {{#if error}}<p id="f-{{name}}-error" class="field-error">{{error}}</p>{{/if}}
+</div>

@@ -1,0 +1,3 @@
+-- Migration khởi tạo. Thêm bảng mới bằng file mới: 001_create_xxx.sql, 002_...
+-- Quy ước cột: id INTEGER PRIMARY KEY, created_at / updated_at dạng TEXT (datetime('now')).
+SELECT 1;

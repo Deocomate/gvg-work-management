@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* Tailwind quét các file này để sinh class. Thêm thư mục nếu đặt class ở chỗ khác. */
+@source "../views";
+@source "../../public/js";
+
+/* Đổi màu thương hiệu ở đây: cả app đổi theo. */
+@theme {
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9eaff;
+  --color-brand-500: #2f7cf6;
+  --color-brand-600: #1f64db;
+  --color-brand-700: #1b50b0;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Lớp nền dùng lại được bằng @apply (Tailwind 4 yêu cầu khai báo bằng @utility). */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+      transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+}
+@utility badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+@utility alert { @apply rounded-lg border px-4 py-3 text-sm; }
+
+/* Bộ UI dùng chung. Ưu tiên dùng các class này thay vì lặp lại chuỗi class dài trong view. */
+@layer components {
+  .container-page { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
+
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 focus-visible:outline-brand-600; }
+  .btn-secondary { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-slate-400; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600; }
+  .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+
+  .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+  .card-body { @apply p-5 sm:p-6; }
+
+  .field { @apply space-y-1.5; }
+  .label { @apply block text-sm font-medium text-slate-700; }
+  .input {
+    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+      placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none;
+  }
+  .input-error { @apply border-red-500 focus:border-red-500 focus:ring-red-100; }
+  .hint { @apply text-xs text-slate-500; }
+  .field-error { @apply text-xs font-medium text-red-600; }
+
+  .table-wrap { @apply overflow-x-auto rounded-xl border border-slate-200 bg-white; }
+  .table { @apply min-w-full divide-y divide-slate-200 text-sm; }
+  .table th { @apply bg-slate-50 px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase; }
+  .table td { @apply px-4 py-3 align-middle text-slate-700; }
+  .table tbody tr { @apply hover:bg-slate-50; }
+
+  .badge-gray { @apply badge bg-slate-100 text-slate-700; }
+  .badge-green { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-yellow { @apply badge bg-amber-50 text-amber-700; }
+  .badge-red { @apply badge bg-red-50 text-red-700; }
+  .badge-blue { @apply badge bg-brand-50 text-brand-700; }
+
+  .alert-success { @apply alert border-emerald-200 bg-emerald-50 text-emerald-800; }
+  .alert-error { @apply alert border-red-200 bg-red-50 text-red-800; }
+  .alert-info { @apply alert border-brand-100 bg-brand-50 text-brand-700; }
+
+  .nav-link { @apply rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
+  .nav-link-active { @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700; }
+}

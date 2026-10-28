@@ -1,0 +1,11 @@
+{{!-- Dùng: {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=4}} --}}
+<div class="field">
+  <label for="f-{{name}}" class="label">{{label}}{{#if required}} <span class="text-red-600" aria-hidden="true">*</span>{{/if}}</label>
+  <textarea id="f-{{name}}" name="{{name}}" rows="{{default rows 4}}"
+    class="input{{#if error}} input-error{{/if}}"
+    {{#if required}}required{{/if}}
+    {{#if placeholder}}placeholder="{{placeholder}}"{{/if}}
+    {{#if error}}aria-invalid="true" aria-describedby="f-{{name}}-error"{{/if}}>{{value}}</textarea>
+  {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+  {{#if error}}<p id="f-{{name}}-error" class="field-error">{{error}}</p>{{/if}}
+</div>

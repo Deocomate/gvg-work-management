@@ -1,0 +1,11 @@
+{{#if currentUser}}
+  <div class="flex shrink-0 items-center gap-3 text-sm">
+    <span class="hidden text-slate-600 sm:inline">{{currentUser.name}}</span>
+    <form method="post" action="/logout">
+      {{> form/csrf}}
+      <button type="submit" class="btn-ghost btn-sm">Đăng xuất</button>
+    </form>
+  </div>
+{{else}}
+  <a href="/login" class="btn-secondary btn-sm shrink-0">Đăng nhập</a>
+{{/if}}

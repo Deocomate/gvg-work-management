@@ -1,0 +1,7 @@
+{{#if flash.length}}
+  <div class="mb-6 space-y-2" role="status">
+    {{#each flash}}
+      <div class="alert-{{type}}" data-dismissible>{{message}}</div>
+    {{/each}}
+  </div>
+{{/if}}

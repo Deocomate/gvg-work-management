@@ -1,0 +1,34 @@
+# Render Blueprint: deploy free, tự build lại mỗi lần push lên GitHub.
+# Lần đầu: Render Dashboard → New → Blueprint → chọn repo này.
+services:
+  - type: web
+    name: lich-cong-viec
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: APP_NAME
+        value: "Lịch công việc"
+      - key: SESSION_SECRET
+        generateValue: true
+      # Turso (SQLite trên cloud, free) để dữ liệu không mất khi server ngủ.
+      # Render sẽ hỏi 2 giá trị này khi tạo Blueprint.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_AUTH_TOKEN
+        sync: false
+      - key: APP_TIMEZONE
+        value: Asia/Ho_Chi_Minh
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # [vibe:render-env]

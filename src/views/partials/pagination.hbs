@@ -1,0 +1,10 @@
+{{!-- Dùng: {{> pagination pagination}} (object từ buildPagination) --}}
+{{#if (or hasPrev hasNext)}}
+  <nav class="mt-4 flex items-center justify-between text-sm text-slate-600" aria-label="Phân trang">
+    <span>Trang {{page}} / {{totalPages}} · {{formatNumber total}} mục</span>
+    <div class="flex gap-2">
+      {{#if hasPrev}}<a class="btn-secondary btn-sm" href="{{prevUrl}}">← Trước</a>{{/if}}
+      {{#if hasNext}}<a class="btn-secondary btn-sm" href="{{nextUrl}}">Sau →</a>{{/if}}
+    </div>
+  </nav>
+{{/if}}

@@ -1,0 +1,11 @@
+<div class="mx-auto max-w-sm">
+  <h1 class="mb-6 text-center text-2xl font-semibold text-slate-900">Tạo tài khoản</h1>
+  <form method="post" action="/signup" class="card card-body space-y-5" novalidate>
+    {{> form/csrf}}
+    {{> form/field name="name" label="Họ tên" value=values.name error=errors.name required=true}}
+    {{> form/field name="email" label="Email" type="email" value=values.email error=errors.email required=true}}
+    {{> form/field name="password" label="Mật khẩu" type="password" error=errors.password required=true hint="Tối thiểu 8 ký tự"}}
+    <button type="submit" class="btn-primary w-full">Đăng ký</button>
+  </form>
+  <p class="mt-4 text-center text-sm text-slate-500">Đã có tài khoản? <a href="/login" class="font-medium text-brand-600 hover:underline">Đăng nhập</a></p>
+</div>
