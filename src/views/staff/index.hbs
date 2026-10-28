@@ -1,0 +1,27 @@
+{{#> page-header title="Nhân viên" subtitle="Tài khoản đăng nhập để xem và nhận việc"}}
+  <a href="/staff/new" class="btn-primary">+ Thêm nhân viên</a>
+{{/page-header}}
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th class="text-right">Thao tác</th></tr>
+    </thead>
+    <tbody>
+      {{#each users}}
+        <tr>
+          <td class="font-medium text-slate-900">{{name}}{{#if isMe}} <span class="text-xs font-normal text-slate-500">(bạn)</span>{{/if}}</td>
+          <td>{{email}}</td>
+          <td><span class="{{roleInfo.badge}}">{{roleInfo.label}}</span></td>
+          <td class="whitespace-nowrap text-right">
+            <a href="/today?user={{id}}" class="btn-ghost btn-sm">Xem việc</a>
+            <a href="/staff/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
+            {{#unless isMe}}
+              {{> form/delete-button action=(concat "/staff/" id "/delete") confirm="Xoá nhân viên này? Toàn bộ việc đã giao cho họ cũng bị xoá."}}
+            {{/unless}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

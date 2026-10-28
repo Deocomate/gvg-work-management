@@ -1,0 +1,27 @@
+{{#> page-header title=title}}
+  <a href="/staff" class="btn-secondary">← Danh sách</a>
+{{/page-header}}
+
+<form method="post" action="{{#if staff}}/staff/{{staff.id}}{{else}}/staff{{/if}}" class="card card-body max-w-2xl space-y-5" novalidate>
+  {{> form/csrf}}
+  {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    {{> form/field name="name" label="Họ tên" value=values.name error=errors.name required=true placeholder="VD: Nguyễn Văn An"}}
+    {{> form/field name="email" label="Email đăng nhập" type="email" value=values.email error=errors.email required=true}}
+  </div>
+  <div class="grid gap-5 sm:grid-cols-2">
+    {{#if staff}}
+      {{> form/field name="password" label="Mật khẩu mới" type="password" error=errors.password hint="Để trống nếu không đổi"}}
+    {{else}}
+      {{> form/field name="password" label="Mật khẩu" type="password" error=errors.password required=true hint="Tối thiểu 8 ký tự"}}
+    {{/if}}
+    {{> form/select name="role" label="Vai trò" options=roleOptions value=values.role error=errors.role required=true}}
+  </div>
+  <p class="hint">Quản lý: giao việc cho mọi người và quản lý nhân viên. Nhân viên: xem việc của mình, tự thêm việc cá nhân, đánh dấu hoàn thành.</p>
+
+  <div class="flex gap-2 pt-2">
+    <button type="submit" class="btn-primary">{{#if staff}}Lưu thay đổi{{else}}Thêm nhân viên{{/if}}</button>
+    <a href="/staff" class="btn-ghost">Huỷ</a>
+  </div>
+</form>

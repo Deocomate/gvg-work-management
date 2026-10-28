@@ -1,0 +1,40 @@
+{{!-- Một việc trên dòng thời gian. Dùng: {{> schedule/task-item this back=../back showAssignee=../showAssignee showDate=false}} --}}
+<li class="card flex gap-3 p-4 sm:gap-4{{#if isNow}} ring-2 ring-brand-500{{/if}}">
+  <div class="w-14 shrink-0 pt-0.5 text-right text-sm tabular-nums sm:w-16">
+    {{#if start_time}}
+      <div class="font-semibold text-slate-900">{{start_time}}</div>
+      {{#if end_time}}<div class="text-xs text-slate-500">{{end_time}}</div>{{/if}}
+    {{else}}
+      <div class="text-xs font-medium text-slate-500">Cả ngày</div>
+    {{/if}}
+  </div>
+
+  <div class="min-w-0 flex-1 border-l-4 pl-3 sm:pl-4 {{statusInfo.bar}}">
+    <div class="flex flex-wrap items-center gap-2">
+      <h3 class="font-medium {{#if (eq status 'done')}}text-slate-400 line-through{{else}}text-slate-900{{/if}}">{{title}}</h3>
+      <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
+      {{#if isHigh}}<span class="badge-red">Quan trọng</span>{{/if}}
+      {{#if isNow}}<span class="badge-blue">Đang diễn ra</span>{{/if}}
+      {{#if isLate}}<span class="badge-red">Trễ</span>{{/if}}
+    </div>
+    {{#if showDate}}<p class="mt-0.5 text-xs text-slate-500">{{formatWeekday date}}</p>{{/if}}
+    {{#if showAssignee}}<p class="mt-0.5 text-xs text-slate-500">Người làm: <span class="font-medium text-slate-700">{{assignee_name}}</span></p>{{/if}}
+    {{#if note}}<p class="mt-1.5 text-sm whitespace-pre-line text-slate-600">{{note}}</p>{{/if}}
+
+    {{#if (or canStatus canEdit)}}
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        {{#if canStatus}}
+          {{#if (eq status 'todo')}}
+            {{> schedule/status-button id=id status="doing" label="Bắt đầu" class="btn-secondary btn-sm" back=back}}
+            {{> schedule/status-button id=id status="done" label="✓ Xong" class="btn-primary btn-sm" back=back}}
+          {{else if (eq status 'doing')}}
+            {{> schedule/status-button id=id status="done" label="✓ Xong" class="btn-primary btn-sm" back=back}}
+          {{else}}
+            {{> schedule/status-button id=id status="todo" label="Mở lại" class="btn-ghost btn-sm" back=back}}
+          {{/if}}
+        {{/if}}
+        {{#if canEdit}}<a href="/tasks/{{id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Sửa</a>{{/if}}
+      </div>
+    {{/if}}
+  </div>
+</li>

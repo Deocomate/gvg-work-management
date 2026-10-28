@@ -1,8 +1,9 @@
 import { config } from '#config';
+import { safeBack } from '#lib/redirect.js';
 import * as service from './auth.service.js';
 
 // Chỉ cho phép quay lại đường dẫn nội bộ (chống open redirect).
-const safeNext = (next) => (typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') ? next : '/');
+const safeNext = (next) => safeBack(next, '/');
 
 const startSession = (req, user) => {
   req.session.userId = user.id;

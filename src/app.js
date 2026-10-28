@@ -14,6 +14,7 @@ import { locals } from '#middleware/locals.js';
 import { errorHandler, notFoundHandler } from '#middleware/errors.js';
 import { registerModules } from '#modules/index.js';
 import { loadUser } from '#middleware/auth.js';
+import { taskBadge } from '#middleware/task-badge.js';
 // [vibe:app-imports]
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,6 +61,7 @@ export function createApp() {
   app.use(flash);
   app.use(csrf);
   app.use(loadUser);
+  app.use(taskBadge);
   // [vibe:app-middleware]
 
   registerModules(app);

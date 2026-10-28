@@ -1,0 +1,58 @@
+{{#> page-header title=title}}
+  <a href="{{back}}" class="btn-secondary">← Quay lại</a>
+{{/page-header}}
+
+<form method="post" action="{{#if task}}/tasks/{{task.id}}{{else}}/tasks{{/if}}" class="card card-body max-w-2xl space-y-5" novalidate>
+  {{> form/csrf}}
+  <input type="hidden" name="back" value="{{back}}">
+  {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+  {{> form/field name="title" label="Công việc" value=values.title error=errors.title required=true placeholder="VD: Kiểm kê kho tầng 2"}}
+  {{> form/textarea name="note" label="Ghi chú / hướng dẫn" value=values.note error=errors.note rows=3}}
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    {{#if manager}}
+      {{> form/select name="assignee_id" label="Giao cho" options=assigneeOptions value=values.assignee_id error=errors.assignee_id required=true placeholder="— Chọn nhân viên —"}}
+    {{else}}
+      <div class="field">
+        <span class="label">Giao cho</span>
+        <p class="input bg-slate-50 text-slate-600">{{currentUser.name}} (bạn)</p>
+        <input type="hidden" name="assignee_id" value="{{currentUser.id}}">
+      </div>
+    {{/if}}
+    {{> form/field name="date" label="Ngày" type="date" value=values.date error=errors.date required=true}}
+  </div>
+
+  <div class="grid gap-5 sm:grid-cols-3">
+    {{> form/field name="start_time" label="Bắt đầu" type="time" value=values.start_time error=errors.start_time hint="Để trống = cả ngày"}}
+    {{> form/field name="end_time" label="Kết thúc" type="time" value=values.end_time error=errors.end_time}}
+    {{> form/select name="priority" label="Mức độ" options=priorityOptions value=values.priority error=errors.priority}}
+  </div>
+
+  {{#if task}}
+    <div class="grid gap-5 sm:grid-cols-3">
+      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status}}
+    </div>
+  {{else}}
+    <fieldset class="grid gap-5 rounded-lg border border-slate-200 p-4 sm:grid-cols-2">
+      <legend class="px-1 text-sm font-medium text-slate-700">Việc lặp lại</legend>
+      {{> form/select name="repeat" label="Lặp lại" options=repeatOptions value=values.repeat error=errors.repeat}}
+      {{> form/field name="repeat_until" label="Đến ngày" type="date" value=values.repeat_until error=errors.repeat_until hint="Tối đa 3 tháng. Mỗi ngày là một việc riêng."}}
+    </fieldset>
+  {{/if}}
+
+  <div class="flex gap-2 pt-2">
+    <button type="submit" class="btn-primary">{{#if task}}Lưu thay đổi{{else}}Thêm công việc{{/if}}</button>
+    <a href="{{back}}" class="btn-ghost">Huỷ</a>
+  </div>
+</form>
+
+{{#if task}}
+  <div class="mt-4 max-w-2xl text-right">
+    <form method="post" action="/tasks/{{task.id}}/delete" class="inline" data-confirm="Xoá công việc này?">
+      {{> form/csrf}}
+      <input type="hidden" name="back" value="{{back}}">
+      <button type="submit" class="btn-ghost btn-sm text-red-600 hover:text-red-700">Xoá công việc</button>
+    </form>
+  </div>
+{{/if}}

@@ -50,6 +50,8 @@ export const helpers = {
   json: (value) => JSON.stringify(value),
   // Ghép chuỗi trong view: (concat "/tasks/" id "/edit")
   concat: (...args) => args.slice(0, -1).join(''),
+  // Đặt giá trị vào tham số URL an toàn: href="/x?back={{urlEncode back}}"
+  urlEncode: (value) => encodeURIComponent(value ?? ''),
   // Dùng trong <option>/<input type=checkbox>: {{selected status 'done'}}
   selected: (a, b) => (a == b ? 'selected' : ''),
   checked: (value) => (value ? 'checked' : ''),

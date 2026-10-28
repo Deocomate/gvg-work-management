@@ -1,0 +1,7 @@
+{{!-- Ô chọn nhân viên cho quản lý (đặt trong form GET). Dùng: {{> schedule/staff-filter}} --}}
+{{#if @root.manager}}
+  <select name="user" class="input w-auto sm:ml-auto" aria-label="Xem việc của" data-autosubmit>
+    <option value="">Tất cả nhân viên</option>
+    {{#each @root.staffOptions}}<option value="{{value}}" {{selected value @root.selectedUser}}>{{label}}</option>{{/each}}
+  </select>
+{{/if}}

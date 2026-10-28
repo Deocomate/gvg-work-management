@@ -9,11 +9,17 @@
 import homeRoutes from './home/home.routes.js';
 import authRoutes from './auth/auth.routes.js';
 import { requireAuth, requireRole } from '#middleware/auth.js'; // dùng: middleware: [requireAuth]
+import scheduleRoutes from './schedule/schedule.routes.js';
+import tasksRoutes from './tasks/tasks.routes.js';
+import staffRoutes from './staff/staff.routes.js';
 // [vibe:module-imports]
 
 export const modules = [
   { path: '/', router: homeRoutes },
   { path: '/', router: authRoutes },
+  { path: '/', router: scheduleRoutes }, // /today, /calendar (tự kiểm tra đăng nhập)
+  { path: '/tasks', router: tasksRoutes, middleware: [requireAuth] },
+  { path: '/staff', router: staffRoutes, middleware: [requireRole('admin')] },
   // [vibe:module-mounts]
 ];
 

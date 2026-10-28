@@ -1,1 +1,2 @@
-<a href="{{href}}" class="nav-link {{#if (isActive currentPath href)}}nav-link-active{{/if}}"{{#if (isActive currentPath href)}} aria-current="page"{{/if}}>{{label}}</a>
+{{!-- Dùng: {{> nav-link href="/today" label="Hôm nay" count=todayUnfinished}} (count tuỳ chọn: số nhỏ màu đỏ) --}}
+<a href="{{href}}" class="nav-link {{#if (isActive currentPath href)}}nav-link-active{{/if}}"{{#if (isActive currentPath href)}} aria-current="page"{{/if}}>{{label}}{{#if count}} <span class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white" title="{{count}} việc chưa xong hôm nay">{{count}}</span>{{/if}}</a>

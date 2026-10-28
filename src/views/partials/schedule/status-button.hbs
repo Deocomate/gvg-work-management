@@ -1,0 +1,7 @@
+{{!-- Nút đổi trạng thái nhanh. Dùng: {{> schedule/status-button id=id status="done" label="Xong" class="btn-primary btn-sm" back=back}} --}}
+<form method="post" action="/tasks/{{id}}/status" class="inline">
+  {{> form/csrf}}
+  <input type="hidden" name="status" value="{{status}}">
+  <input type="hidden" name="back" value="{{back}}">
+  <button type="submit" class="{{class}}">{{label}}</button>
+</form>
