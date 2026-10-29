@@ -12,14 +12,13 @@ export const parseMonth = (value) => (isISOMonth(value) ? value : todayISO().sli
 export const ALL_USERS = 'all';
 
 /**
- * Xem việc của ai: mặc định ai đăng nhập thì thấy việc của người đó.
- * Nhân viên luôn là chính mình; quản lý chọn được người khác hoặc "all" (null = tất cả mọi người).
+ * Xem việc của ai (null = tất cả mọi người).
+ * Nhân viên luôn là chính mình; quản lý mặc định xem cả nhóm (khớp với phiếu công việc), chọn được một người.
  */
 export function resolveAssignee(user, requested) {
   if (!isManager(user)) return user.id;
-  if (requested === ALL_USERS) return null;
   const id = Number(requested);
-  return Number.isInteger(id) && id > 0 ? id : user.id;
+  return Number.isInteger(id) && id > 0 ? id : null;
 }
 
 /** Việc đang diễn ra / đã trễ so với thời điểm hiện tại (giờ Việt Nam). */

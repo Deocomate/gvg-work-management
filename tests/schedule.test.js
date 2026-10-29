@@ -75,8 +75,12 @@ test('nhân viên chỉ thấy việc của mình kể cả khi sửa ?user=', a
   assert.match(all, /Người làm: <span[^>]*>Phạm Hoa/);
 });
 
-test('mỗi tài khoản mặc định chỉ thấy việc của chính mình (kể cả quản lý)', async () => {
-  const mine = (await admin.get('/today')).text;
+test('quản lý mặc định thấy việc cả nhóm (khớp phiếu công việc), chọn được từng người', async () => {
+  const all = (await admin.get('/today')).text;
+  assert.match(all, /Việc riêng của quản lý/);
+  assert.match(all, /Họp sáng/);
+  assert.match(all, /<option value="all" selected>Tất cả nhân viên/);
+  const mine = (await admin.get('/today?user=1')).text;
   assert.match(mine, /Việc riêng của quản lý/);
   assert.doesNotMatch(mine, /Họp sáng/);
   const ofHoa = (await admin.get(`/today?user=${hoaId}`)).text;

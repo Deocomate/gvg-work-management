@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lich-cong-viec",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 3000
+    },
+    {
+      "name": "lich-cong-viec-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/server.js"],
+      "env": {
+        "PORT": "3011",
+        "DATABASE_URL": "file:data/preview.db",
+        "ADMIN_EMAIL": "preview@test.local",
+        "ADMIN_PASSWORD": "preview-pass-123"
+      },
+      "port": 3011
+    }
+  ]
+}
