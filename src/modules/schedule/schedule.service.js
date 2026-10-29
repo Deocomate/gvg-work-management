@@ -33,12 +33,45 @@ export function timing(task, today, now) {
   };
 }
 
-export async function getDay({ date, assigneeId }) {
+// Trạng thái chung của việc làm chung: xong khi mọi người xong, chưa làm khi chưa ai bắt đầu.
+function groupStatus(copies) {
+  if (copies.every((t) => t.status === 'done')) return 'done';
+  return copies.every((t) => t.status === 'todo') ? 'todo' : 'doing';
+}
+
+/**
+ * Gộp các bản của một việc làm chung (cùng group_key) thành một mục — dùng khi xem cả nhóm.
+ * Mục gộp giữ id của bản đầu tiên; assignee_name là tên mọi người (✓ cho ai đã xong khi chưa xong hết).
+ */
+export function mergeGroups(tasks) {
+  const groups = new Map();
+  const merged = [];
+  for (const task of tasks) {
+    if (!task.group_key) merged.push(task);
+    else if (groups.has(task.group_key)) groups.get(task.group_key).push(task);
+    else {
+      const copies = [task];
+      groups.set(task.group_key, copies);
+      merged.push(copies);
+    }
+  }
+  return merged.map((item) => {
+    if (!Array.isArray(item)) return item;
+    if (item.length === 1) return item[0];
+    const status = groupStatus(item);
+    const names = item.map((t) => (status !== 'done' && t.status === 'done' ? `${t.assignee_name} ✓` : t.assignee_name));
+    return { ...item[0], status, assignee_name: names.join(', '), coworkers: null, isGroup: true };
+  });
+}
+
+// perPerson: giữ mỗi người một bản (phiếu công việc); không thì xem cả nhóm sẽ gộp việc làm chung.
+export async function getDay({ date, assigneeId, perPerson = false }) {
   const today = todayISO();
   const now = nowTimeHM();
+  const merge = assigneeId || perPerson ? (list) => list : mergeGroups;
   const [tasks, overdue] = await Promise.all([
-    tasksRepo.listForDay({ date, assigneeId }),
-    date === today ? tasksRepo.listOverdue({ beforeDate: today, assigneeId }) : [],
+    tasksRepo.listForDay({ date, assigneeId }).then(merge),
+    date === today ? tasksRepo.listOverdue({ beforeDate: today, assigneeId }).then(merge) : [],
   ]);
 
   const items = tasks.map((t) => ({ ...t, ...timing(t, today, now) }));
@@ -61,7 +94,7 @@ export async function getDay({ date, assigneeId }) {
 
 /** Phiếu công việc trong ngày: việc của ngày (và việc tồn nếu là hôm nay) gom theo từng người làm. */
 export async function getSheet({ date, assigneeId }) {
-  const day = await getDay({ date, assigneeId });
+  const day = await getDay({ date, assigneeId, perPerson: true });
   const people = new Map();
   const add = (task, key) => {
     const person = people.get(task.assignee_id) ?? { name: task.assignee_name, tasks: [], overdue: [] };
@@ -82,11 +115,12 @@ export async function getWeek({ date, assigneeId }) {
   const days = weekDays(date);
   const today = todayISO();
   const tasks = await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId });
+  const list = assigneeId ? tasks : mergeGroups(tasks);
 
   return {
     days: days.map((day) => {
-      const list = tasks.filter((t) => t.date === day);
-      const unfinished = list.filter((t) => t.status !== 'done').length;
+      const dayTasks = list.filter((t) => t.date === day);
+      const unfinished = dayTasks.filter((t) => t.status !== 'done').length;
       return {
         date: day,
         // Ngày 1 kèm tháng để biết tuần đã sang tháng mới
@@ -95,7 +129,7 @@ export async function getWeek({ date, assigneeId }) {
         isPast: day < today,
         unfinished,
         hasLate: day < today && unfinished > 0,
-        tasks: list,
+        tasks: dayTasks,
       };
     }),
     // Sang tuần trước/sau, giữ nguyên thứ đang chọn
@@ -110,7 +144,7 @@ export async function getMonth({ month, assigneeId }) {
   const tasks = await tasksRepo.listForRange({ from: weeks[0][0], to: weeks.at(-1)[6], assigneeId });
 
   const byDate = new Map();
-  for (const task of tasks) byDate.set(task.date, [...(byDate.get(task.date) ?? []), task]);
+  for (const task of assigneeId ? tasks : mergeGroups(tasks)) byDate.set(task.date, [...(byDate.get(task.date) ?? []), task]);
 
   const toCell = (date) => {
     const list = byDate.get(date) ?? [];

@@ -135,12 +135,14 @@ export async function deleteTask(id, user) {
   await repo.remove(id);
 }
 
-export async function changeStatus(id, status, user) {
+/** Đổi trạng thái. wholeGroup: quản lý đổi cho mọi người của việc làm chung (mục đã gộp khi xem cả nhóm). */
+export async function changeStatus(id, status, user, { wholeGroup = false } = {}) {
   const parsed = statusSchema.safeParse(status);
   if (!parsed.success) throw badRequest('Trạng thái không hợp lệ.');
   const task = await getTask(id);
   if (!canChangeStatus(user, task)) throw forbidden('Đây không phải việc của bạn.');
-  await repo.updateStatus(id, parsed.data);
+  const ids = wholeGroup && isManager(user) ? (await groupOf(task)).map((t) => t.id) : [task.id];
+  await Promise.all(ids.map((taskId) => repo.updateStatus(taskId, parsed.data)));
   return { ...task, status: parsed.data };
 }
 

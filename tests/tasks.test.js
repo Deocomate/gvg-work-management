@@ -99,7 +99,7 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
   );
   const all = (await admin.get(`/today?date=${day}`)).text;
   const copies = (html) => html.match(/>Dựng phim bản 2<\/h3>/g)?.length ?? 0;
-  assert.equal(copies(all), 3);
+  assert.equal(copies(all), 1); // xem cả nhóm: việc làm chung gộp thành một mục
   assert.doesNotMatch(all, />Dựng phim<\/h3>/);
   const minhItem = (await admin.get(`/today?date=${day}&user=${minhId}`)).text.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
   assert.match(minhItem, /line-through/); // Minh vẫn "Đã xong"
@@ -320,4 +320,33 @@ test('dữ liệu người dùng được escape (chống XSS)', async () => {
   const res = await lan.get(`/today?date=${addDays(today, 1)}`);
   assert.doesNotMatch(res.text, /<script>alert\(1\)<\/script>/);
   assert.match(res.text, /&lt;script&gt;/);
+});
+
+test('quản lý xem cả nhóm: việc làm chung gộp một mục; phiếu công việc vẫn tách từng người', async () => {
+  const day = addDays(today, 5);
+  await assign(admin, { title: 'Chụp ảnh sản phẩm', assignee_id: [lanId, minhId], date: day });
+  const itemsOf = (html) => html.split('<li class="card').slice(1).filter((p) => p.includes('>Chụp ảnh sản phẩm</h3>'));
+
+  const team = itemsOf((await admin.get(`/today?date=${day}`)).text);
+  assert.equal(team.length, 1);
+  assert.match(team[0], /Phụ trách: <span[^>]*>Trần Lan, Lê Minh</);
+  assert.equal(itemsOf((await admin.get(`/today?date=${day}&user=${lanId}`)).text).length, 1);
+
+  // Lan xong phần mình -> mục gộp chưa xong, đánh dấu ✓ cho Lan
+  const lanCopy = await taskIdOn(lan, `/today?date=${day}`, 'Chụp ảnh sản phẩm');
+  await postForm(lan, `/tasks/${lanCopy}/status`, { status: 'done' }, { from: '/today' });
+  const mixed = itemsOf((await admin.get(`/today?date=${day}`)).text)[0];
+  assert.doesNotMatch(mixed, /line-through/);
+  assert.match(mixed, /Trần Lan ✓, Lê Minh/);
+
+  // Bấm "Xong" trên mục gộp -> xong cho cả nhóm
+  assert.match(mixed, /name="group" value="1"/);
+  const groupId = mixed.match(/\/tasks\/(\d+)\/status/)[1];
+  await postForm(admin, `/tasks/${groupId}/status`, { status: 'done', group: '1' }, { from: '/today' });
+  const minhItem = itemsOf((await admin.get(`/today?date=${day}&user=${minhId}`)).text)[0];
+  assert.match(minhItem, /line-through/);
+
+  // Phiếu công việc: mỗi người một dòng
+  const sheet = (await admin.get(`/today/sheet?date=${day}`)).text;
+  assert.equal(sheet.match(/<strong>Chụp ảnh sản phẩm<\/strong>/g).length, 2);
 });

@@ -41,12 +41,12 @@
       <div class="mt-3 flex flex-wrap items-center gap-2">
         {{#if canStatus}}
           {{#if (eq status 'todo')}}
-            {{> schedule/status-button id=id status="doing" label="Bắt đầu" class="btn-secondary btn-sm" back=back}}
-            {{> schedule/status-button id=id status="done" label="✓ Xong" class="btn-primary btn-sm" back=back}}
+            {{> schedule/status-button id=id status="doing" label="Bắt đầu" class="btn-secondary btn-sm" back=back group=isGroup}}
+            {{> schedule/status-button id=id status="done" label="✓ Xong" class="btn-primary btn-sm" back=back group=isGroup}}
           {{else if (eq status 'doing')}}
-            {{> schedule/status-button id=id status="done" label="✓ Xong" class="btn-primary btn-sm" back=back}}
+            {{> schedule/status-button id=id status="done" label="✓ Xong" class="btn-primary btn-sm" back=back group=isGroup}}
           {{else}}
-            {{> schedule/status-button id=id status="todo" label="Mở lại" class="btn-ghost btn-sm" back=back}}
+            {{> schedule/status-button id=id status="todo" label="Mở lại" class="btn-ghost btn-sm" back=back group=isGroup}}
           {{/if}}
         {{/if}}
         {{#if canEdit}}<a href="/tasks/{{id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Sửa</a>{{/if}}

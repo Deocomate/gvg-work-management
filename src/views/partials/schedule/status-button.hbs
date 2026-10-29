@@ -1,7 +1,8 @@
-{{!-- Nút đổi trạng thái nhanh. Dùng: {{> schedule/status-button id=id status="done" label="Xong" class="btn-primary btn-sm" back=back}} --}}
+{{!-- Nút đổi trạng thái nhanh. Dùng: {{> schedule/status-button id=id status="done" label="Xong" class="btn-primary btn-sm" back=back group=isGroup}} --}}
 <form method="post" action="/tasks/{{id}}/status" class="inline">
   {{> form/csrf}}
   <input type="hidden" name="status" value="{{status}}">
   <input type="hidden" name="back" value="{{back}}">
+  {{#if group}}<input type="hidden" name="group" value="1">{{/if}}
   <button type="submit" class="{{class}}">{{label}}</button>
 </form>

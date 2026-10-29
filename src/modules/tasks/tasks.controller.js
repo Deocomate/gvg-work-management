@@ -91,7 +91,7 @@ export async function destroy(req, res) {
 const STATUS_MESSAGES = { todo: 'Đã mở lại', doing: 'Đã bắt đầu', done: 'Đã hoàn thành' };
 
 export async function setStatus(req, res) {
-  const task = await service.changeStatus(req.params.id, req.body.status, req.user);
+  const task = await service.changeStatus(req.params.id, req.body.status, req.user, { wholeGroup: req.body.group === '1' });
   req.flash('success', `${STATUS_MESSAGES[task.status]} “${task.title}”.`);
   res.redirect(safeBack(req.body.back, dayUrl(task.date)));
 }
