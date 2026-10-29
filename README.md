@@ -38,5 +38,17 @@ tests/                test (node:test + supertest)
 docs/PROJECT.md       sổ tay dự án
 ```
 
+## Deploy lên Coolify (Docker)
+Dùng `Dockerfile` + `docker-compose.yml`. Compose dùng `expose` chứ không dùng `ports`, nên app không
+chiếm cổng nào trên server và không đụng các project khác; Coolify trỏ tên miền vào cổng 3000 bên trong.
+
+1. Coolify → **New Resource** → chọn repo GitHub → Build Pack **Docker Compose**.
+2. Tab **Environment Variables**: điền `ADMIN_EMAIL`, `ADMIN_PASSWORD` (bắt buộc, tạo tài khoản quản lý lần đầu).
+   `SESSION_SECRET` Coolify tự sinh. Tuỳ chọn: `APP_NAME`, `ALLOW_SIGNUP`, `DATABASE_URL` + `DATABASE_AUTH_TOKEN` (Turso).
+3. Ở service `app`, đặt **Domain** (VD `https://lich.ten-mien.com`) rồi **Deploy**.
+
+Dữ liệu SQLite nằm trong volume `app-data` (`/app/data`), không mất khi deploy lại.
+Nên dùng tên miền **https**: ở production cookie đăng nhập chỉ gửi qua https.
+
 ## Deploy free
 Xem hướng dẫn trong `render.yaml` (Render free + Turso free) hoặc `npm run share`.

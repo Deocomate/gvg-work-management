@@ -1,0 +1,38 @@
+# Deploy trên Coolify: New Resource → Docker Compose → chọn repo này.
+# Dùng `expose` (KHÔNG dùng `ports`): app chỉ mở cổng 3000 trong mạng Docker, không chiếm cổng của server,
+# nên không đụng các project khác. Proxy của Coolify (Traefik) tự trỏ tên miền vào cổng này.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      # Coolify: gán tên miền cho service này và trỏ vào cổng 3000 trong container
+      - SERVICE_FQDN_APP_3000
+      - NODE_ENV=production
+      - PORT=3000
+      - APP_NAME=${APP_NAME:-Work Calendar}
+      - APP_TIMEZONE=${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+      - APP_LOCALE=${APP_LOCALE:-vi-VN}
+      # Coolify tự sinh chuỗi ngẫu nhiên 64 ký tự và giữ nguyên qua các lần deploy
+      - SESSION_SECRET=${SERVICE_PASSWORD_64_SESSION}
+      # Tài khoản quản lý tạo lúc khởi động lần đầu: điền trong tab Environment Variables của Coolify
+      - ADMIN_EMAIL=${ADMIN_EMAIL:?}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?}
+      - ALLOW_SIGNUP=${ALLOW_SIGNUP:-false}
+      # Mặc định lưu SQLite trong volume bên dưới. Muốn dùng Turso thì điền 2 biến này.
+      - DATABASE_URL=${DATABASE_URL:-file:data/app.db}
+      - DATABASE_AUTH_TOKEN=${DATABASE_AUTH_TOKEN:-}
+    volumes:
+      # Dữ liệu SQLite: giữ lại qua các lần deploy / khởi động lại
+      - app-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  app-data:
