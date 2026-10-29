@@ -42,6 +42,11 @@ export function repeatSummary(days) {
   return `Mỗi ${picked.map((d) => d.name).join(', ')}`;
 }
 
+/** Người làm đã chọn (chuỗi/mảng từ form, có thể nhiều người) -> mảng id không trùng, bỏ giá trị lạ. */
+export const parseAssigneeIds = (value) => [
+  ...new Set([value ?? []].flat().map(Number).filter((id) => Number.isInteger(id) && id > 0)),
+];
+
 /** Lặp lại tối đa bao nhiêu ngày kể từ ngày bắt đầu. */
 export const MAX_REPEAT_DAYS = 92;
 
@@ -76,6 +81,7 @@ export const taskSchema = z
       .min(1, 'Vui lòng nhập tên công việc')
       .max(200, 'Tối đa 200 ký tự'),
     note: z.preprocess(emptyToUndefined, z.string().trim().max(2000, 'Ghi chú tối đa 2000 ký tự').optional()),
+    facilities: z.preprocess(emptyToUndefined, z.string().trim().max(2000, 'Tối đa 2000 ký tự').optional()),
     // Lưu dạng chuỗi, mỗi dòng một link (đã bỏ dòng trống); không có link -> undefined.
     links: z
       .preprocess(emptyToUndefined, z.string().optional())

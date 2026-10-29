@@ -3,6 +3,7 @@ import { formatDayVN, isISODate, todayISO, weekdayOf } from '#lib/dates.js';
 import { safeBack } from '#lib/redirect.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import {
+  parseAssigneeIds,
   parseWeekdays,
   REPEAT_OPTIONS,
   REPEAT_WEEKDAYS,
@@ -27,6 +28,8 @@ function weekdayChoices(values) {
 
 async function renderForm(req, res, { task = null, values = {}, errors = {}, status = 200 }) {
   const manager = service.isManager(req.user);
+  const options = manager ? await staffOptions() : [];
+  const picked = parseAssigneeIds(values.assignee_id);
   res.status(status).render('tasks/form', {
     ...weekdayChoices(values),
     title: task ? 'Sửa công việc' : 'Thêm công việc',
@@ -34,7 +37,9 @@ async function renderForm(req, res, { task = null, values = {}, errors = {}, sta
     values,
     errors,
     manager,
-    assigneeOptions: manager ? await staffOptions() : [],
+    // Thêm việc: chọn nhiều người (ô tick); sửa việc: một người (danh sách xổ xuống)
+    assigneeOptions: options,
+    assigneeChoices: options.map((o) => ({ ...o, checked: picked.includes(o.value) })),
     statusOptions: TASK_STATUSES,
     priorityOptions: TASK_PRIORITIES,
     repeatOptions: REPEAT_OPTIONS,
@@ -54,8 +59,10 @@ export function newForm(req, res) {
 export async function create(req, res) {
   const result = await service.createTasks(req.body, req.user);
   if (!result.ok) return renderForm(req, res, { values: req.body, errors: result.errors, status: 422 });
-  const { title, count, date } = result.data;
-  req.flash('success', count > 1 ? `Đã giao “${title}” cho ${count} ngày.` : `Đã thêm “${title}” ngày ${formatDayVN(date)}.`);
+  const { title, days, people, date } = result.data;
+  const who = people > 1 ? ` cho ${people} người` : '';
+  const when = days > 1 ? `${who ? ',' : ' cho'} ${days} ngày` : ` ngày ${formatDayVN(date)}`;
+  req.flash('success', `Đã ${who || days > 1 ? 'giao' : 'thêm'} “${title}”${who}${when}.`);
   res.redirect(safeBack(req.body.back, dayUrl(date)));
 }
 

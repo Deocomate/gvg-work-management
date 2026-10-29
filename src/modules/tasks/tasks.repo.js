@@ -1,7 +1,11 @@
 // Truy cập bảng tasks. CHỈ file này viết SQL cho công việc.
 import { all, get, run, transaction } from '#db';
 
-const SELECT_SQL = `SELECT t.*, u.name AS assignee_name FROM tasks t JOIN users u ON u.id = t.assignee_id`;
+// coworkers: tên những người làm cùng việc này (cùng group_key), VD "Lan, Minh".
+const SELECT_SQL = `SELECT t.*, u.name AS assignee_name,
+    (SELECT group_concat(cu.name, ', ') FROM tasks ct JOIN users cu ON cu.id = ct.assignee_id
+      WHERE ct.group_key = t.group_key AND ct.id <> t.id) AS coworkers
+  FROM tasks t JOIN users u ON u.id = t.assignee_id`;
 // Trong ngày: việc "cả ngày" trước, rồi theo giờ; việc quan trọng lên trước khi cùng giờ.
 const DAY_ORDER_SQL = `ORDER BY t.start_time IS NOT NULL, t.start_time, t.priority = 'high' DESC, t.id`;
 
@@ -43,12 +47,14 @@ export async function countUnfinished({ date, assigneeId }) {
   return Number(row.total);
 }
 
-const INSERT_SQL = `INSERT INTO tasks (title, note, links, assignee_id, created_by, date, start_time, end_time, priority, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+const INSERT_SQL = `INSERT INTO tasks (title, note, links, facilities, group_key, assignee_id, created_by, date, start_time, end_time, priority, status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 const insertArgs = (t) => [
   t.title,
   t.note ?? null,
   t.links ?? null,
+  t.facilities ?? null,
+  t.group_key ?? null,
   t.assignee_id,
   t.created_by ?? null,
   t.date,
@@ -66,7 +72,7 @@ export async function createMany(tasks) {
 
 export async function update(id, t) {
   await run(
-    `UPDATE tasks SET title = ?, note = ?, links = ?, assignee_id = ?, date = ?, start_time = ?, end_time = ?,
+    `UPDATE tasks SET title = ?, note = ?, links = ?, facilities = ?, assignee_id = ?, date = ?, start_time = ?, end_time = ?,
        priority = ?, status = ?,
        done_at = CASE WHEN ? = 'done' THEN COALESCE(done_at, datetime('now')) ELSE NULL END,
        updated_at = datetime('now')
@@ -75,6 +81,7 @@ export async function update(id, t) {
       t.title,
       t.note ?? null,
       t.links ?? null,
+      t.facilities ?? null,
       t.assignee_id,
       t.date,
       t.start_time ?? null,

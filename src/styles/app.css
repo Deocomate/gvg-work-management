@@ -221,6 +221,17 @@
   .repeat-day input:checked + span { @apply bg-brand-500 text-cream shadow-sm shadow-black/30; }
   .repeat-day input:focus-visible + span { @apply outline-2 outline-offset-1 outline-sun-400; }
 
+  /* Chọn nhiều người làm (form thêm việc) */
+  .people-pick { @apply flex flex-wrap gap-2; }
+  .people-chip { @apply relative cursor-pointer; }
+  .people-chip input { @apply sr-only; }
+  .people-chip span {
+    @apply inline-flex items-center rounded-full border border-line bg-raised px-3.5 py-1.5 text-sm font-medium text-ink-soft transition hover:text-ink;
+  }
+  .people-chip input:checked + span { @apply border-brand-500 bg-brand-500 text-cream shadow-sm shadow-black/30; }
+  .people-chip input:checked + span::before { content: "✓"; @apply mr-1.5; }
+  .people-chip input:focus-visible + span { @apply outline-2 outline-offset-1 outline-sun-400; }
+
   /* Ô chọn ngày / giờ / danh sách tự vẽ (public/js/pickers.js) */
   .picker { @apply relative; }
   .picker-trigger { @apply flex min-w-36 cursor-pointer items-center gap-2 text-left; }

@@ -2,7 +2,9 @@
 {{#*inline "task-cell"}}
   <td>
     <strong>{{title}}</strong>{{#if (eq priority 'high')}} <span class="tag-high">Quan trọng</span>{{/if}}
+    {{#if coworkers}}<div class="note">Làm cùng: {{coworkers}}</div>{{/if}}
     {{#if note}}<div class="note">{{note}}</div>{{/if}}
+    {{#if facilities}}<div class="note"><b>Chuẩn bị:</b> {{facilities}}</div>{{/if}}
     {{#each linkList}}
       {{!-- Hiện nguyên link để bấm được trên màn hình/PDF và còn đủ khi sao chép chữ --}}
       <div class="link"><a href="{{url}}" target="_blank" rel="noopener noreferrer">{{url}}</a></div>

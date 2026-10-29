@@ -3,11 +3,12 @@
 //   - Quản lý (admin): giao việc cho bất kỳ ai, sửa/xoá mọi việc.
 //   - Nhân viên: chỉ tự thêm việc cho mình; sửa/xoá việc do chính mình tạo;
 //     đổi trạng thái (bắt đầu/xong) mọi việc được giao cho mình.
+import crypto from 'node:crypto';
 import { addDays, daysBetween, weekdayOf } from '#lib/dates.js';
 import { badRequest, forbidden, notFound } from '#lib/errors.js';
 import { validate } from '#lib/validate.js';
 import * as staffRepo from '#modules/staff/staff.repo.js';
-import { MAX_REPEAT_DAYS, repeatSchema, splitLinks, statusSchema, taskSchema } from './tasks.schema.js';
+import { MAX_REPEAT_DAYS, parseAssigneeIds, repeatSchema, splitLinks, statusSchema, taskSchema } from './tasks.schema.js';
 import * as repo from './tasks.repo.js';
 
 export const isManager = (user) => user?.role === 'admin';
@@ -30,13 +31,19 @@ export async function getEditableTask(id, user) {
   return task;
 }
 
-// Nhân viên luôn tự giao cho mình (bỏ qua giá trị gửi lên) — áp dụng TRƯỚC khi validate.
-const withOwnAssignee = (input, user) => (isManager(user) ? input : { ...input, assignee_id: user.id });
+// Ai làm việc này. Nhân viên luôn tự giao cho mình (bỏ qua giá trị gửi lên);
+// quản lý chọn được nhiều người khi thêm, một người khi sửa.
+function assigneeIdsOf(input, user, { multiple }) {
+  if (!isManager(user)) return [user.id];
+  const ids = parseAssigneeIds(input.assignee_id);
+  return multiple ? ids : ids.slice(0, 1);
+}
 
 // Quản lý phải chọn người có thật.
-async function resolveAssignee(data, user) {
-  if (isManager(user) && !(await staffRepo.findById(data.assignee_id))) return null;
-  return data;
+async function allExist(ids, user) {
+  if (!isManager(user)) return true;
+  const found = await Promise.all(ids.map((id) => staffRepo.findById(id)));
+  return found.every(Boolean);
 }
 
 /**
@@ -60,26 +67,32 @@ export function repeatDates(start, repeat, until, days = []) {
 }
 
 // Validate việc + phần lặp lại cùng lúc để form báo đủ lỗi một lần.
-async function validateTaskInput(input, user) {
-  const task = validate(taskSchema, withOwnAssignee(input, user));
+async function validateTaskInput(input, user, { multiple = false } = {}) {
+  const assigneeIds = assigneeIdsOf(input, user, { multiple });
+  // Kiểm tra theo người đầu tiên; chưa chọn ai thì để trống cho schema báo "Vui lòng chọn người thực hiện".
+  const task = validate(taskSchema, { ...input, assignee_id: assigneeIds[0] ?? '' });
   const repeat = validate(repeatSchema, input);
   if (!task.ok || !repeat.ok) return { ok: false, errors: { ...task.errors, ...repeat.errors } };
 
-  const data = await resolveAssignee(task.data, user);
-  if (!data) return { ok: false, errors: { assignee_id: 'Người thực hiện không tồn tại' } };
+  if (!(await allExist(assigneeIds, user))) return { ok: false, errors: { assignee_id: 'Người thực hiện không tồn tại' } };
 
   const { repeat: kind, repeat_until: until, repeat_days: days } = repeat.data;
-  const { dates, error } = repeatDates(data.date, kind, until, days);
+  const { dates, error } = repeatDates(task.data.date, kind, until, days);
   if (error) return { ok: false, errors: error };
-  return { ok: true, data, dates };
+  return { ok: true, data: task.data, dates, assigneeIds };
 }
 
+/** Thêm việc: mỗi người × mỗi ngày là một bản riêng; nhiều người cùng ngày thì chung group_key. */
 export async function createTasks(input, user) {
-  const result = await validateTaskInput(input, user);
+  const result = await validateTaskInput(input, user, { multiple: true });
   if (!result.ok) return result;
-  const { data, dates } = result;
-  const count = await repo.createMany(dates.map((date) => ({ ...data, date, created_by: user.id })));
-  return { ok: true, data: { ...data, count } };
+  const { data, dates, assigneeIds } = result;
+  const rows = dates.flatMap((date) => {
+    const group_key = assigneeIds.length > 1 ? crypto.randomUUID() : null;
+    return assigneeIds.map((assignee_id) => ({ ...data, assignee_id, date, group_key, created_by: user.id }));
+  });
+  await repo.createMany(rows);
+  return { ok: true, data: { ...data, days: dates.length, people: assigneeIds.length } };
 }
 
 /** Sửa việc; nếu chọn lặp lại thì việc này giữ ngày của nó và thêm bản sao (chưa làm) cho các ngày sau. */
@@ -87,7 +100,8 @@ export async function updateTask(id, input, user) {
   await getEditableTask(id, user);
   const result = await validateTaskInput(input, user);
   if (!result.ok) return result;
-  const { data, dates } = result;
+  const { data: validated, dates, assigneeIds } = result;
+  const data = { ...validated, assignee_id: assigneeIds[0] };
   const repeats = dates.slice(1).map((date) => ({ ...data, date, status: 'todo', created_by: user.id }));
   const updated = await repo.update(id, data);
   const added = repeats.length ? await repo.createMany(repeats) : 0;

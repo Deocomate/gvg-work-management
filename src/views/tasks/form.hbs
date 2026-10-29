@@ -13,13 +13,32 @@
     {{> form/field name="title" label="Tên công việc" value=values.title error=errors.title required=true autofocus=(not task) placeholder="VD: Kiểm kê kho tầng 2"}}
     {{> form/textarea name="note" label="Ghi chú / hướng dẫn" value=values.note error=errors.note rows=2 placeholder="Không bắt buộc — địa điểm, cách làm, tài liệu…"}}
     {{> form/textarea name="links" label="Link liên quan" value=values.links error=errors.links rows=2 placeholder="https://… (mỗi dòng một link)" hint="Video mẫu, kịch bản, thư mục Drive… Mỗi dòng một link, tối đa 10."}}
+    {{> form/textarea name="facilities" label="Cơ sở vật chất cần chuẩn bị" value=values.facilities error=errors.facilities rows=2 placeholder="VD: máy quay, đèn, phòng họp tầng 2… (mỗi dòng một thứ)"}}
   </section>
 
   <section class="form-section">
     <h2 class="form-section-title">Ai làm · Khi nào</h2>
+    {{#if (and manager (not task))}}
+      {{!-- Thêm việc: chọn một hoặc nhiều người; mỗi người nhận một bản việc riêng --}}
+      <fieldset class="field">
+        <legend class="label">Giao cho <span class="required-mark" aria-hidden="true">*</span></legend>
+        <div class="people-pick">
+          {{#each assigneeChoices}}
+            <label class="people-chip">
+              <input type="checkbox" name="assignee_id" value="{{this.value}}" {{checked this.checked}}>
+              <span>{{this.label}}</span>
+            </label>
+          {{/each}}
+        </div>
+        <p class="hint">Chọn nhiều người nếu cùng làm. Mỗi người nhận một bản việc riêng, tự bấm bắt đầu/xong.</p>
+        {{#if errors.assignee_id}}<p class="field-error">{{errors.assignee_id}}</p>{{/if}}
+      </fieldset>
+    {{/if}}
     <div class="grid gap-4 sm:grid-cols-2">
       {{#if manager}}
-        {{> form/select name="assignee_id" label="Giao cho" options=assigneeOptions value=values.assignee_id error=errors.assignee_id required=true placeholder="Chọn nhân viên"}}
+        {{#if task}}
+          {{> form/select name="assignee_id" label="Giao cho" options=assigneeOptions value=values.assignee_id error=errors.assignee_id required=true placeholder="Chọn nhân viên"}}
+        {{/if}}
       {{else}}
         <div class="field">
           <span class="label">Giao cho</span>

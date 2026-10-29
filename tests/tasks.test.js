@@ -41,6 +41,50 @@ test('quản lý giao việc cho nhân viên -> nhân viên thấy trong "Hôm n
   assert.doesNotMatch((await admin.get(`/today?user=${minhId}`)).text, />Kiểm kê kho<\/h3>/);
 });
 
+test('giao một việc cho nhiều người: mỗi người một bản, hiện "Làm cùng"; có cơ sở vật chất cần chuẩn bị', async () => {
+  const form = (await admin.get('/tasks/new')).text;
+  assert.match(form, /type="checkbox" name="assignee_id" value="\d+"/);
+  assert.match(form, /Cơ sở vật chất cần chuẩn bị/);
+
+  const res = await assign(admin, {
+    title: 'Quay quảng cáo',
+    assignee_id: [lanId, minhId],
+    facilities: 'Máy quay\nĐèn led',
+  });
+  assert.equal(res.status, 302);
+  assert.match((await admin.get(res.headers.location)).text, /Đã giao “Quay quảng cáo” cho 2 người ngày/);
+
+  const ofLan = (await lan.get('/today')).text;
+  assert.match(ofLan, /Quay quảng cáo/);
+  assert.match(ofLan, /Làm cùng: <span[^>]*>Lê Minh/);
+  assert.match(ofLan, /Cơ sở vật chất cần chuẩn bị[\s\S]*Máy quay\nĐèn led/);
+  assert.match((await admin.get(`/today?user=${minhId}`)).text, /Làm cùng: <span[^>]*>Trần Lan/);
+
+  // Mỗi người tự đổi trạng thái phần của mình
+  const lanCopy = await taskIdOn(lan, '/today', 'Quay quảng cáo');
+  await postForm(lan, `/tasks/${lanCopy}/status`, { status: 'done' }, { from: '/today' });
+  const minhPage = (await admin.get(`/today?user=${minhId}`)).text;
+  const minhItem = minhPage.split('<li class="card').find((p) => p.includes('Quay quảng cáo'));
+  assert.doesNotMatch(minhItem, /line-through/);
+
+  // Phiếu công việc hiện người làm cùng và đồ cần chuẩn bị
+  const sheet = (await admin.get('/today/sheet')).text;
+  assert.match(sheet, /Làm cùng: Lê Minh/);
+  assert.match(sheet, /Chuẩn bị:<\/b> Máy quay/);
+});
+
+test('giao nhiều người: chưa chọn ai -> báo lỗi; nhân viên gửi nhiều id vẫn chỉ giao cho mình', async () => {
+  const none = await assign(admin, { title: 'Chưa chọn người' });
+  assert.equal(none.status, 422);
+  assert.match(none.text, /Vui lòng chọn người thực hiện/);
+
+  await assign(lan, { title: 'Việc tự thêm nhiều id', assignee_id: [lanId, minhId] });
+  assert.match((await lan.get('/today')).text, /Việc tự thêm nhiều id/);
+  assert.doesNotMatch((await admin.get(`/today?user=${minhId}`)).text, /Việc tự thêm nhiều id/);
+  const item = (await lan.get('/today')).text.split('<li class="card').find((p) => p.includes('Việc tự thêm nhiều id'));
+  assert.doesNotMatch(item, /Làm cùng/);
+});
+
 test('link liên quan: mỗi dòng một link, hiện thành nút mở tab mới; sửa được', async () => {
   const res = await assign(admin, {
     title: 'Quay video mẫu',
