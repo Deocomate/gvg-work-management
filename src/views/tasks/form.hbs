@@ -18,34 +18,27 @@
 
   <section class="form-section">
     <h2 class="form-section-title">Ai làm · Khi nào</h2>
-    {{#if manager}}
-      {{!-- Chọn một hoặc nhiều người; mỗi người nhận một bản việc riêng --}}
-      <fieldset class="field">
-        <legend class="label">Giao cho <span class="required-mark" aria-hidden="true">*</span></legend>
-        <div class="people-pick">
-          {{#each assigneeChoices}}
-            <label class="people-chip">
-              <input type="checkbox" name="assignee_id" value="{{this.value}}" {{checked this.checked}}>
-              <span>{{this.label}}</span>
-            </label>
-          {{/each}}
-        </div>
-        {{#if task}}
-          <p class="hint">Tick thêm người để thêm bản việc cho họ; bỏ tick sẽ xoá phần việc của người đó. Sửa tên, giờ, đồ chuẩn bị… áp dụng cho cả nhóm.</p>
-        {{else}}
-          <p class="hint">Chọn nhiều người nếu cùng làm. Mỗi người nhận một bản việc riêng, tự bấm bắt đầu/xong.</p>
-        {{/if}}
-        {{#if errors.assignee_id}}<p class="field-error">{{errors.assignee_id}}</p>{{/if}}
-      </fieldset>
-    {{/if}}
     <div class="grid gap-4 sm:grid-cols-2">
-      {{#unless manager}}
+      {{#if manager}}
+        {{!-- Chọn một hoặc nhiều người (public/js/pickers.js vẽ thành danh sách xổ xuống); mỗi người nhận một bản việc riêng --}}
+        <div class="field">
+          <label for="f-assignee_id" class="label">Giao cho <span class="required-mark" aria-hidden="true">*</span></label>
+          <select id="f-assignee_id" name="assignee_id" multiple data-placeholder="Chọn nhân viên"
+            class="input{{#if errors.assignee_id}} input-error{{/if}}"
+            {{#if errors.assignee_id}}aria-invalid="true" aria-describedby="f-assignee_id-error"{{/if}}>
+            {{#each assigneeChoices}}
+              <option value="{{this.value}}" {{#if this.checked}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+          {{#if errors.assignee_id}}<p id="f-assignee_id-error" class="field-error">{{errors.assignee_id}}</p>{{/if}}
+        </div>
+      {{else}}
         <div class="field">
           <span class="label">Giao cho</span>
           <p class="input bg-raised text-ink-soft">{{currentUser.name}} (bạn)</p>
           <input type="hidden" name="assignee_id" value="{{currentUser.id}}">
         </div>
-      {{/unless}}
+      {{/if}}
       {{> form/field name="date" label="Ngày" type="date" value=values.date error=errors.date required=true}}
     </div>
     <div>

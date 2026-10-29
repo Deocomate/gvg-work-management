@@ -43,7 +43,8 @@ test('quản lý giao việc cho nhân viên -> nhân viên thấy trong "Hôm n
 
 test('giao một việc cho nhiều người: mỗi người một bản, hiện "Làm cùng"; có cơ sở vật chất cần chuẩn bị', async () => {
   const form = (await admin.get('/tasks/new')).text;
-  assert.match(form, /type="checkbox" name="assignee_id" value="\d+"/);
+  assert.match(form, /<select id="f-assignee_id" name="assignee_id" multiple/);
+  assert.match(form, /href="\/css\/app\.css\?v=\w+"/); // đổi phiên bản mỗi lần deploy để không dùng CSS cũ
   assert.match(form, /Cơ sở vật chất cần chuẩn bị/);
 
   const res = await assign(admin, {
@@ -85,9 +86,9 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
   await postForm(admin, `/tasks/${minhCopy}/status`, { status: 'done' }, { from: '/today' });
 
   const edit = (await admin.get(`/tasks/${lanCopy}/edit`)).text;
-  assert.match(edit, new RegExp(`name="assignee_id" value="${lanId}" checked`));
-  assert.match(edit, new RegExp(`name="assignee_id" value="${minhId}" checked`));
-  assert.doesNotMatch(edit, new RegExp(`name="assignee_id" value="${haId}" checked`));
+  assert.match(edit, new RegExp(`<option value="${lanId}" selected>`));
+  assert.match(edit, new RegExp(`<option value="${minhId}" selected>`));
+  assert.doesNotMatch(edit, new RegExp(`<option value="${haId}" selected>`));
 
   // Đổi tên + thêm Hà
   await postForm(

@@ -7,8 +7,8 @@
   <title>{{#if title}}{{title}} · {{/if}}{{appName}}</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   {{!-- Layout giấy trắng để in / lưu PDF. Không dùng app.css (giao diện tối). --}}
-  <link rel="stylesheet" href="/css/sheet.css">
-  <script src="/js/app.js" defer></script>
+  <link rel="stylesheet" href="/css/sheet.css?v={{assetVersion}}">
+  <script src="/js/app.js?v={{assetVersion}}" defer></script>
 </head>
 <body>
   {{{body}}}

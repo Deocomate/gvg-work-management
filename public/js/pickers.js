@@ -2,6 +2,7 @@
 // Phần tử gốc vẫn nằm trong form (chỉ bị ẩn) nên tên & giá trị gửi lên server không đổi;
 // trình duyệt tắt JS thì vẫn dùng ô mặc định như cũ.
 //   <select>               -> danh sách xổ xuống (trên 7 lựa chọn có ô tìm nhanh, gõ không dấu cũng được)
+//   <select multiple>      -> như trên nhưng bấm để chọn/bỏ nhiều mục; data-placeholder là chữ khi chưa chọn gì
 //   <input type="date">    -> lịch tháng + nút "Hôm nay" / "Ngày mai". data-min-from="date": không chọn trước ngày ở ô "date"
 //   <input type="time">    -> cột giờ + phút (bước 5 phút). data-after="start_time": tự gợi ý giờ kết thúc = bắt đầu + 1 tiếng
 (() => {
@@ -137,17 +138,26 @@
   function enhanceSelect(select) {
     const picker = createPicker(select, 'select', 'chevron');
     const { panel, trigger } = picker;
+    const multiple = select.multiple;
     // Ô bắt buộc: dòng trống ("— Chọn nhân viên —") chỉ là chữ gợi ý, không phải lựa chọn.
     const placeholder = select.required ? select.querySelector('option[value=""]') : null;
     const options = [...select.options].filter((option) => option !== placeholder);
+    const placeholderText = placeholder?.textContent.trim() || select.dataset.placeholder || 'Chọn…';
 
     let search = null;
     if (options.length > 7) {
       search = make('input', 'picker-search', { type: 'text', placeholder: 'Tìm nhanh…', 'aria-label': 'Tìm trong danh sách', autocomplete: 'off' });
       panel.append(search);
     }
-    const list = make('ul', 'picker-list', { role: 'listbox' });
+    const list = make('ul', 'picker-list', { role: 'listbox', ...(multiple ? { 'aria-multiselectable': 'true' } : {}) });
     panel.append(list);
+    if (multiple) {
+      const foot = make('div', 'picker-foot');
+      const ok = button('picker-chip picker-chip-end', 'Xong');
+      ok.addEventListener('click', () => picker.done());
+      foot.append(ok);
+      panel.append(foot);
+    }
 
     const items = options.map((option) => {
       const item = make('li', 'picker-option', { role: 'option' });
@@ -179,17 +189,25 @@
       empty.hidden = visible().length > 0;
     }
     function render() {
-      const selected = select.options[select.selectedIndex];
-      const isEmpty = !selected || selected === placeholder;
-      picker.value.textContent = isEmpty ? placeholder?.textContent.trim() || 'Chọn…' : selected.textContent.trim();
+      const chosen = options.filter((option) => option.selected);
+      const isEmpty = chosen.length === 0;
+      picker.value.textContent = isEmpty ? placeholderText : chosen.map((option) => option.textContent.trim()).join(', ');
       trigger.classList.toggle('is-placeholder', isEmpty);
-      items.forEach((item) => {
-        const on = !isEmpty && item.dataset.value === select.value;
+      items.forEach((item, i) => {
+        const on = options[i].selected;
         item.classList.toggle('is-selected', on);
         item.setAttribute('aria-selected', String(on));
       });
     }
     function choose(value) {
+      // Chọn nhiều: bấm để bật/tắt mục đó, bảng vẫn mở để chọn tiếp.
+      if (multiple) {
+        const option = options.find((o) => o.value === value);
+        option.selected = !option.selected;
+        render();
+        picker.emit();
+        return;
+      }
       const changed = select.value !== value;
       select.value = value;
       render();
@@ -464,7 +482,7 @@
     if (event.target.form?.querySelector('[data-show-when]')) applyShowWhen(event.target.form);
   });
 
-  document.querySelectorAll('select:not([multiple])').forEach(enhanceSelect);
+  document.querySelectorAll('select').forEach(enhanceSelect);
   document.querySelectorAll('input[type="date"]').forEach(enhanceDate);
   document.querySelectorAll('input[type="time"]').forEach(enhanceTime);
   document.querySelectorAll('form').forEach((form) => {

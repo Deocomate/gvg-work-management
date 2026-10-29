@@ -8,11 +8,11 @@
   <title>{{#if title}}{{title}} · {{/if}}{{appName}}</title>
   <meta name="csrf-token" content="{{csrfToken}}">
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/app.css">
-  <script src="/js/theme.js"></script>
-  <script src="/js/app.js" defer></script>
-  <script src="/js/pickers.js" defer></script>
-  {{#if holiday}}<script src="/js/holiday.js" defer></script>{{/if}}
+  <link rel="stylesheet" href="/css/app.css?v={{assetVersion}}">
+  <script src="/js/theme.js?v={{assetVersion}}"></script>
+  <script src="/js/app.js?v={{assetVersion}}" defer></script>
+  <script src="/js/pickers.js?v={{assetVersion}}" defer></script>
+  {{#if holiday}}<script src="/js/holiday.js?v={{assetVersion}}" defer></script>{{/if}}
 </head>
 <body class="flex min-h-screen flex-col font-sans text-ink antialiased">
   {{#if holiday}}
