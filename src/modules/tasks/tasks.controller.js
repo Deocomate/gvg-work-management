@@ -37,8 +37,6 @@ async function renderForm(req, res, { task = null, values = {}, errors = {}, sta
     values,
     errors,
     manager,
-    // Thêm việc: chọn nhiều người (ô tick); sửa việc: một người (danh sách xổ xuống)
-    assigneeOptions: options,
     assigneeChoices: options.map((o) => ({ ...o, checked: picked.includes(o.value) })),
     statusOptions: TASK_STATUSES,
     priorityOptions: TASK_PRIORITIES,
@@ -68,7 +66,9 @@ export async function create(req, res) {
 
 export async function editForm(req, res) {
   const task = await service.getEditableTask(req.params.id, req.user);
-  return renderForm(req, res, { task, values: { ...task, repeat: 'none', back: req.query.back } });
+  // Tick sẵn người làm việc này và những người làm cùng
+  const assignees = (await service.groupOf(task)).map((t) => t.assignee_id);
+  return renderForm(req, res, { task, values: { ...task, assignee_id: assignees, repeat: 'none', back: req.query.back } });
 }
 
 export async function update(req, res) {

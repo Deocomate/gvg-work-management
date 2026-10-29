@@ -70,29 +70,37 @@ export async function createMany(tasks) {
   return tasks.length;
 }
 
-export async function update(id, t) {
-  await run(
-    `UPDATE tasks SET title = ?, note = ?, links = ?, facilities = ?, assignee_id = ?, date = ?, start_time = ?, end_time = ?,
-       priority = ?, status = ?,
-       done_at = CASE WHEN ? = 'done' THEN COALESCE(done_at, datetime('now')) ELSE NULL END,
-       updated_at = datetime('now')
-     WHERE id = ?`,
-    [
-      t.title,
-      t.note ?? null,
-      t.links ?? null,
-      t.facilities ?? null,
-      t.assignee_id,
-      t.date,
-      t.start_time ?? null,
-      t.end_time ?? null,
-      t.priority,
-      t.status,
-      t.status,
-      id,
-    ],
-  );
-  return findById(id);
+/** Các bản của một việc làm chung (cùng group_key). */
+export const listGroup = (groupKey) => all(`${SELECT_SQL} WHERE t.group_key = ? ORDER BY t.id`, [groupKey]);
+
+const UPDATE_SQL = `UPDATE tasks SET title = ?, note = ?, links = ?, facilities = ?, group_key = ?, assignee_id = ?, date = ?,
+     start_time = ?, end_time = ?, priority = ?, status = ?,
+     done_at = CASE WHEN ? = 'done' THEN COALESCE(done_at, datetime('now')) ELSE NULL END,
+     updated_at = datetime('now')
+   WHERE id = ?`;
+const updateArgs = (id, t) => [
+  t.title,
+  t.note ?? null,
+  t.links ?? null,
+  t.facilities ?? null,
+  t.group_key ?? null,
+  t.assignee_id,
+  t.date,
+  t.start_time ?? null,
+  t.end_time ?? null,
+  t.priority,
+  t.status,
+  t.status,
+  id,
+];
+
+/** Lưu thay đổi của một việc (và nhóm làm chung) trong một transaction: sửa, thêm, xoá các bản. */
+export async function saveGroup({ updates = [], creates = [], deletes = [] }) {
+  await transaction([
+    ...updates.map(({ id, task }) => ({ sql: UPDATE_SQL, args: updateArgs(id, task) })),
+    ...creates.map((t) => ({ sql: INSERT_SQL, args: insertArgs(t) })),
+    ...deletes.map((id) => ({ sql: 'DELETE FROM tasks WHERE id = ?', args: [id] })),
+  ]);
 }
 
 export const updateStatus = (id, status) =>

@@ -18,8 +18,8 @@
 
   <section class="form-section">
     <h2 class="form-section-title">Ai làm · Khi nào</h2>
-    {{#if (and manager (not task))}}
-      {{!-- Thêm việc: chọn một hoặc nhiều người; mỗi người nhận một bản việc riêng --}}
+    {{#if manager}}
+      {{!-- Chọn một hoặc nhiều người; mỗi người nhận một bản việc riêng --}}
       <fieldset class="field">
         <legend class="label">Giao cho <span class="required-mark" aria-hidden="true">*</span></legend>
         <div class="people-pick">
@@ -30,22 +30,22 @@
             </label>
           {{/each}}
         </div>
-        <p class="hint">Chọn nhiều người nếu cùng làm. Mỗi người nhận một bản việc riêng, tự bấm bắt đầu/xong.</p>
+        {{#if task}}
+          <p class="hint">Tick thêm người để thêm bản việc cho họ; bỏ tick sẽ xoá phần việc của người đó. Sửa tên, giờ, đồ chuẩn bị… áp dụng cho cả nhóm.</p>
+        {{else}}
+          <p class="hint">Chọn nhiều người nếu cùng làm. Mỗi người nhận một bản việc riêng, tự bấm bắt đầu/xong.</p>
+        {{/if}}
         {{#if errors.assignee_id}}<p class="field-error">{{errors.assignee_id}}</p>{{/if}}
       </fieldset>
     {{/if}}
     <div class="grid gap-4 sm:grid-cols-2">
-      {{#if manager}}
-        {{#if task}}
-          {{> form/select name="assignee_id" label="Giao cho" options=assigneeOptions value=values.assignee_id error=errors.assignee_id required=true placeholder="Chọn nhân viên"}}
-        {{/if}}
-      {{else}}
+      {{#unless manager}}
         <div class="field">
           <span class="label">Giao cho</span>
           <p class="input bg-raised text-ink-soft">{{currentUser.name}} (bạn)</p>
           <input type="hidden" name="assignee_id" value="{{currentUser.id}}">
         </div>
-      {{/if}}
+      {{/unless}}
       {{> form/field name="date" label="Ngày" type="date" value=values.date error=errors.date required=true}}
     </div>
     <div>

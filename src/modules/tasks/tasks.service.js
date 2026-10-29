@@ -31,13 +31,8 @@ export async function getEditableTask(id, user) {
   return task;
 }
 
-// Ai làm việc này. Nhân viên luôn tự giao cho mình (bỏ qua giá trị gửi lên);
-// quản lý chọn được nhiều người khi thêm, một người khi sửa.
-function assigneeIdsOf(input, user, { multiple }) {
-  if (!isManager(user)) return [user.id];
-  const ids = parseAssigneeIds(input.assignee_id);
-  return multiple ? ids : ids.slice(0, 1);
-}
+// Ai làm việc này. Nhân viên luôn tự giao cho mình (bỏ qua giá trị gửi lên); quản lý chọn được nhiều người.
+const assigneeIdsOf = (input, user) => (isManager(user) ? parseAssigneeIds(input.assignee_id) : [user.id]);
 
 // Quản lý phải chọn người có thật.
 async function allExist(ids, user) {
@@ -67,8 +62,8 @@ export function repeatDates(start, repeat, until, days = []) {
 }
 
 // Validate việc + phần lặp lại cùng lúc để form báo đủ lỗi một lần.
-async function validateTaskInput(input, user, { multiple = false } = {}) {
-  const assigneeIds = assigneeIdsOf(input, user, { multiple });
+async function validateTaskInput(input, user) {
+  const assigneeIds = assigneeIdsOf(input, user);
   // Kiểm tra theo người đầu tiên; chưa chọn ai thì để trống cho schema báo "Vui lòng chọn người thực hiện".
   const task = validate(taskSchema, { ...input, assignee_id: assigneeIds[0] ?? '' });
   const repeat = validate(repeatSchema, input);
@@ -84,7 +79,7 @@ async function validateTaskInput(input, user, { multiple = false } = {}) {
 
 /** Thêm việc: mỗi người × mỗi ngày là một bản riêng; nhiều người cùng ngày thì chung group_key. */
 export async function createTasks(input, user) {
-  const result = await validateTaskInput(input, user, { multiple: true });
+  const result = await validateTaskInput(input, user);
   if (!result.ok) return result;
   const { data, dates, assigneeIds } = result;
   const rows = dates.flatMap((date) => {
@@ -95,17 +90,44 @@ export async function createTasks(input, user) {
   return { ok: true, data: { ...data, days: dates.length, people: assigneeIds.length } };
 }
 
-/** Sửa việc; nếu chọn lặp lại thì việc này giữ ngày của nó và thêm bản sao (chưa làm) cho các ngày sau. */
+/** Các bản của việc làm chung chứa `task` (chỉ mình nó nếu làm một mình). */
+export const groupOf = (task) => (task.group_key ? repo.listGroup(task.group_key) : [task]);
+
+/**
+ * Sửa việc. Việc làm chung: tên, ghi chú, giờ, đồ chuẩn bị… áp dụng cho mọi bản trong nhóm, trạng thái chỉ
+ * cho bản đang sửa (mỗi người tự đánh dấu phần mình). Tick thêm người -> thêm bản; bỏ tick -> xoá bản của họ.
+ * Chọn lặp lại thì việc này giữ ngày của nó, các ngày sau thêm bản mới (chưa làm) cho từng người.
+ */
 export async function updateTask(id, input, user) {
-  await getEditableTask(id, user);
+  const task = await getEditableTask(id, user);
   const result = await validateTaskInput(input, user);
   if (!result.ok) return result;
-  const { data: validated, dates, assigneeIds } = result;
-  const data = { ...validated, assignee_id: assigneeIds[0] };
-  const repeats = dates.slice(1).map((date) => ({ ...data, date, status: 'todo', created_by: user.id }));
-  const updated = await repo.update(id, data);
-  const added = repeats.length ? await repo.createMany(repeats) : 0;
-  return { ok: true, data: { ...updated, added } };
+  const { data, dates, assigneeIds } = result;
+
+  const group = await groupOf(task);
+  const others = group.filter((t) => t.id !== task.id && assigneeIds.includes(t.assignee_id));
+  const covered = new Set(others.map((t) => t.assignee_id));
+  // Người của bản đang sửa bị bỏ tick -> chuyển bản này cho người mới tick (nếu có), không thì xoá
+  const mine = assigneeIds.includes(task.assignee_id) ? task.assignee_id : assigneeIds.find((a) => !covered.has(a));
+  if (mine) covered.add(mine);
+
+  const group_key = assigneeIds.length > 1 ? (task.group_key ?? crypto.randomUUID()) : null;
+  const shared = { ...data, group_key };
+  const newCopy = (assignee_id, extra = {}) => ({ ...shared, assignee_id, status: 'todo', created_by: user.id, ...extra });
+  const repeats = dates.slice(1).flatMap((date) => {
+    const key = assigneeIds.length > 1 ? crypto.randomUUID() : null;
+    return assigneeIds.map((a) => newCopy(a, { date, group_key: key }));
+  });
+
+  await repo.saveGroup({
+    updates: [
+      ...(mine ? [{ id: task.id, task: { ...shared, assignee_id: mine } }] : []),
+      ...others.map((t) => ({ id: t.id, task: { ...shared, assignee_id: t.assignee_id, status: t.status } })),
+    ],
+    creates: [...assigneeIds.filter((a) => !covered.has(a)).map((a) => newCopy(a)), ...repeats],
+    deletes: group.filter((t) => !(t.id === task.id ? mine : covered.has(t.assignee_id))).map((t) => t.id),
+  });
+  return { ok: true, data: { ...data, added: dates.length - 1 } };
 }
 
 export async function deleteTask(id, user) {

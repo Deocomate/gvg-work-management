@@ -73,6 +73,62 @@ test('giao một việc cho nhiều người: mỗi người một bản, hiện
   assert.match(sheet, /Chuẩn bị:<\/b> Máy quay/);
 });
 
+test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho cả nhóm; thêm/bớt người', async () => {
+  await postForm(admin, '/staff', { name: 'Đỗ Hà', email: 'ha@test.local', role: 'member', password: 'mat-khau-123' }, { from: '/staff/new' });
+  const haId = await staffId('Đỗ Hà');
+  const day = addDays(today, 3);
+  await assign(admin, { title: 'Dựng phim', assignee_id: [lanId, minhId], date: day });
+  const lanCopy = await taskIdOn(admin, `/today?date=${day}&user=${lanId}`, 'Dựng phim');
+
+  // Minh đã xong phần mình; sửa nhóm không làm mất trạng thái của Minh
+  const minhCopy = await taskIdOn(admin, `/today?date=${day}&user=${minhId}`, 'Dựng phim');
+  await postForm(admin, `/tasks/${minhCopy}/status`, { status: 'done' }, { from: '/today' });
+
+  const edit = (await admin.get(`/tasks/${lanCopy}/edit`)).text;
+  assert.match(edit, new RegExp(`name="assignee_id" value="${lanId}" checked`));
+  assert.match(edit, new RegExp(`name="assignee_id" value="${minhId}" checked`));
+  assert.doesNotMatch(edit, new RegExp(`name="assignee_id" value="${haId}" checked`));
+
+  // Đổi tên + thêm Hà
+  await postForm(
+    admin,
+    `/tasks/${lanCopy}`,
+    { title: 'Dựng phim bản 2', assignee_id: [lanId, minhId, haId], date: day, priority: 'normal', status: 'todo', facilities: 'Máy dựng' },
+    { from: `/tasks/${lanCopy}/edit` },
+  );
+  const all = (await admin.get(`/today?date=${day}`)).text;
+  const copies = (html) => html.match(/>Dựng phim bản 2<\/h3>/g)?.length ?? 0;
+  assert.equal(copies(all), 3);
+  assert.doesNotMatch(all, />Dựng phim<\/h3>/);
+  const minhItem = (await admin.get(`/today?date=${day}&user=${minhId}`)).text.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
+  assert.match(minhItem, /line-through/); // Minh vẫn "Đã xong"
+  assert.match(minhItem, /Máy dựng/);
+  assert.match(minhItem, /Làm cùng: <span[^>]*>(Trần Lan, Đỗ Hà|Đỗ Hà, Trần Lan)/);
+
+  // Bỏ Minh -> bản của Minh bị xoá; còn Lan và Hà
+  await postForm(
+    admin,
+    `/tasks/${lanCopy}`,
+    { title: 'Dựng phim bản 2', assignee_id: [lanId, haId], date: day, priority: 'normal', status: 'todo' },
+    { from: `/tasks/${lanCopy}/edit` },
+  );
+  assert.doesNotMatch((await admin.get(`/today?date=${day}&user=${minhId}`)).text, /Dựng phim bản 2/);
+  assert.match((await admin.get(`/today?date=${day}&user=${haId}`)).text, /Làm cùng: <span[^>]*>Trần Lan/);
+
+  // Bỏ Lan (bản đang sửa) và chỉ giữ Hà -> còn đúng một bản của Hà, hết "Làm cùng"
+  await postForm(
+    admin,
+    `/tasks/${lanCopy}`,
+    { title: 'Dựng phim bản 2', assignee_id: [haId], date: day, priority: 'normal', status: 'todo' },
+    { from: `/tasks/${lanCopy}/edit` },
+  );
+  const left = (await admin.get(`/today?date=${day}`)).text;
+  assert.equal(copies(left), 1);
+  const haItem = left.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
+  assert.match(haItem, /Đỗ Hà/);
+  assert.doesNotMatch(haItem, /Làm cùng/);
+});
+
 test('giao nhiều người: chưa chọn ai -> báo lỗi; nhân viên gửi nhiều id vẫn chỉ giao cho mình', async () => {
   const none = await assign(admin, { title: 'Chưa chọn người' });
   assert.equal(none.status, 422);
