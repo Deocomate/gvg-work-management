@@ -6,6 +6,7 @@ import * as controller from './schedule.controller.js';
 const router = Router();
 
 router.get('/today', requireAuth, controller.today);
+router.get('/today/sheet', requireAuth, controller.sheet);
 router.get('/calendar', requireAuth, controller.calendar);
 
 export default router;

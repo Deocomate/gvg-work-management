@@ -28,8 +28,10 @@ call npm run -s build >nul
 if errorlevel 1 goto fail
 
 echo App dang chay tai http://localhost:3000  (dong cua so nay de tat app)
+echo Code thay doi thi app tu nap lai, khong can dong/mo lai cua so nay.
 start "" cmd /c "timeout /t 4 >nul & start http://localhost:3000"
-call npm start
+rem "dev" = tu khoi dong lai server khi code doi + tu build lai giao dien (CSS)
+call npm run dev
 goto end
 
 :fail

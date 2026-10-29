@@ -12,7 +12,7 @@ export const config = Object.freeze({
   isTest: nodeEnv === 'test',
   onRender: Boolean(env.RENDER), // Render tự đặt biến RENDER
   port: Number(env.PORT ?? 3000),
-  appName: env.APP_NAME ?? 'Lịch công việc',
+  appName: env.APP_NAME ?? 'Work Calendar',
   timezone: env.APP_TIMEZONE || 'Asia/Ho_Chi_Minh',
   locale: env.APP_LOCALE || 'vi-VN',
   sessionSecret: env.SESSION_SECRET ?? DEV_SECRET,

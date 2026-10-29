@@ -12,6 +12,10 @@ const isoDateFormatter = new Intl.DateTimeFormat('en-CA', {
 /** Ngày hôm nay dạng YYYY-MM-DD theo múi giờ app. */
 export const todayISO = () => isoDateFormatter.format(new Date());
 
+/** Thời điểm SQLite datetime('now') (UTC "YYYY-MM-DD HH:MM:SS") -> ngày YYYY-MM-DD theo múi giờ app. */
+export const appDateOf = (utcDateTime) =>
+  utcDateTime ? isoDateFormatter.format(new Date(`${utcDateTime.replace(' ', 'T')}Z`)) : null;
+
 /** Cộng/trừ ngày cho chuỗi YYYY-MM-DD. */
 export function addDays(isoDate, days) {
   const date = new Date(`${isoDate}T00:00:00Z`);
@@ -51,6 +55,12 @@ export function addMonths(month, n) {
   const [year, m] = month.split('-').map(Number);
   const date = new Date(Date.UTC(year, m - 1 + n, 1));
   return date.toISOString().slice(0, 7);
+}
+
+/** 7 ngày (Thứ 2 → Chủ nhật) của tuần chứa YYYY-MM-DD. */
+export function weekDays(isoDate) {
+  const start = addDays(isoDate, -((weekdayOf(isoDate) + 6) % 7)); // lùi về Thứ 2
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
 /** Lưới lịch tháng YYYY-MM: các tuần (Thứ 2 → Chủ nhật), mỗi tuần 7 ngày YYYY-MM-DD. */

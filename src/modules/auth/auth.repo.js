@@ -9,10 +9,11 @@ export const findByEmailWithHash = (email) => get('SELECT * FROM users WHERE ema
 
 export const existsByEmail = async (email) => Boolean(await get('SELECT 1 FROM users WHERE email = ?', [email]));
 
-export async function create({ email, name, passwordHash, role = 'member' }) {
-  const { id } = await run('INSERT INTO users (email, name, password_hash, role) VALUES (?, ?, ?, ?)', [
+export async function create({ email, name, phone = null, passwordHash, role = 'member' }) {
+  const { id } = await run('INSERT INTO users (email, name, phone, password_hash, role) VALUES (?, ?, ?, ?, ?)', [
     email,
     name,
+    phone,
     passwordHash,
     role,
   ]);

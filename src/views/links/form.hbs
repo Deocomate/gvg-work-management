@@ -1,0 +1,17 @@
+{{#> page-header title=title}}
+  <a href="/links" class="btn-secondary">← Danh sách</a>
+{{/page-header}}
+
+<form method="post" action="{{#if link}}/links/{{link.id}}{{else}}/links{{/if}}" class="card card-body max-w-2xl space-y-5" novalidate>
+  {{> form/csrf}}
+  {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+  {{> form/field name="title" label="Tên tài liệu" value=values.title error=errors.title required=true placeholder="VD: Quy trình nghỉ phép"}}
+  {{> form/field name="url" label="Đường link" type="url" value=values.url error=errors.url required=true placeholder="https://drive.google.com/..."}}
+  {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=2 hint="Không bắt buộc. VD: dùng khi nào, ai phụ trách"}}
+
+  <div class="flex gap-2 pt-2">
+    <button type="submit" class="btn-primary">{{#if link}}Lưu thay đổi{{else}}Thêm link{{/if}}</button>
+    <a href="/links" class="btn-ghost">Huỷ</a>
+  </div>
+</form>

@@ -1,0 +1,26 @@
+{{!-- Lịch 7 ngày (T2–CN) của tuần đang xem; bấm một ngày để xem chi tiết bên dưới.
+      Máy tính: mỗi ô liệt kê việc; điện thoại: chỉ thứ, ngày và số việc cho gọn.
+      Dùng: {{> schedule/week-strip days=week.days selected=date}} --}}
+<div class="card mb-5 overflow-hidden">
+  <div class="grid grid-cols-7">
+    {{#each days}}
+      <a href="/today?date={{date}}{{@root.userQuery}}"
+         class="flex min-w-0 flex-col items-center gap-1 border-r border-line p-2 transition last:border-r-0 hover:bg-pine-500/20 md:min-h-40 md:items-stretch md:p-3{{#if (eq date ../selected)}} bg-pine-500/25{{/if}}"
+         {{#if (eq date ../selected)}}aria-current="date"{{/if}} aria-label="{{formatWeekday date}}: {{tasks.length}} việc">
+        <div class="flex flex-col items-center gap-1 md:flex-row md:justify-between">
+          <span class="text-[11px] font-semibold text-ink-faint">{{weekdayLabel}}</span>
+          <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-sm font-semibold tabular-nums{{#if isToday}} bg-brand-500 text-cream{{else if isPast}} text-ink-faint{{else}} text-ink{{/if}}">{{dayLabel}}</span>
+        </div>
+        {{#if tasks.length}}
+          <span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-brand-300{{else if unfinished}}text-sun-300{{else}}text-pine-300{{/if}}">{{tasks.length}} việc</span>
+          <ul class="mt-1 hidden min-w-0 space-y-1.5 md:block">
+            {{#each tasks}}
+              <li class="text-sm leading-snug break-words{{#if (eq status 'done')}} text-ink-faint line-through{{else if (eq status 'doing')}} text-sun-300{{else}} text-ink{{/if}}"
+                  title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="tabular-nums">{{start_time}}</span> {{/if}}{{title}}</li>
+            {{/each}}
+          </ul>
+        {{/if}}
+      </a>
+    {{/each}}
+  </div>
+</div>

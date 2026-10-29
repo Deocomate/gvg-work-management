@@ -2,46 +2,75 @@
   <a href="{{back}}" class="btn-secondary">← Quay lại</a>
 {{/page-header}}
 
-<form method="post" action="{{#if task}}/tasks/{{task.id}}{{else}}/tasks{{/if}}" class="card card-body max-w-2xl space-y-5" novalidate>
+{{!-- Thứ tự theo cách quản lý nghĩ khi giao việc: việc gì → ai làm, khi nào → tuỳ chọn thêm. --}}
+<form method="post" action="{{#if task}}/tasks/{{task.id}}{{else}}/tasks{{/if}}" class="card card-body max-w-2xl space-y-6" novalidate>
   {{> form/csrf}}
   <input type="hidden" name="back" value="{{back}}">
   {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
 
-  {{> form/field name="title" label="Công việc" value=values.title error=errors.title required=true placeholder="VD: Kiểm kê kho tầng 2"}}
-  {{> form/textarea name="note" label="Ghi chú / hướng dẫn" value=values.note error=errors.note rows=3}}
+  <section class="form-section">
+    <h2 class="form-section-title">Việc cần làm</h2>
+    {{> form/field name="title" label="Tên công việc" value=values.title error=errors.title required=true autofocus=(not task) placeholder="VD: Kiểm kê kho tầng 2"}}
+    {{> form/textarea name="note" label="Ghi chú / hướng dẫn" value=values.note error=errors.note rows=2 placeholder="Không bắt buộc — địa điểm, cách làm, tài liệu…"}}
+    {{> form/textarea name="links" label="Link liên quan" value=values.links error=errors.links rows=2 placeholder="https://… (mỗi dòng một link)" hint="Video mẫu, kịch bản, thư mục Drive… Mỗi dòng một link, tối đa 10."}}
+  </section>
 
-  <div class="grid gap-5 sm:grid-cols-2">
-    {{#if manager}}
-      {{> form/select name="assignee_id" label="Giao cho" options=assigneeOptions value=values.assignee_id error=errors.assignee_id required=true placeholder="— Chọn nhân viên —"}}
-    {{else}}
-      <div class="field">
-        <span class="label">Giao cho</span>
-        <p class="input bg-slate-50 text-slate-600">{{currentUser.name}} (bạn)</p>
-        <input type="hidden" name="assignee_id" value="{{currentUser.id}}">
-      </div>
-    {{/if}}
-    {{> form/field name="date" label="Ngày" type="date" value=values.date error=errors.date required=true}}
-  </div>
-
-  <div class="grid gap-5 sm:grid-cols-3">
-    {{> form/field name="start_time" label="Bắt đầu" type="time" value=values.start_time error=errors.start_time hint="Để trống = cả ngày"}}
-    {{> form/field name="end_time" label="Kết thúc" type="time" value=values.end_time error=errors.end_time}}
-    {{> form/select name="priority" label="Mức độ" options=priorityOptions value=values.priority error=errors.priority}}
-  </div>
-
-  {{#if task}}
-    <div class="grid gap-5 sm:grid-cols-3">
-      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status}}
+  <section class="form-section">
+    <h2 class="form-section-title">Ai làm · Khi nào</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {{#if manager}}
+        {{> form/select name="assignee_id" label="Giao cho" options=assigneeOptions value=values.assignee_id error=errors.assignee_id required=true placeholder="Chọn nhân viên"}}
+      {{else}}
+        <div class="field">
+          <span class="label">Giao cho</span>
+          <p class="input bg-raised text-ink-soft">{{currentUser.name}} (bạn)</p>
+          <input type="hidden" name="assignee_id" value="{{currentUser.id}}">
+        </div>
+      {{/if}}
+      {{> form/field name="date" label="Ngày" type="date" value=values.date error=errors.date required=true}}
     </div>
-  {{else}}
-    <fieldset class="grid gap-5 rounded-lg border border-slate-200 p-4 sm:grid-cols-2">
-      <legend class="px-1 text-sm font-medium text-slate-700">Việc lặp lại</legend>
-      {{> form/select name="repeat" label="Lặp lại" options=repeatOptions value=values.repeat error=errors.repeat}}
-      {{> form/field name="repeat_until" label="Đến ngày" type="date" value=values.repeat_until error=errors.repeat_until hint="Tối đa 3 tháng. Mỗi ngày là một việc riêng."}}
-    </fieldset>
-  {{/if}}
+    <div>
+      <div class="grid grid-cols-2 gap-4">
+        {{> form/field name="start_time" label="Bắt đầu" type="time" value=values.start_time error=errors.start_time placeholder="Cả ngày" clearLabel="Cả ngày"}}
+        {{> form/field name="end_time" label="Kết thúc" type="time" value=values.end_time error=errors.end_time placeholder="—" after="start_time"}}
+      </div>
+      <p class="hint mt-1.5">Không chọn giờ = việc cả ngày. Chọn giờ bắt đầu, giờ kết thúc tự gợi ý sau 1 tiếng.</p>
+    </div>
+  </section>
 
-  <div class="flex gap-2 pt-2">
+  <section class="form-section">
+    <h2 class="form-section-title">Tuỳ chọn</h2>
+    {{> form/segmented name="priority" label="Mức độ" options=priorityOptions value=values.priority error=errors.priority}}
+    {{#if task}}
+      {{> form/segmented name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status}}
+    {{/if}}
+    {{> form/segmented name="repeat" label="Lặp lại" options=repeatOptions value=values.repeat error=errors.repeat}}
+    <div data-show-when="repeat!=none" class="space-y-4">
+      {{!-- Chọn thứ lặp lại; dòng mô tả bên phải do public/js/app.js cập nhật khi bấm --}}
+      <fieldset class="repeat-box" data-weekdays>
+        <div class="repeat-box-head">
+          <legend class="text-ink">Lặp lại</legend>
+          <span class="text-ink-faint" data-weekday-summary>{{repeatSummary}}</span>
+        </div>
+        <div class="repeat-days">
+          {{#each weekdayOptions}}
+            <label class="repeat-day" title="{{this.name}}">
+              <input type="checkbox" name="repeat_days" value="{{this.value}}" data-name="{{this.name}}" {{checked this.checked}}>
+              <span>{{this.label}}</span>
+            </label>
+          {{/each}}
+        </div>
+        {{#if errors.repeat_days}}<p class="field-error">{{errors.repeat_days}}</p>{{/if}}
+      </fieldset>
+      {{#if task}}
+        {{> form/field name="repeat_until" label="Lặp đến ngày" type="date" value=values.repeat_until error=errors.repeat_until minFrom="date" placeholder="Chọn ngày kết thúc" hint="Tối đa 3 tháng. Việc này giữ nguyên, các ngày sau được thêm thành việc riêng."}}
+      {{else}}
+        {{> form/field name="repeat_until" label="Lặp đến ngày" type="date" value=values.repeat_until error=errors.repeat_until minFrom="date" placeholder="Chọn ngày kết thúc" hint="Tối đa 3 tháng. Mỗi ngày là một việc riêng, sửa/xoá độc lập."}}
+      {{/if}}
+    </div>
+  </section>
+
+  <div class="flex flex-wrap items-center gap-2 border-t border-line pt-5">
     <button type="submit" class="btn-primary">{{#if task}}Lưu thay đổi{{else}}Thêm công việc{{/if}}</button>
     <a href="{{back}}" class="btn-ghost">Huỷ</a>
   </div>
@@ -52,7 +81,7 @@
     <form method="post" action="/tasks/{{task.id}}/delete" class="inline" data-confirm="Xoá công việc này?">
       {{> form/csrf}}
       <input type="hidden" name="back" value="{{back}}">
-      <button type="submit" class="btn-ghost btn-sm text-red-600 hover:text-red-700">Xoá công việc</button>
+      <button type="submit" class="btn-ghost btn-sm text-brand-300 hover:text-brand-300">Xoá công việc</button>
     </form>
   </div>
 {{/if}}

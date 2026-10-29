@@ -1,0 +1,10 @@
+{{!-- Thẻ tròn đếm ngược ngày lễ, treo dưới góc phải thanh menu (src/lib/holidays.js). --}}
+{{#if holiday}}
+  <div class="holiday-tag" role="note" aria-label="{{holiday.message}}" title="{{holiday.message}}">
+    <span class="holiday-tag-disc" aria-hidden="true">
+      <span class="holiday-tag-icon">{{holiday.icons.[0]}}</span>
+      {{#if holiday.tag.count}}<span class="holiday-tag-count">{{holiday.tag.count}}</span>{{/if}}
+      <span class="holiday-tag-label">{{holiday.tag.label}}</span>
+    </span>
+  </div>
+{{/if}}

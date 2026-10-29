@@ -43,11 +43,12 @@ export async function countUnfinished({ date, assigneeId }) {
   return Number(row.total);
 }
 
-const INSERT_SQL = `INSERT INTO tasks (title, note, assignee_id, created_by, date, start_time, end_time, priority, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+const INSERT_SQL = `INSERT INTO tasks (title, note, links, assignee_id, created_by, date, start_time, end_time, priority, status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 const insertArgs = (t) => [
   t.title,
   t.note ?? null,
+  t.links ?? null,
   t.assignee_id,
   t.created_by ?? null,
   t.date,
@@ -65,12 +66,24 @@ export async function createMany(tasks) {
 
 export async function update(id, t) {
   await run(
-    `UPDATE tasks SET title = ?, note = ?, assignee_id = ?, date = ?, start_time = ?, end_time = ?,
+    `UPDATE tasks SET title = ?, note = ?, links = ?, assignee_id = ?, date = ?, start_time = ?, end_time = ?,
        priority = ?, status = ?,
        done_at = CASE WHEN ? = 'done' THEN COALESCE(done_at, datetime('now')) ELSE NULL END,
        updated_at = datetime('now')
      WHERE id = ?`,
-    [t.title, t.note ?? null, t.assignee_id, t.date, t.start_time ?? null, t.end_time ?? null, t.priority, t.status, t.status, id],
+    [
+      t.title,
+      t.note ?? null,
+      t.links ?? null,
+      t.assignee_id,
+      t.date,
+      t.start_time ?? null,
+      t.end_time ?? null,
+      t.priority,
+      t.status,
+      t.status,
+      id,
+    ],
   );
   return findById(id);
 }

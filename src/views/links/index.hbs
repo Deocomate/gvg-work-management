@@ -1,0 +1,30 @@
+{{#> page-header title="Tài liệu" subtitle="Link cần thiết hiện ở trang Hôm nay cho mọi người"}}
+  <a href="/links/new" class="btn-primary">+ Thêm link</a>
+{{/page-header}}
+
+{{#if links.length}}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Tên tài liệu</th><th>Link</th><th class="text-right">Thao tác</th></tr>
+      </thead>
+      <tbody>
+        {{#each links}}
+          <tr>
+            <td>
+              <p class="font-medium text-ink">{{title}}</p>
+              {{#if note}}<p class="text-xs text-ink-faint">{{note}}</p>{{/if}}
+            </td>
+            <td class="max-w-xs truncate"><a href="{{url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">{{url}}</a></td>
+            <td class="whitespace-nowrap text-right">
+              <a href="/links/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
+              {{> form/delete-button action=(concat "/links/" id "/delete") confirm="Xoá link này?"}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+{{else}}
+  {{> empty-state title="Chưa có link tài liệu nào" text="Thêm link Google Drive, biểu mẫu, quy trình… để cả nhóm mở nhanh từ trang Hôm nay." actionHref="/links/new" actionLabel="+ Thêm link"}}
+{{/if}}

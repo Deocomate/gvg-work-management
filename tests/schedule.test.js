@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, postForm } from './helpers.js';
 import { loginAs, loginAsAdmin } from './auth-helpers.js';
-import { addDays, monthGrid, todayISO } from '../src/lib/dates.js';
+import { addDays, monthGrid, todayISO, weekDays } from '../src/lib/dates.js';
 import { timing } from '../src/modules/schedule/schedule.service.js';
 
 const today = todayISO();
@@ -70,9 +70,63 @@ test('nhân viên chỉ thấy việc của mình kể cả khi sửa ?user=', a
   assert.doesNotMatch(html, /Việc riêng của quản lý/);
   assert.doesNotMatch(html, /Tất cả nhân viên/);
   // Quản lý xem "tất cả" thấy cả hai, kèm tên người làm
-  const all = (await admin.get('/today')).text;
+  const all = (await admin.get('/today?user=all')).text;
   assert.match(all, /Việc riêng của quản lý/);
   assert.match(all, /Người làm: <span[^>]*>Phạm Hoa/);
+});
+
+test('mỗi tài khoản mặc định chỉ thấy việc của chính mình (kể cả quản lý)', async () => {
+  const mine = (await admin.get('/today')).text;
+  assert.match(mine, /Việc riêng của quản lý/);
+  assert.doesNotMatch(mine, /Họp sáng/);
+  const ofHoa = (await admin.get(`/today?user=${hoaId}`)).text;
+  assert.match(ofHoa, /Họp sáng/);
+  assert.doesNotMatch(ofHoa, /Việc riêng của quản lý/);
+});
+
+test('trang Hôm nay có lịch cả tuần (T2–CN); bấm ngày khác vẫn thấy cả tuần, ngày đó được chọn', async () => {
+  const html = (await hoa.get('/today')).text;
+  assert.match(html, /T2[\s\S]*T3[\s\S]*T4[\s\S]*T5[\s\S]*T6[\s\S]*T7[\s\S]*CN/);
+  assert.match(html, /08:00<\/span> Họp sáng/);
+  assert.match(html, new RegExp(`href="/today\\?date=${today}"[^>]*aria-current="date"`));
+  // Chọn một ngày khác trong tuần: lịch tuần vẫn hiện việc hôm nay, chi tiết là ngày được chọn
+  const other = weekDays(today).find((d) => d !== today);
+  const otherHtml = (await hoa.get(`/today?date=${other}`)).text;
+  assert.match(otherHtml, /Họp sáng/);
+  assert.match(otherHtml, new RegExp(`href="/today\\?date=${other}"[^>]*aria-current="date"`));
+  // Nút tuần sau nhảy 7 ngày
+  assert.ok(html.includes(`href="/today?date=${addDays(today, 7)}"`));
+  const later = (await hoa.get(`/today?date=${addDays(today, 30)}`)).text;
+  assert.doesNotMatch(later, /Họp sáng/);
+});
+
+test('phiếu công việc: ai xuất cũng ra việc của tất cả mọi người, gom theo từng người, trong một phiếu', async () => {
+  assert.match((await hoa.get('/today')).text, new RegExp(`href="/today/sheet\\?date=${today}"`));
+  await assign({ title: 'Đọc tài liệu', links: 'https://example.com/tai-lieu' });
+  const all = (await admin.get('/today/sheet')).text;
+  assert.match(all, /<a href="https:\/\/example.com\/tai-lieu" target="_blank"[^>]*>https:\/\/example.com\/tai-lieu<\/a>/);
+  assert.doesNotMatch(all, /Trạng thái/);
+  assert.match(all, /PHIẾU CÔNG VIỆC/);
+  assert.match(all, /<h2>Phạm Hoa/);
+  assert.match(all, /Họp sáng/);
+  assert.match(all, /Dọn kho<\/strong> <span class="tag-high">Quan trọng/);
+  assert.match(all, /Việc riêng của quản lý/);
+  assert.match(all, /Tồn \d{2}\/\d{2}\/\d{4}/); // việc tồn hôm qua
+  assert.match(all, /data-print/);
+  // Nhân viên xuất phiếu cũng thấy việc của cả nhóm; ?user= không lọc bớt
+  const byHoa = (await hoa.get(`/today/sheet?user=${hoaId}`)).text;
+  assert.match(byHoa, /Họp sáng/);
+  assert.match(byHoa, /Việc riêng của quản lý/);
+  assert.doesNotMatch(byHoa, /Tất cả nhân viên/);
+  const empty = (await hoa.get(`/today/sheet?date=${addDays(today, 30)}`)).text;
+  assert.match(empty, /Không có việc nào trong ngày này/);
+});
+
+test('tuần luôn bắt đầu Thứ 2', () => {
+  assert.deepEqual(weekDays('2026-10-28'), [
+    '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01',
+  ]);
+  assert.equal(weekDays('2026-11-01')[0], '2026-10-26'); // Chủ nhật thuộc tuần trước đó
 });
 
 test('trạng thái "đang diễn ra" và "trễ" theo giờ hiện tại', () => {

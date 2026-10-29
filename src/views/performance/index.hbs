@@ -1,0 +1,86 @@
+{{#> page-header title=title subtitle=(concat (formatDay from) " – " (formatDay to) " · Chỉ quản trị viên xem được")}}{{/page-header}}
+
+<div class="mb-5 flex flex-wrap items-center gap-2">
+  <a href="/performance?date={{prev}}" class="btn-secondary btn-sm">‹ Tuần trước</a>
+  {{#unless isThisWeek}}<a href="/performance?date={{today}}" class="btn-ghost btn-sm">Tuần này</a>{{/unless}}
+  <a href="/performance?date={{next}}" class="btn-secondary btn-sm">Tuần sau ›</a>
+</div>
+
+{{!-- Tổng quan cả nhóm --}}
+<div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <div class="card p-4">
+    <p class="text-xs text-ink-faint">Tổng việc trong tuần</p>
+    <p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{team.total}}</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs text-ink-faint">Hoàn thành</p>
+    <p class="mt-1 text-2xl font-semibold tabular-nums {{> performance/level-text level=teamLevel}}">{{#if team.total}}{{team.completion}}%{{else}}—{{/if}}</p>
+    <p class="text-xs text-ink-faint">{{team.done}}/{{team.total}} việc</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs text-ink-faint">Xong đúng hạn</p>
+    <p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{#if team.done}}{{team.onTimeRate}}%{{else}}—{{/if}}</p>
+    <p class="text-xs text-ink-faint">{{team.onTime}} đúng hạn · {{team.doneLate}} trễ</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs text-ink-faint">Quá hạn chưa xong</p>
+    <p class="mt-1 text-2xl font-semibold tabular-nums {{#if team.overdue}}text-brand-300{{else}}text-pine-300{{/if}}">{{team.overdue}}</p>
+  </div>
+</div>
+
+{{!-- Từng người --}}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nhân viên</th>
+        <th class="min-w-48">Hoàn thành</th>
+        <th class="text-right">Tổng</th>
+        <th class="text-right">Đã xong</th>
+        <th class="text-right">Đúng hạn</th>
+        <th class="text-right">Xong trễ</th>
+        <th class="text-right">Đang làm</th>
+        <th class="text-right">Quá hạn</th>
+        <th class="text-right">So với tuần trước</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each rows}}
+        <tr>
+          <td class="whitespace-nowrap">
+            <a href="/today?date={{../from}}&user={{id}}" class="font-medium text-ink hover:underline" title="Xem việc của {{name}}">{{name}}</a>
+          </td>
+          <td>
+            {{#if total}}
+              <div class="flex items-center gap-2">
+                <div class="h-2 flex-1 overflow-hidden rounded-full bg-canvas" role="progressbar" aria-valuenow="{{completion}}" aria-valuemin="0" aria-valuemax="100" aria-label="Hoàn thành của {{name}}">
+                  <div class="h-full rounded-full {{> performance/level-bar level=level}}" style="width: {{completion}}%"></div>
+                </div>
+                <span class="w-10 text-right text-sm font-semibold tabular-nums {{> performance/level-text level=level}}">{{completion}}%</span>
+              </div>
+            {{else}}
+              <span class="text-xs text-ink-faint">Chưa có việc tuần này</span>
+            {{/if}}
+          </td>
+          <td class="text-right tabular-nums">{{total}}</td>
+          <td class="text-right tabular-nums">{{done}}</td>
+          <td class="text-right tabular-nums">{{onTime}}</td>
+          <td class="text-right tabular-nums {{#if doneLate}}text-sun-300{{/if}}">{{doneLate}}</td>
+          <td class="text-right tabular-nums">{{doing}}</td>
+          <td class="text-right tabular-nums {{#if overdue}}font-semibold text-brand-300{{/if}}">{{overdue}}</td>
+          <td class="text-right tabular-nums">
+            {{#if (eq change null)}}<span class="text-ink-faint">—</span>
+            {{else if (gt change 0)}}<span class="text-pine-300">▲ {{change}}%</span>
+            {{else if (lt change 0)}}<span class="text-brand-300">▼ {{abs change}}%</span>
+            {{else}}<span class="text-ink-faint">= 0%</span>{{/if}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+<p class="mt-3 text-xs text-ink-faint">
+  Tính trên các việc có ngày trong tuần. <b>Đúng hạn</b> = bấm Xong trong hoặc trước ngày của việc. <b>Quá hạn</b> = ngày đã qua mà chưa xong.
+  Màu: <span class="text-pine-300">xanh ≥ 80%</span> · <span class="text-sun-300">vàng 50–79%</span> · <span class="text-brand-300">cam &lt; 50%</span>.
+</p>

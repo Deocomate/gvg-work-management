@@ -35,6 +35,9 @@ export function createApp() {
       layoutsDir: path.join(VIEWS, 'layouts'),
       partialsDir: path.join(VIEWS, 'partials'),
       helpers,
+      // Không thụt lề nội dung partial theo chỗ gọi: nếu thụt, chữ nhiều dòng trong <textarea>
+      // (ghi chú, link) bị chèn thêm dấu cách mỗi lần mở form sửa.
+      compilerOptions: { preventIndent: true },
     }),
   );
   app.set('view engine', 'hbs');

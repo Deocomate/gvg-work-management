@@ -1,5 +1,5 @@
 {{!-- Nút xoá có hỏi xác nhận. Dùng: {{> form/delete-button action=(concat "/tasks/" id "/delete") confirm="Xoá công việc này?"}} --}}
 <form method="post" action="{{action}}" class="inline" data-confirm="{{default confirm 'Bạn chắc chắn muốn xoá?'}}">
   {{> form/csrf}}
-  <button type="submit" class="{{default buttonClass 'btn-ghost btn-sm text-red-600 hover:text-red-700'}}">{{default label 'Xoá'}}</button>
+  <button type="submit" class="{{default buttonClass 'btn-ghost btn-sm text-brand-300 hover:text-brand-300'}}">{{default label 'Xoá'}}</button>
 </form>

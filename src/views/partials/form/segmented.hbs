@@ -1,0 +1,15 @@
+{{!-- Chọn một trong vài lựa chọn bằng một lần bấm (thay dropdown khi có 2–4 lựa chọn ngắn).
+     Dùng: {{> form/segmented name="priority" label="Mức độ" options=priorityOptions value=values.priority error=errors.priority}} --}}
+<fieldset class="field">
+  <legend class="label mb-1.5">{{label}}</legend>
+  <div class="segmented">
+    {{#each options}}
+      <label class="segmented-item">
+        <input type="radio" name="{{../name}}" value="{{this.value}}" {{checked (eq this.value ../value)}}>
+        <span>{{this.label}}</span>
+      </label>
+    {{/each}}
+  </div>
+  {{#if hint}}<p class="hint">{{hint}}</p>{{/if}}
+  {{#if error}}<p class="field-error">{{error}}</p>{{/if}}
+</fieldset>

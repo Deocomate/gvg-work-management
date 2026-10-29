@@ -1,10 +1,10 @@
 <div class="card card-body mx-auto max-w-lg py-12 text-center">
-  <p class="text-sm font-semibold text-red-600">Lỗi {{status}}</p>
-  <h1 class="mt-2 text-2xl font-semibold text-slate-900">Có lỗi xảy ra</h1>
-  <p class="mt-2 text-slate-500">{{message}}</p>
+  <p class="text-sm font-semibold text-brand-300">Lỗi {{status}}</p>
+  <h1 class="mt-2 text-2xl font-semibold text-ink">Có lỗi xảy ra</h1>
+  <p class="mt-2 text-ink-faint">{{message}}</p>
   <div class="mt-6 flex justify-center gap-2">
     <a href="/" class="btn-secondary" data-back>Quay lại</a>
     <a href="/" class="btn-primary">Về trang chủ</a>
   </div>
-  {{#if stack}}<pre class="mt-6 overflow-x-auto rounded-lg bg-slate-900 p-4 text-left text-xs text-slate-100">{{stack}}</pre>{{/if}}
+  {{#if stack}}<pre class="mt-6 overflow-x-auto rounded-lg border border-line bg-canvas p-4 text-left text-xs text-ink-soft">{{stack}}</pre>{{/if}}
 </div>

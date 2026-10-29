@@ -16,7 +16,7 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: APP_NAME
-        value: "Lịch công việc"
+        value: "Work Calendar"
       - key: SESSION_SECRET
         generateValue: true
       # Turso (SQLite trên cloud, free) để dữ liệu không mất khi server ngủ.

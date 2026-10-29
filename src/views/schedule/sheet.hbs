@@ -1,0 +1,58 @@
+{{!-- Phiếu công việc trong ngày. Thanh công cụ chỉ hiện trên màn hình, không in ra. --}}
+{{#*inline "task-cell"}}
+  <td>
+    <strong>{{title}}</strong>{{#if (eq priority 'high')}} <span class="tag-high">Quan trọng</span>{{/if}}
+    {{#if note}}<div class="note">{{note}}</div>{{/if}}
+    {{#each linkList}}
+      {{!-- Hiện nguyên link để bấm được trên màn hình/PDF và còn đủ khi sao chép chữ --}}
+      <div class="link"><a href="{{url}}" target="_blank" rel="noopener noreferrer">{{url}}</a></div>
+    {{/each}}
+  </td>
+{{/inline}}
+<form method="get" action="/today/sheet" class="toolbar no-print">
+  <a href="{{back}}" class="btn">‹ Quay lại</a>
+  <input type="date" name="date" value="{{date}}" class="input" aria-label="Chọn ngày" data-autosubmit>
+  <noscript><button type="submit" class="btn">Xem</button></noscript>
+  <span class="spacer"></span>
+  <button type="button" class="btn" data-copy="#sheet">📋 Sao chép chữ</button>
+  <button type="button" class="btn btn-primary" data-print>🖨 In / Lưu PDF</button>
+</form>
+
+<article id="sheet" class="sheet">
+  <header class="sheet-head">
+    <p class="sheet-app">{{appName}}</p>
+    <h1>PHIẾU CÔNG VIỆC</h1>
+    <p class="sheet-date">{{formatWeekday date}}</p>
+  </header>
+
+  {{#each people}}
+    <section class="person">
+      <h2>{{name}}</h2>
+      <table>
+        <thead>
+          <tr><th class="c-no">#</th><th class="c-time">Giờ</th><th>Công việc</th><th class="c-check">Xong</th></tr>
+        </thead>
+        <tbody>
+          {{#each tasks}}
+            <tr>
+              <td class="c-no">{{inc @index}}</td>
+              <td class="c-time">{{#if start_time}}{{start_time}}{{#if end_time}}–{{end_time}}{{/if}}{{else}}Cả ngày{{/if}}</td>
+              {{> task-cell}}
+              <td class="c-check"><span class="box{{#if (eq status 'done')}} box-done{{/if}}"></span></td>
+            </tr>
+          {{/each}}
+          {{#each overdue}}
+            <tr class="row-overdue">
+              <td class="c-no">{{inc @index ../tasks.length}}</td>
+              <td class="c-time">Tồn {{formatDay date}}</td>
+              {{> task-cell}}
+              <td class="c-check"><span class="box"></span></td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </section>
+  {{else}}
+    <p class="empty">Không có việc nào trong ngày này.</p>
+  {{/each}}
+</article>

@@ -45,6 +45,27 @@ test('email trùng, mật khẩu ngắn, thiếu tên -> báo lỗi', async () =
   assert.match(noName.text, /Vui lòng nhập họ tên/);
 });
 
+test('số điện thoại: lưu khi thêm, sửa được, để trống được, sai thì báo lỗi', async () => {
+  await addStaff({ name: 'Có Số', email: 'coso@test.local', phone: ' 0912 345 678 ' });
+  assert.match((await admin.get('/staff')).text, /href="tel:0912 345 678"/);
+
+  const id = await idOf('Có Số');
+  const base = { name: 'Có Số', email: 'coso@test.local', role: 'member' };
+  await postForm(admin, `/staff/${id}`, { ...base, phone: '+84 987.654.321' }, { from: `/staff/${id}/edit` });
+  assert.match((await admin.get(`/staff/${id}/edit`)).text, /value="\+84 987.654.321"/);
+
+  await postForm(admin, `/staff/${id}`, { ...base, phone: '' }, { from: `/staff/${id}/edit` });
+  assert.doesNotMatch((await admin.get('/staff')).text, /987/);
+
+  const letters = await postForm(admin, `/staff/${id}`, { ...base, phone: '09abc' }, { from: `/staff/${id}/edit` });
+  assert.equal(letters.status, 422);
+  assert.match(letters.text, /chỉ gồm chữ số/);
+
+  const short = await addStaff({ name: 'Ngắn', email: 'ngan@test.local', phone: '0912' });
+  assert.equal(short.status, 422);
+  assert.match(short.text, /9–15 chữ số/);
+});
+
 test('nhân viên không vào được trang quản lý nhân viên', async () => {
   const { agent: an } = await setup();
   await loginAs(an, { email: 'an@test.local', password: 'mat-khau-123' });

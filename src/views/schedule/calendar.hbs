@@ -12,26 +12,26 @@
 </form>
 
 <div class="card overflow-hidden">
-  <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-semibold text-slate-500">
+  <div class="grid grid-cols-7 border-b border-line bg-raised text-center text-xs font-semibold text-ink-faint">
     {{#each weekdayLabels}}<div class="py-2">{{this}}</div>{{/each}}
   </div>
   {{#each weeks}}
-    <div class="grid grid-cols-7 border-b border-slate-200 last:border-b-0">
+    <div class="grid grid-cols-7 border-b border-line last:border-b-0">
       {{#each this}}
         <a href="/today?date={{date}}{{@root.userQuery}}"
-           class="min-h-16 border-r border-slate-200 p-1 last:border-r-0 hover:bg-brand-50 sm:min-h-28 sm:p-2{{#unless inMonth}} bg-slate-50 text-slate-400{{/unless}}"
+           class="min-h-16 border-r border-line p-1 transition last:border-r-0 hover:bg-pine-500/25 sm:min-h-28 sm:p-2{{#unless inMonth}} bg-canvas/60 text-ink-faint{{/unless}}"
            aria-label="{{formatWeekday date}}: {{total}} việc">
           <div class="flex items-center justify-between gap-1">
-            <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium{{#if isToday}} bg-brand-600 text-white{{/if}}">{{day}}</span>
-            {{#if hasLate}}<span class="h-2 w-2 rounded-full bg-red-500" title="{{unfinished}} việc chưa xong"></span>{{/if}}
+            <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium{{#if isToday}} bg-brand-500 text-cream{{/if}}">{{day}}</span>
+            {{#if hasLate}}<span class="h-2 w-2 rounded-full bg-brand-400" title="{{unfinished}} việc chưa xong"></span>{{/if}}
           </div>
           {{#if total}}
-            <p class="mt-1 text-center text-[11px] font-medium sm:hidden {{#if unfinished}}text-brand-700{{else}}text-emerald-600{{/if}}">{{total}} việc</p>
+            <p class="mt-1 text-center text-[11px] font-medium sm:hidden {{#if unfinished}}text-sun-300{{else}}text-pine-300{{/if}}">{{total}} việc</p>
             <ul class="mt-1 hidden space-y-1 sm:block">
               {{#each tasks}}
                 <li class="truncate rounded px-1.5 py-0.5 text-xs {{statusInfo.chip}}" title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="tabular-nums">{{start_time}}</span> {{/if}}{{title}}</li>
               {{/each}}
-              {{#if more}}<li class="px-1.5 text-xs text-slate-500">+{{more}} việc khác</li>{{/if}}
+              {{#if more}}<li class="px-1.5 text-xs text-ink-faint">+{{more}} việc khác</li>{{/if}}
             </ul>
           {{/if}}
         </a>
@@ -40,8 +40,8 @@
   {{/each}}
 </div>
 
-<p class="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
-  <span class="inline-flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-500"></span> Ngày đã qua còn việc chưa xong</span>
-  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-amber-50 ring-1 ring-amber-200"></span> Đang làm</span>
-  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-emerald-50 ring-1 ring-emerald-200"></span> Đã xong</span>
+<p class="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
+  <span class="inline-flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-brand-400"></span> Ngày đã qua còn việc chưa xong</span>
+  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-sun-400/15 ring-1 ring-sun-400/40"></span> Đang làm</span>
+  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-pine-500/40 ring-1 ring-pine-400/50"></span> Đã xong</span>
 </p>

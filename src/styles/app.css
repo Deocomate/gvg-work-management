@@ -4,14 +4,131 @@
 @source "../views";
 @source "../../public/js";
 
-/* Đổi màu thương hiệu ở đây: cả app đổi theo. */
+/* Bảng màu "Dusty Bloom" — app luôn ở nền tối. Đổi màu ở đây: cả app đổi theo.
+   brand (cam đất #CA5323) = nút chính · pine (xanh rêu #315E5C) = vùng chọn/hoàn thành
+   bloom (hồng #D086AB) = nhấn/thông tin · sun (vàng #E6B545) = đang làm/cảnh báo · cream (#EEEDD9) = chữ */
 @theme {
-  --color-brand-50: #eef6ff;
-  --color-brand-100: #d9eaff;
-  --color-brand-500: #2f7cf6;
-  --color-brand-600: #1f64db;
-  --color-brand-700: #1b50b0;
+  --color-brand-300: #e3916f;
+  --color-brand-400: #d96d43;
+  --color-brand-500: #ca5323;
+  --color-brand-600: #b0461d;
+  --color-brand-700: #8f3a19;
+
+  --color-pine-200: #b3d3cf;
+  --color-pine-300: #8bbab5;
+  --color-pine-400: #5c918d;
+  --color-pine-500: #315e5c;
+  --color-pine-600: #294f4d;
+  --color-pine-700: #213f3e;
+
+  --color-bloom-300: #e3b3cb;
+  --color-bloom-400: #d086ab;
+  --color-sun-300: #f0cd7d;
+  --color-sun-400: #e6b545;
+  --color-cream: #eeedd9;
+
+  /* Nền & chữ theo tầng: canvas (nền trang) < surface (thẻ) < raised (bảng xổ, hover) */
+  --color-canvas: #0d1514;
+  --color-surface: #142120;
+  --color-raised: #1b2c2a;
+  --color-line: #263a38;
+  --color-line-strong: #36504d;
+  --color-ink: #eeedd9;
+  --color-ink-soft: #c2c5b3;
+  --color-ink-faint: #889691;
+
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Giao diện sáng "Lavender" (tuỳ chọn, bật bằng nút ☀/☾ trên thanh menu — public/js/theme.js).
+   Cùng tên màu như trên nhưng giá trị khác: các sắc -200/-300 (dùng làm chữ) được làm đậm để đọc rõ trên nền sáng.
+   brand = mận tím (nút chính) · pine = xanh rêu đậm · bloom = tím · sun = vàng đậm. Dùng light:… trong view nếu cần riêng. */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+:root[data-theme="light"] {
+  --color-brand-300: #a8336a;
+  --color-brand-400: #b8508a;
+  --color-brand-500: #93408a;
+  --color-brand-600: #7c3474;
+  --color-brand-700: #652a5e;
+
+  --color-pine-200: #1d4f4a;
+  --color-pine-300: #2b6c65;
+  --color-pine-400: #4a8f87;
+  --color-pine-500: #3f7f78;
+  --color-pine-600: #336a64;
+  --color-pine-700: #e2efed;
+
+  --color-bloom-300: #7d3c9e;
+  --color-bloom-400: #a066c8;
+  --color-sun-300: #8c5e00;
+  --color-sun-400: #d49a14;
+
+  --color-canvas: #f6f1fc;
+  --color-surface: #fdfbff;
+  --color-raised: #efe6f9;
+  --color-line: #ddd0ef;
+  --color-line-strong: #c5b0e2;
+  --color-ink: #2a1a3c;
+  --color-ink-soft: #4d3b62;
+  --color-ink-faint: #7a6990;
+}
+
+/* Thanh menu nền sáng: tím đậm, chữ trắng (đặt lại màu chữ/hover cho riêng thanh này) */
+[data-theme="light"] .app-header {
+  --color-ink: #ffffff;
+  --color-ink-soft: #ece2f7;
+  --color-raised: #7d61a0;
+  --color-line: #5c4178;
+  --color-line-strong: #9a80bb;
+  background: #6c4f8b;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgb(60 30 90 / 0.25);
+}
+
+/* Trang trí ngày lễ (src/lib/holidays.js đặt data-holiday trên <html>, ~1 tuần trước lễ).
+   Mỗi lễ chỉ cần 2 màu: --holiday-a (viền/hắt sáng) và --holiday-b (nền bảng). Lễ mới chưa khai báo dùng màu mặc định. */
+:root[data-holiday] { --holiday-a: #e6b545; --holiday-b: #ca5323; }
+:root[data-holiday="new-year"] { --holiday-a: #f0cd7d; --holiday-b: #d086ab; }
+:root[data-holiday="tet"] { --holiday-a: #f5c518; --holiday-b: #e0302b; }
+:root[data-holiday="valentine"] { --holiday-a: #ff8fb3; --holiday-b: #e8457a; }
+:root[data-holiday="womens-day"],
+:root[data-holiday="vn-womens-day"] { --holiday-a: #f6a5c4; --holiday-b: #d9568f; }
+:root[data-holiday="reunification"],
+:root[data-holiday="national-day"] { --holiday-a: #ffcd00; --holiday-b: #da251d; }
+:root[data-holiday="mid-autumn"] { --holiday-a: #f5d76e; --holiday-b: #f08a24; }
+:root[data-holiday="halloween"] { --holiday-a: #ffd166; --holiday-b: #ea580c; }
+:root[data-holiday="teachers-day"] { --holiday-a: #f2c14e; --holiday-b: #3d8bd9; }
+:root[data-holiday="christmas"] { --holiday-a: #e04848; --holiday-b: #2f9a62; }
+
+/* Thanh menu viền & hắt sáng theo màu lễ */
+:root[data-holiday] .app-header {
+  border-color: color-mix(in srgb, var(--holiday-a) 45%, transparent);
+  box-shadow: 0 6px 26px color-mix(in srgb, var(--holiday-a) 28%, transparent), 0 10px 15px rgb(0 0 0 / 0.3);
+}
+
+@keyframes holiday-fall {
+  to { transform: translate3d(var(--drift, 0), 110vh, 0) rotate(var(--spin, 0deg)); }
+}
+@keyframes holiday-swing {
+  from { transform: rotate(-7deg); }
+  to { transform: rotate(7deg); }
+}
+@keyframes holiday-bob {
+  50% { transform: translateY(-3px) scale(1.08); }
+}
+
+@layer base {
+  html { color-scheme: dark; }
+  /* Ảnh nền xanh mờ cho cả app; màu canvas lót bên dưới khi ảnh chưa tải xong. */
+  body { background: var(--color-canvas) url("/img/bg.jpg") center / cover no-repeat fixed; }
+  /* Nền sáng: dải tím – hồng oải hương */
+  html[data-theme="light"] { color-scheme: light; }
+  [data-theme="light"] body {
+    background: linear-gradient(135deg, #b89ad9 0%, #cf9fd3 45%, #c2b4e3 100%) fixed;
+  }
+  ::selection { @apply bg-bloom-400/40 text-cream light:text-ink; }
+  * { scrollbar-width: thin; scrollbar-color: var(--color-line-strong) transparent; }
 }
 
 /* Lớp nền dùng lại được bằng @apply (Tailwind 4 yêu cầu khai báo bằng @utility). */
@@ -26,41 +143,227 @@
 @layer components {
   .container-page { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
 
-  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 focus-visible:outline-brand-600; }
-  .btn-secondary { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-slate-400; }
-  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600; }
-  .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
+  .btn-primary { @apply btn bg-brand-500 text-cream shadow-sm shadow-black/30 hover:bg-brand-600 focus-visible:outline-brand-400; }
+  .btn-secondary { @apply btn border border-line-strong bg-raised text-ink hover:border-pine-400 hover:bg-pine-700 focus-visible:outline-pine-400; }
+  .btn-danger { @apply btn bg-brand-600 text-cream hover:bg-brand-700 focus-visible:outline-brand-400; }
+  .btn-ghost { @apply btn text-ink-soft hover:bg-raised hover:text-ink focus-visible:outline-pine-400; }
   .btn-sm { @apply px-3 py-1.5 text-xs; }
 
-  .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+  .link { @apply font-medium text-bloom-300 hover:underline; }
+
+  /* Hơi trong để thấy ảnh nền phía sau */
+  .card { @apply rounded-xl border border-line bg-surface/80 shadow-sm shadow-black/20 backdrop-blur-sm; }
   .card-body { @apply p-5 sm:p-6; }
 
   .field { @apply space-y-1.5; }
-  .label { @apply block text-sm font-medium text-slate-700; }
+  .label { @apply block text-sm font-medium text-ink-soft; }
   .input {
-    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-      placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none;
+    @apply block w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink transition
+      placeholder:text-ink-faint hover:border-line-strong focus:border-pine-400 focus:ring-2 focus:ring-pine-500/50 focus:outline-none;
   }
-  .input-error { @apply border-red-500 focus:border-red-500 focus:ring-red-100; }
-  .hint { @apply text-xs text-slate-500; }
-  .field-error { @apply text-xs font-medium text-red-600; }
+  .input-error { @apply border-brand-400 hover:border-brand-400 focus:border-brand-400 focus:ring-brand-500/30; }
+  .hint { @apply text-xs text-ink-faint; }
+  .field-error { @apply text-xs font-medium text-brand-300; }
+  .required-mark { @apply text-brand-400; }
 
-  .table-wrap { @apply overflow-x-auto rounded-xl border border-slate-200 bg-white; }
-  .table { @apply min-w-full divide-y divide-slate-200 text-sm; }
-  .table th { @apply bg-slate-50 px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase; }
-  .table td { @apply px-4 py-3 align-middle text-slate-700; }
-  .table tbody tr { @apply hover:bg-slate-50; }
+  /* Nhóm trường trong form dài: tiêu đề nhỏ + nội dung */
+  .form-section { @apply space-y-4; }
+  .form-section + .form-section { @apply border-t border-line pt-6; }
+  .form-section-title { @apply text-xs font-semibold tracking-wider text-ink-faint uppercase; }
 
-  .badge-gray { @apply badge bg-slate-100 text-slate-700; }
-  .badge-green { @apply badge bg-emerald-50 text-emerald-700; }
-  .badge-yellow { @apply badge bg-amber-50 text-amber-700; }
-  .badge-red { @apply badge bg-red-50 text-red-700; }
-  .badge-blue { @apply badge bg-brand-50 text-brand-700; }
+  .table-wrap { @apply overflow-x-auto rounded-xl border border-line bg-surface; }
+  .table { @apply min-w-full divide-y divide-line text-sm; }
+  .table th { @apply bg-raised px-4 py-3 text-left text-xs font-semibold tracking-wide text-ink-faint uppercase; }
+  .table td { @apply px-4 py-3 align-middle text-ink-soft; }
+  .table tbody tr { @apply hover:bg-raised/60; }
 
-  .alert-success { @apply alert border-emerald-200 bg-emerald-50 text-emerald-800; }
-  .alert-error { @apply alert border-red-200 bg-red-50 text-red-800; }
-  .alert-info { @apply alert border-brand-100 bg-brand-50 text-brand-700; }
+  .badge-gray { @apply badge bg-raised text-ink-soft ring-1 ring-line-strong; }
+  .badge-green { @apply badge bg-pine-500/40 text-pine-200; }
+  .badge-yellow { @apply badge bg-sun-400/15 text-sun-300; }
+  .badge-red { @apply badge bg-brand-500/20 text-brand-300; }
+  .badge-pink { @apply badge bg-bloom-400/15 text-bloom-300; }
 
-  .nav-link { @apply rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
-  .nav-link-active { @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700; }
+  .alert-success { @apply alert border-pine-400/40 bg-pine-500/25 text-pine-200; }
+  .alert-error { @apply alert border-brand-400/40 bg-brand-500/15 text-brand-300; }
+  .alert-info { @apply alert border-bloom-400/30 bg-bloom-400/10 text-bloom-300; }
+
+  .nav-link { @apply rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-raised hover:text-ink; }
+  /* Thanh menu nổi bo góc, cách mép trang một chút (cả sáng lẫn tối) */
+  .app-header { @apply top-2 mx-3 mt-2 rounded-2xl border shadow-lg shadow-black/30; }
+  .app-header .nav-link { @apply rounded-xl; }
+  .nav-link-active { @apply bg-pine-500/50 text-cream hover:bg-pine-500/50 hover:text-cream light:bg-pine-500 light:hover:bg-pine-500; }
+
+  /* Nút đổi sáng/tối: nền tối hiện mặt trời, nền sáng hiện mặt trăng */
+  .theme-toggle { @apply shrink-0 px-2; }
+  .theme-toggle .icon-moon { @apply hidden light:block; }
+  .theme-toggle .icon-sun { @apply block light:hidden; }
+
+  /* Nút chọn một trong vài lựa chọn (thay cho dropdown khi chỉ có 2–4 lựa chọn) */
+  .segmented { @apply flex flex-wrap gap-1 rounded-xl border border-line bg-canvas p-1; }
+  .segmented-item { @apply relative flex-1 cursor-pointer; }
+  .segmented-item input { @apply sr-only; }
+  .segmented-item span {
+    @apply block rounded-lg px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-raised hover:text-ink;
+  }
+  .segmented-item input:checked + span { @apply bg-pine-500 text-cream shadow-sm shadow-black/30 hover:bg-pine-500; }
+  .segmented-item input:focus-visible + span { @apply outline-2 outline-offset-1 outline-sun-400; }
+
+  /* Chọn thứ lặp lại: hàng nút tròn T2 … CN */
+  .repeat-box { @apply rounded-2xl border border-line bg-canvas px-4 py-3; }
+  .repeat-box-head { @apply flex items-center justify-between gap-3 border-b border-line pb-3 text-sm; }
+  .repeat-box-head legend { @apply float-left; }
+  .repeat-days { @apply flex justify-between gap-1.5 pt-3; }
+  .repeat-day { @apply relative cursor-pointer; }
+  .repeat-day input { @apply sr-only; }
+  .repeat-day span {
+    @apply flex size-10 items-center justify-center rounded-full bg-raised text-sm font-semibold text-ink-soft transition hover:text-ink;
+  }
+  .repeat-day input:checked + span { @apply bg-brand-500 text-cream shadow-sm shadow-black/30; }
+  .repeat-day input:focus-visible + span { @apply outline-2 outline-offset-1 outline-sun-400; }
+
+  /* Ô chọn ngày / giờ / danh sách tự vẽ (public/js/pickers.js) */
+  .picker { @apply relative; }
+  .picker-trigger { @apply flex min-w-36 cursor-pointer items-center gap-2 text-left; }
+  .picker-value { @apply flex-1 truncate; }
+  .picker-trigger.is-placeholder .picker-value { @apply text-ink-faint; }
+  .picker-icon { @apply h-4 w-4 shrink-0 transition-transform duration-200; }
+  .picker-trigger .picker-icon { @apply text-ink-faint; }
+  .picker.is-open .picker-trigger { @apply border-pine-400 ring-2 ring-pine-500/50; }
+  .picker-select.is-open .picker-trigger .picker-icon { @apply rotate-180; }
+
+  .picker-panel {
+    @apply invisible absolute top-full left-0 z-30 mt-2 min-w-full origin-top -translate-y-1 scale-[0.98] rounded-xl border border-line-strong
+      bg-raised p-2 opacity-0 shadow-2xl shadow-black/60 transition-[opacity,transform,visibility] duration-150 ease-out;
+  }
+  /* Khi mở: hiện ngay (để đặt được con trỏ vào bảng), chỉ mờ/trượt dần; khi đóng: ẩn sau hiệu ứng. */
+  .picker.is-open .picker-panel { @apply visible translate-y-0 scale-100 opacity-100 transition-[opacity,transform]; }
+  .picker-up .picker-panel { @apply top-auto bottom-full mt-0 mb-2 origin-bottom translate-y-1; }
+  .picker-end .picker-panel { @apply right-0 left-auto; }
+  .picker-panel-select { @apply max-w-[min(22rem,calc(100vw-2rem))]; }
+  .picker-panel-date { @apply w-72; }
+  .picker-panel-time { @apply w-56; }
+
+  .picker-search {
+    @apply mb-2 block w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-pine-400 focus:outline-none;
+  }
+  .picker-list { @apply max-h-64 overflow-y-auto overscroll-contain; }
+  .picker-option { @apply flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-ink-soft; }
+  .picker-option.is-active { @apply bg-pine-500/40 text-ink; }
+  .picker-option.is-selected { @apply font-medium text-ink; }
+  .picker-option .picker-icon { @apply text-sun-400 opacity-0; }
+  .picker-option.is-selected .picker-icon { @apply opacity-100; }
+  .picker-empty { @apply px-3 py-2 text-sm text-ink-faint; }
+
+  .picker-head { @apply mb-1 flex items-center justify-between; }
+  .picker-title { @apply text-sm font-semibold text-ink; }
+  .picker-nav { @apply flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition hover:bg-pine-500/40 hover:text-ink; }
+  .picker-weekdays, .picker-days { @apply grid grid-cols-7 gap-0.5 text-center; }
+  .picker-weekdays span { @apply py-1 text-[11px] font-semibold text-ink-faint; }
+  .picker-day {
+    @apply h-9 rounded-lg text-sm text-ink tabular-nums transition hover:bg-pine-500/40 focus-visible:outline-2 focus-visible:outline-sun-400;
+  }
+  .picker-day.is-outside { @apply text-ink-faint/70; }
+  .picker-day.is-today { @apply font-semibold text-sun-300 ring-1 ring-sun-400/50 ring-inset; }
+  .picker-day.is-selected { @apply bg-brand-500 text-cream ring-0 hover:bg-brand-500; }
+  .picker-day:disabled { @apply cursor-not-allowed text-ink-faint/30 hover:bg-transparent; }
+
+  .picker-time-head { @apply grid grid-cols-2 gap-2 pb-1 text-center text-[11px] font-semibold text-ink-faint uppercase; }
+  .picker-time-cols { @apply grid grid-cols-2 gap-2; }
+  .picker-col { @apply relative flex max-h-56 flex-col gap-0.5 overflow-y-auto overscroll-contain scroll-smooth; }
+  .picker-cell {
+    @apply shrink-0 rounded-lg py-1.5 text-sm text-ink-soft tabular-nums transition hover:bg-pine-500/40 hover:text-ink
+      focus-visible:outline-2 focus-visible:outline-sun-400;
+  }
+  .picker-cell.is-selected { @apply bg-brand-500 font-semibold text-cream hover:bg-brand-500; }
+
+  .picker-foot { @apply mt-2 flex flex-wrap items-center gap-1.5 border-t border-line pt-2; }
+  .picker-chip {
+    @apply rounded-full bg-canvas px-3 py-1 text-xs font-medium text-ink-soft ring-1 ring-line transition hover:bg-pine-500/40 hover:text-ink
+      disabled:pointer-events-none disabled:opacity-40;
+  }
+  .picker-chip-end { @apply ml-auto; }
+
+  /* Ngày lễ: thẻ tròn đếm ngược treo dưới góc phải menu, đung đưa như đồ treo.
+     Nền chuyển từ màu lễ sang màu nền trang; tối và sáng pha khác nhau. */
+  .holiday-tag {
+    @apply pointer-events-none absolute top-full right-6 flex flex-col items-center select-none;
+    transform-origin: top center;
+    animation: holiday-swing 3s ease-in-out infinite alternate;
+    animation-delay: -1.4s;
+  }
+  /* Sợi dây thả xuống, xỏ vào lỗ khoen trên đỉnh thẻ (nằm đè lên thẻ) */
+  .holiday-tag::before {
+    content: ""; @apply relative z-10 -mb-3 h-8 w-0.5 rounded-full;
+    background: linear-gradient(#d8c7a3, #a8936a);
+  }
+  /* Thẻ giấy bìa cứng: nền 2 màu (màu lễ -> màu nền), vệt sáng mặt giấy, viền chỉ khâu, bóng đổ xuống tường */
+  .holiday-tag-disc {
+    @apply relative flex size-20 flex-col items-center justify-center rounded-full pt-2 text-center leading-none;
+    --tag-ink: #fff;
+    color: var(--tag-ink);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
+    background:
+      radial-gradient(circle at 30% 22%, rgb(255 255 255 / 0.22), transparent 45%),
+      linear-gradient(165deg, var(--holiday-b) 0%, color-mix(in srgb, var(--holiday-b) 40%, var(--color-canvas)) 100%);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.12),
+      inset 0 -6px 10px rgb(0 0 0 / 0.18),
+      0 10px 14px -6px rgb(0 0 0 / 0.55),
+      0 2px 3px rgb(0 0 0 / 0.25);
+  }
+  /* Đường chỉ khâu nét đứt chạy quanh mép thẻ */
+  .holiday-tag-disc::after {
+    content: ""; @apply pointer-events-none absolute inset-1 rounded-full;
+    border: 1px dashed color-mix(in srgb, var(--tag-ink) 45%, transparent);
+  }
+  /* Lỗ khoen kim loại: lòng lỗ tối, viền đồng thau */
+  .holiday-tag-disc::before {
+    content: ""; @apply absolute top-1.5 left-1/2 size-2.5 -translate-x-1/2 rounded-full;
+    background: rgb(0 0 0 / 0.45);
+    box-shadow: 0 0 0 2px #c9ae72, 0 0 0 2.5px rgb(0 0 0 / 0.25), inset 0 1px 1px rgb(0 0 0 / 0.5);
+  }
+  /* Icon lễ như miếng sticker dán lệch ở mép dưới bên phải */
+  .holiday-tag-icon {
+    @apply absolute -right-1.5 -bottom-1 text-base;
+    rotate: 16deg;
+    text-shadow: none;
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
+  }
+  /* Cỡ chữ không quá nhỏ: trình duyệt có cỡ chữ tối thiểu sẽ phóng to và làm tràn thẻ */
+  .holiday-tag-count { @apply text-2xl font-extrabold tracking-tight; }
+  .holiday-tag-label { @apply mt-0.5 text-xs font-semibold whitespace-nowrap; }
+  /* Thẻ nằm trong .app-header (nền sáng đặt --color-ink trắng) nên ghi thẳng màu chữ tối của theme sáng */
+  [data-theme="light"] .holiday-tag-disc {
+    --tag-ink: #2a1a3c;
+    text-shadow: none;
+    background:
+      radial-gradient(circle at 30% 22%, rgb(255 255 255 / 0.7), transparent 50%),
+      linear-gradient(165deg, color-mix(in srgb, var(--holiday-a) 70%, white) 0%, var(--color-surface) 100%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--holiday-b) 30%, transparent),
+      inset 0 -6px 10px color-mix(in srgb, var(--holiday-b) 14%, transparent),
+      0 10px 14px -6px rgb(60 30 90 / 0.45),
+      0 2px 3px rgb(60 30 90 / 0.2);
+  }
+  [data-theme="light"] .holiday-tag-count { color: color-mix(in srgb, var(--holiday-b) 80%, black); }
+
+  /* Đồ treo lủng lẳng dưới thanh menu, có sợi dây */
+  .holiday-hang {
+    @apply pointer-events-none absolute top-full flex flex-col items-center text-3xl leading-none select-none;
+    transform-origin: top center;
+    animation: holiday-swing 2.8s ease-in-out infinite alternate;
+  }
+  .holiday-hang::before { content: ""; @apply mb-0.5 h-4 w-px; background: color-mix(in srgb, var(--holiday-a) 70%, transparent); }
+  .holiday-hang-left { @apply left-6; }
+
+  /* Lớp emoji rơi: nằm sau mọi nội dung (z -1), không chặn chuột */
+  .holiday-sky { @apply pointer-events-none fixed inset-0 overflow-hidden; z-index: -1; }
+  .holiday-flake {
+    @apply absolute -top-10 text-xl select-none; /* mọi icon rơi cùng một cỡ */
+    opacity: 0.55;
+    animation: holiday-fall linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .holiday-tag, .holiday-hang { animation: none; }
+  }
 }

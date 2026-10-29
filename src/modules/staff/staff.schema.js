@@ -4,7 +4,7 @@ import { emptyToUndefined } from '#lib/validate.js';
 
 export const ROLES = [
   { value: 'member', label: 'Nhân viên', badge: 'badge-gray' },
-  { value: 'admin', label: 'Quản lý', badge: 'badge-blue' },
+  { value: 'admin', label: 'Quản lý', badge: 'badge-pink' },
 ];
 
 const base = {
@@ -14,6 +14,15 @@ const base = {
     .trim()
     .toLowerCase()
     .pipe(z.email({ error: 'Email không hợp lệ' })),
+  // Không bắt buộc. Cho phép dấu cách, chấm, gạch, ngoặc và + đầu số quốc tế.
+  phone: z.preprocess(
+    (v) => emptyToUndefined(typeof v === 'string' ? v.trim() : v),
+    z
+      .string()
+      .regex(/^\+?[\d\s.()-]+$/, 'Số điện thoại chỉ gồm chữ số')
+      .refine((v) => /^\d{9,15}$/.test(v.replace(/\D/g, '')), 'Số điện thoại cần 9–15 chữ số')
+      .optional(),
+  ),
   role: z.enum(
     ROLES.map((r) => r.value),
     { error: 'Vai trò không hợp lệ' },

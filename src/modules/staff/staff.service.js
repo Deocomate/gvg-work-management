@@ -23,9 +23,9 @@ export async function getStaff(id) {
 export async function createStaff(input) {
   const result = validate(createStaffSchema, input);
   if (!result.ok) return result;
-  const { name, email, role, password } = result.data;
+  const { name, email, phone, role, password } = result.data;
   if (await repo.emailTaken(email)) return { ok: false, errors: { email: 'Email này đã được sử dụng.' } };
-  const user = await authRepo.create({ name, email, role, passwordHash: await hashPassword(password) });
+  const user = await authRepo.create({ name, email, phone, role, passwordHash: await hashPassword(password) });
   return { ok: true, data: user };
 }
 

@@ -5,13 +5,14 @@
 <div class="table-wrap">
   <table class="table">
     <thead>
-      <tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th class="text-right">Thao tác</th></tr>
+      <tr><th>Họ tên</th><th>Email</th><th>Số điện thoại</th><th>Vai trò</th><th class="text-right">Thao tác</th></tr>
     </thead>
     <tbody>
       {{#each users}}
         <tr>
-          <td class="font-medium text-slate-900">{{name}}{{#if isMe}} <span class="text-xs font-normal text-slate-500">(bạn)</span>{{/if}}</td>
+          <td class="font-medium text-ink">{{name}}{{#if isMe}} <span class="text-xs font-normal text-ink-faint">(bạn)</span>{{/if}}</td>
           <td>{{email}}</td>
+          <td class="whitespace-nowrap">{{#if phone}}<a href="tel:{{phone}}" class="hover:underline">{{phone}}</a>{{else}}<span class="text-ink-faint">—</span>{{/if}}</td>
           <td><span class="{{roleInfo.badge}}">{{roleInfo.label}}</span></td>
           <td class="whitespace-nowrap text-right">
             <a href="/today?user={{id}}" class="btn-ghost btn-sm">Xem việc</a>

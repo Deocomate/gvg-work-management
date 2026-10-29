@@ -4,6 +4,7 @@
 
 ## Chạy trên máy
 **Windows, không cần gõ lệnh:** cài Node.js (bản LTS ở nodejs.org), rồi bấm đúp `chay-app.bat`.
+App chạy ở chế độ tự nạp lại: sửa code xong không cần đóng/mở lại cửa sổ.
 
 ```bash
 npm install

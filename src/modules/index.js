@@ -12,6 +12,8 @@ import { requireAuth, requireRole } from '#middleware/auth.js'; // dùng: middle
 import scheduleRoutes from './schedule/schedule.routes.js';
 import tasksRoutes from './tasks/tasks.routes.js';
 import staffRoutes from './staff/staff.routes.js';
+import linksRoutes from './links/links.routes.js';
+import performanceRoutes from './performance/performance.routes.js';
 // [vibe:module-imports]
 
 export const modules = [
@@ -20,6 +22,8 @@ export const modules = [
   { path: '/', router: scheduleRoutes }, // /today, /calendar (tự kiểm tra đăng nhập)
   { path: '/tasks', router: tasksRoutes, middleware: [requireAuth] },
   { path: '/staff', router: staffRoutes, middleware: [requireRole('admin')] },
+  { path: '/links', router: linksRoutes, middleware: [requireRole('admin')] },
+  { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
   // [vibe:module-mounts]
 ];
 

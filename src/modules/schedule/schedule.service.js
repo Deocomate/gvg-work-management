@@ -1,5 +1,5 @@
 // Dữ liệu cho 2 màn hình xem việc: "Hôm nay" (dòng thời gian) và "Lịch" (theo tháng).
-import { addDays, addMonths, isISODate, isISOMonth, monthGrid, nowTimeHM, todayISO } from '#lib/dates.js';
+import { addDays, addMonths, isISODate, isISOMonth, monthGrid, nowTimeHM, todayISO, weekDays } from '#lib/dates.js';
 import * as tasksRepo from '#modules/tasks/tasks.repo.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
 
@@ -8,11 +8,18 @@ const CHIPS_PER_DAY = 3;
 export const parseDate = (value) => (isISODate(value) ? value : todayISO());
 export const parseMonth = (value) => (isISOMonth(value) ? value : todayISO().slice(0, 7));
 
-/** Xem việc của ai: nhân viên luôn là chính mình; quản lý chọn được (null = tất cả mọi người). */
+/** Giá trị ?user= để quản lý xem việc của tất cả mọi người. */
+export const ALL_USERS = 'all';
+
+/**
+ * Xem việc của ai: mặc định ai đăng nhập thì thấy việc của người đó.
+ * Nhân viên luôn là chính mình; quản lý chọn được người khác hoặc "all" (null = tất cả mọi người).
+ */
 export function resolveAssignee(user, requested) {
   if (!isManager(user)) return user.id;
+  if (requested === ALL_USERS) return null;
   const id = Number(requested);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  return Number.isInteger(id) && id > 0 ? id : user.id;
 }
 
 /** Việc đang diễn ra / đã trễ so với thời điểm hiện tại (giờ Việt Nam). */
@@ -50,8 +57,51 @@ export async function getDay({ date, assigneeId }) {
     },
     isToday: date === today,
     today,
-    prev: addDays(date, -1),
-    next: addDays(date, 1),
+  };
+}
+
+/** Phiếu công việc trong ngày: việc của ngày (và việc tồn nếu là hôm nay) gom theo từng người làm. */
+export async function getSheet({ date, assigneeId }) {
+  const day = await getDay({ date, assigneeId });
+  const people = new Map();
+  const add = (task, key) => {
+    const person = people.get(task.assignee_id) ?? { name: task.assignee_name, tasks: [], overdue: [] };
+    person[key].push(task);
+    people.set(task.assignee_id, person);
+  };
+  day.tasks.forEach((t) => add(t, 'tasks'));
+  day.overdue.forEach((t) => add(t, 'overdue'));
+
+  return {
+    people: [...people.values()].sort((a, b) => a.name.localeCompare(b.name, 'vi')),
+    isToday: day.isToday,
+  };
+}
+
+/** 7 ngày (T2–CN) của tuần chứa `date`, mỗi ngày kèm danh sách việc — dải lịch tuần trên trang "Hôm nay". */
+export async function getWeek({ date, assigneeId }) {
+  const days = weekDays(date);
+  const today = todayISO();
+  const tasks = await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId });
+
+  return {
+    days: days.map((day) => {
+      const list = tasks.filter((t) => t.date === day);
+      const unfinished = list.filter((t) => t.status !== 'done').length;
+      return {
+        date: day,
+        // Ngày 1 kèm tháng để biết tuần đã sang tháng mới
+        dayLabel: day.endsWith('-01') ? `1/${Number(day.slice(5, 7))}` : Number(day.slice(8)),
+        isToday: day === today,
+        isPast: day < today,
+        unfinished,
+        hasLate: day < today && unfinished > 0,
+        tasks: list,
+      };
+    }),
+    // Sang tuần trước/sau, giữ nguyên thứ đang chọn
+    prev: addDays(date, -7),
+    next: addDays(date, 7),
   };
 }
 
