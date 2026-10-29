@@ -41,7 +41,7 @@ test('quản lý giao việc cho nhân viên -> nhân viên thấy trong "Hôm n
   assert.doesNotMatch((await admin.get(`/today?user=${minhId}`)).text, />Kiểm kê kho<\/h3>/);
 });
 
-test('giao một việc cho nhiều người: mỗi người một bản, hiện "Làm cùng"; có cơ sở vật chất cần chuẩn bị', async () => {
+test('giao một việc cho nhiều người: mỗi người một bản, hiện "Phụ trách"; có cơ sở vật chất cần chuẩn bị', async () => {
   const form = (await admin.get('/tasks/new')).text;
   assert.match(form, /<select id="f-assignee_id" name="assignee_id" multiple/);
   assert.match(form, /href="\/css\/app\.css\?v=\w+"/); // đổi phiên bản mỗi lần deploy để không dùng CSS cũ
@@ -57,9 +57,9 @@ test('giao một việc cho nhiều người: mỗi người một bản, hiện
 
   const ofLan = (await lan.get('/today')).text;
   assert.match(ofLan, /Quay quảng cáo/);
-  assert.match(ofLan, /Làm cùng: <span[^>]*>Lê Minh/);
+  assert.match(ofLan, /Phụ trách: <span[^>]*>Trần Lan, Lê Minh</);
   assert.match(ofLan, /Cơ sở vật chất cần chuẩn bị[\s\S]*Máy quay\nĐèn led/);
-  assert.match((await admin.get(`/today?user=${minhId}`)).text, /Làm cùng: <span[^>]*>Trần Lan/);
+  assert.match((await admin.get(`/today?user=${minhId}`)).text, /Phụ trách: <span[^>]*>Lê Minh, Trần Lan</);
 
   // Mỗi người tự đổi trạng thái phần của mình
   const lanCopy = await taskIdOn(lan, '/today', 'Quay quảng cáo');
@@ -70,7 +70,7 @@ test('giao một việc cho nhiều người: mỗi người một bản, hiện
 
   // Phiếu công việc hiện người làm cùng và đồ cần chuẩn bị
   const sheet = (await admin.get('/today/sheet')).text;
-  assert.match(sheet, /Làm cùng: Lê Minh/);
+  assert.match(sheet, /Phụ trách: Trần Lan, Lê Minh/);
   assert.match(sheet, /Chuẩn bị:<\/b> Máy quay/);
 });
 
@@ -104,7 +104,7 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
   const minhItem = (await admin.get(`/today?date=${day}&user=${minhId}`)).text.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
   assert.match(minhItem, /line-through/); // Minh vẫn "Đã xong"
   assert.match(minhItem, /Máy dựng/);
-  assert.match(minhItem, /Làm cùng: <span[^>]*>(Trần Lan, Đỗ Hà|Đỗ Hà, Trần Lan)/);
+  assert.match(minhItem, /Phụ trách: <span[^>]*>Lê Minh, (Trần Lan, Đỗ Hà|Đỗ Hà, Trần Lan)/);
 
   // Bỏ Minh -> bản của Minh bị xoá; còn Lan và Hà
   await postForm(
@@ -114,9 +114,9 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
     { from: `/tasks/${lanCopy}/edit` },
   );
   assert.doesNotMatch((await admin.get(`/today?date=${day}&user=${minhId}`)).text, /Dựng phim bản 2/);
-  assert.match((await admin.get(`/today?date=${day}&user=${haId}`)).text, /Làm cùng: <span[^>]*>Trần Lan/);
+  assert.match((await admin.get(`/today?date=${day}&user=${haId}`)).text, /Phụ trách: <span[^>]*>Đỗ Hà, Trần Lan</);
 
-  // Bỏ Lan (bản đang sửa) và chỉ giữ Hà -> còn đúng một bản của Hà, hết "Làm cùng"
+  // Bỏ Lan (bản đang sửa) và chỉ giữ Hà -> còn đúng một bản của Hà, không còn người cùng phụ trách
   await postForm(
     admin,
     `/tasks/${lanCopy}`,
@@ -127,7 +127,7 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
   assert.equal(copies(left), 1);
   const haItem = left.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
   assert.match(haItem, /Đỗ Hà/);
-  assert.doesNotMatch(haItem, /Làm cùng/);
+  assert.doesNotMatch(haItem, /Phụ trách: <span[^>]*>Đỗ Hà,/);
 });
 
 test('giao nhiều người: chưa chọn ai -> báo lỗi; nhân viên gửi nhiều id vẫn chỉ giao cho mình', async () => {
@@ -139,7 +139,7 @@ test('giao nhiều người: chưa chọn ai -> báo lỗi; nhân viên gửi nh
   assert.match((await lan.get('/today')).text, /Việc tự thêm nhiều id/);
   assert.doesNotMatch((await admin.get(`/today?user=${minhId}`)).text, /Việc tự thêm nhiều id/);
   const item = (await lan.get('/today')).text.split('<li class="card').find((p) => p.includes('Việc tự thêm nhiều id'));
-  assert.doesNotMatch(item, /Làm cùng/);
+  assert.doesNotMatch(item, /Phụ trách/);
 });
 
 test('link liên quan: mỗi dòng một link, hiện thành nút mở tab mới; sửa được', async () => {

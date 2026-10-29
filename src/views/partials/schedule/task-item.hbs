@@ -18,8 +18,7 @@
       {{#if isLate}}<span class="badge-red">Trễ</span>{{/if}}
     </div>
     {{#if showDate}}<p class="mt-0.5 text-xs text-ink-faint">{{formatWeekday date}}</p>{{/if}}
-    {{#if showAssignee}}<p class="mt-0.5 text-xs text-ink-faint">Người làm: <span class="font-medium text-ink-soft">{{assignee_name}}</span></p>{{/if}}
-    {{#if coworkers}}<p class="mt-0.5 text-xs text-ink-faint">Làm cùng: <span class="font-medium text-ink-soft">{{coworkers}}</span></p>{{/if}}
+    {{#if (or showAssignee coworkers)}}<p class="mt-0.5 text-xs text-ink-faint">Phụ trách: <span class="font-medium text-ink-soft">{{assignee_name}}{{#if coworkers}}, {{coworkers}}{{/if}}</span></p>{{/if}}
     {{#if note}}<p class="mt-1.5 text-sm whitespace-pre-line text-ink-soft">{{note}}</p>{{/if}}
     {{#if facilities}}
       <div class="mt-2 rounded-lg border border-line bg-canvas/60 px-3 py-2 text-sm">

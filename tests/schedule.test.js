@@ -72,7 +72,7 @@ test('nhân viên chỉ thấy việc của mình kể cả khi sửa ?user=', a
   // Quản lý xem "tất cả" thấy cả hai, kèm tên người làm
   const all = (await admin.get('/today?user=all')).text;
   assert.match(all, /Việc riêng của quản lý/);
-  assert.match(all, /Người làm: <span[^>]*>Phạm Hoa/);
+  assert.match(all, /Phụ trách: <span[^>]*>Phạm Hoa/);
 });
 
 test('quản lý mặc định thấy việc cả nhóm (khớp phiếu công việc), chọn được từng người', async () => {

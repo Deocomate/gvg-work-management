@@ -2,7 +2,7 @@
 {{#*inline "task-cell"}}
   <td>
     <strong>{{title}}</strong>{{#if (eq priority 'high')}} <span class="tag-high">Quan trọng</span>{{/if}}
-    {{#if coworkers}}<div class="note">Làm cùng: {{coworkers}}</div>{{/if}}
+    {{#if coworkers}}<div class="note">Phụ trách: {{assignee_name}}, {{coworkers}}</div>{{/if}}
     {{#if note}}<div class="note">{{note}}</div>{{/if}}
     {{#if facilities}}<div class="note"><b>Chuẩn bị:</b> {{facilities}}</div>{{/if}}
     {{#each linkList}}
