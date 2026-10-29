@@ -1,12 +1,12 @@
-{{#> page-header title="Tài liệu" subtitle="Link cần thiết hiện ở trang Hôm nay cho mọi người"}}
-  <a href="/links/new" class="btn-primary">+ Thêm link</a>
+{{#> page-header title="Tài liệu" subtitle="Link tài liệu cần thiết cho cả nhóm"}}
+  {{#if manager}}<a href="/links/new" class="btn-primary">+ Thêm link</a>{{/if}}
 {{/page-header}}
 
 {{#if links.length}}
   <div class="table-wrap">
     <table class="table">
       <thead>
-        <tr><th>Tên tài liệu</th><th>Link</th><th class="text-right">Thao tác</th></tr>
+        <tr><th>Tên tài liệu</th><th>Link</th>{{#if manager}}<th class="text-right">Thao tác</th>{{/if}}</tr>
       </thead>
       <tbody>
         {{#each links}}
@@ -16,15 +16,19 @@
               {{#if note}}<p class="text-xs text-ink-faint">{{note}}</p>{{/if}}
             </td>
             <td class="max-w-xs truncate"><a href="{{url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">{{url}}</a></td>
-            <td class="whitespace-nowrap text-right">
-              <a href="/links/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
-              {{> form/delete-button action=(concat "/links/" id "/delete") confirm="Xoá link này?"}}
-            </td>
+            {{#if ../manager}}
+              <td class="whitespace-nowrap text-right">
+                <a href="/links/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
+                {{> form/delete-button action=(concat "/links/" id "/delete") confirm="Xoá link này?"}}
+              </td>
+            {{/if}}
           </tr>
         {{/each}}
       </tbody>
     </table>
   </div>
+{{else if manager}}
+  {{> empty-state title="Chưa có link tài liệu nào" text="Thêm link Google Drive, biểu mẫu, quy trình… để cả nhóm mở nhanh ở trang Tài liệu." actionHref="/links/new" actionLabel="+ Thêm link"}}
 {{else}}
-  {{> empty-state title="Chưa có link tài liệu nào" text="Thêm link Google Drive, biểu mẫu, quy trình… để cả nhóm mở nhanh từ trang Hôm nay." actionHref="/links/new" actionLabel="+ Thêm link"}}
+  {{> empty-state title="Chưa có link tài liệu nào" text="Quản lý sẽ thêm link Google Drive, biểu mẫu, quy trình… ở đây."}}
 {{/if}}

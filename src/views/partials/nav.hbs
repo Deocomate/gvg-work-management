@@ -18,10 +18,10 @@
       {{#if currentUser}}
         {{> nav-link href="/today" label="Hôm nay" count=todayUnfinished}}
         {{> nav-link href="/calendar" label="Tháng"}}
+        {{> nav-link href="/links" label="Tài liệu"}}
         {{#if (eq currentUser.role 'admin')}}
           {{> nav-link href="/performance" label="Hiệu suất"}}
           {{> nav-link href="/staff" label="Nhân viên"}}
-          {{> nav-link href="/links" label="Tài liệu"}}
         {{/if}}
       {{/if}}
       {{!-- [vibe:nav-links] Thêm link module mới: {{> nav-link href="/tasks" label="Công việc"}} --}}

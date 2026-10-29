@@ -26,7 +26,7 @@
 - [x] Hiệu suất tuần (`/performance`, chỉ quản lý): tổng quan cả nhóm (tổng việc, % hoàn thành, % đúng hạn, quá hạn) + bảng từng người (thanh % hoàn thành xanh/vàng/cam, đã xong, đúng hạn, xong trễ, đang làm, quá hạn, so với tuần trước); chuyển tuần trước/sau; bấm tên → xem việc người đó
 - [x] Nhân viên (`/staff`, chỉ quản lý): thêm/sửa/xoá tài khoản, đặt lại mật khẩu, phân vai trò, số điện thoại (không bắt buộc, bấm để gọi)
 - [x] Menu "Hôm nay" có số đỏ = số việc chưa xong hôm nay
-- [x] Tài liệu cần thiết: khung link tài liệu ở cuối trang Hôm nay cho mọi người (mở tab mới); quản lý thêm/sửa/xoá ở `/links`
+- [x] Tài liệu cần thiết: trang `/links` (menu "Tài liệu") cho mọi người xem, mở tab mới; chỉ quản lý thêm/sửa/xoá. Không hiện ở trang Hôm nay
 - [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
 - [x] Trang trí ngày lễ: tự bật 7 ngày trước lễ (thẻ tròn đếm ngược treo góc phải menu, đồ treo dưới menu, emoji rơi nhẹ phía sau nội dung, menu hắt màu lễ), hết lễ tự trở lại bình thường. Lễ: Năm mới, Tết (tới mùng 4), Valentine, 8/3, 30/4–1/5, 2/9, Trung thu, 20/10, Halloween, 20/11, Giáng sinh
 - [ ] Nhắc việc qua email/Zalo/Telegram (cần dịch vụ ngoài)

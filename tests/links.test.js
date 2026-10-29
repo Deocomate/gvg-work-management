@@ -15,19 +15,26 @@ const idOf = async (title) => {
   return row.match(/\/links\/(\d+)\/edit/)[1];
 };
 
-test('chưa có link: quản lý thấy lời mời thêm, nhân viên không thấy khung', async () => {
-  assert.match((await admin.get('/today')).text, /Thêm link đầu tiên/);
-  assert.doesNotMatch((await mai.get('/today')).text, /Tài liệu cần thiết/);
+test('chưa có link: quản lý thấy nút thêm, nhân viên chỉ thấy trang trống', async () => {
+  assert.match((await admin.get('/links')).text, /href="\/links\/new"/);
+  const page = await mai.get('/links');
+  assert.equal(page.status, 200);
+  assert.match(page.text, /Chưa có link tài liệu nào/);
+  assert.doesNotMatch(page.text, /href="\/links\/new"/);
 });
 
-test('quản lý thêm link -> mọi người thấy ở trang Hôm nay, mở tab mới', async () => {
+test('quản lý thêm link -> mọi người thấy ở trang Tài liệu (mở tab mới), không hiện ở trang Hôm nay', async () => {
   const res = await addLink({ title: 'Quy trình nghỉ phép', url: 'https://drive.google.com/abc', note: 'Đọc trước khi xin nghỉ' });
   assert.equal(res.status, 302);
 
+  const page = (await mai.get('/links')).text;
+  assert.match(page, /Quy trình nghỉ phép/);
+  assert.match(page, /href="https:\/\/drive.google.com\/abc" target="_blank" rel="noopener noreferrer"/);
+  assert.doesNotMatch(page, /\/links\/\d+\/edit/);
+
   const home = (await mai.get('/').redirects(5)).text;
-  assert.match(home, /Tài liệu cần thiết/);
-  assert.match(home, /Quy trình nghỉ phép/);
-  assert.match(home, /href="https:\/\/drive.google.com\/abc" target="_blank" rel="noopener noreferrer"/);
+  assert.match(home, /href="\/links"/);
+  assert.doesNotMatch(home, /Quy trình nghỉ phép/);
 });
 
 test('thiếu tên, link sai hoặc link "javascript:" -> báo lỗi', async () => {
@@ -46,18 +53,22 @@ test('sửa và xoá link', async () => {
   const id = await idOf('Quy trình nghỉ phép');
   const edit = await postForm(admin, `/links/${id}`, { title: 'Quy trình nghỉ phép 2026', url: 'https://drive.google.com/xyz', note: '' }, { from: `/links/${id}/edit` });
   assert.equal(edit.status, 302);
-  assert.match((await mai.get('/today')).text, /Quy trình nghỉ phép 2026/);
+  assert.match((await mai.get('/links')).text, /Quy trình nghỉ phép 2026/);
 
   const del = await postForm(admin, `/links/${id}/delete`, {}, { from: '/links' });
   assert.equal(del.status, 302);
-  assert.doesNotMatch((await mai.get('/today')).text, /Quy trình nghỉ phép/);
+  assert.doesNotMatch((await mai.get('/links')).text, /Quy trình nghỉ phép/);
 });
 
-test('nhân viên không vào được trang quản lý link', async () => {
-  assert.equal((await mai.get('/links')).status, 403);
-  const res = await postForm(mai, '/links', { title: 'Hack', url: 'https://x.vn' }, { from: '/today' });
-  assert.equal(res.status, 403);
-  assert.doesNotMatch((await mai.get('/today')).text, /href="\/links"/);
+test('nhân viên không thêm/sửa/xoá được link', async () => {
+  await addLink({ title: 'Biểu mẫu', url: 'https://a.vn' });
+  const id = await idOf('Biểu mẫu');
+  assert.equal((await mai.get('/links/new')).status, 403);
+  assert.equal((await mai.get(`/links/${id}/edit`)).status, 403);
+  assert.equal((await postForm(mai, '/links', { title: 'Hack', url: 'https://x.vn' }, { from: '/links' })).status, 403);
+  assert.equal((await postForm(mai, `/links/${id}`, { title: 'Hack', url: 'https://x.vn' }, { from: '/links' })).status, 403);
+  assert.equal((await postForm(mai, `/links/${id}/delete`, {}, { from: '/links' })).status, 403);
+  assert.match((await mai.get('/links')).text, /Biểu mẫu/);
 });
 
 test('id lạ -> 404', async () => {

@@ -22,7 +22,7 @@ export const modules = [
   { path: '/', router: scheduleRoutes }, // /today, /calendar (tự kiểm tra đăng nhập)
   { path: '/tasks', router: tasksRoutes, middleware: [requireAuth] },
   { path: '/staff', router: staffRoutes, middleware: [requireRole('admin')] },
-  { path: '/links', router: linksRoutes, middleware: [requireRole('admin')] },
+  { path: '/links', router: linksRoutes, middleware: [requireAuth] }, // xem: mọi người; thêm/sửa/xoá: quản lý
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
   // [vibe:module-mounts]
 ];

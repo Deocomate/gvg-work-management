@@ -1,5 +1,4 @@
 // Màn hình "Hôm nay" và "Lịch". Chỉ đọc dữ liệu; thao tác thật nằm ở module tasks.
-import { listLinks } from '#modules/links/links.service.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { TASK_STATUSES } from '#modules/tasks/tasks.schema.js';
 import { canChangeStatus, canEdit, isManager, taskLinks } from '#modules/tasks/tasks.service.js';
@@ -41,10 +40,9 @@ const withLinks = (task) => ({ ...task, linkList: taskLinks(task) });
 export async function today(req, res) {
   const date = service.parseDate(req.query.date);
   const viewer = await viewerContext(req);
-  const [day, week, links] = await Promise.all([
+  const [day, week] = await Promise.all([
     service.getDay({ date, assigneeId: viewer.assigneeId }),
     service.getWeek({ date, assigneeId: viewer.assigneeId }),
-    listLinks(),
   ]);
   const withRights = decorate(req.user);
 
@@ -59,7 +57,6 @@ export async function today(req, res) {
     },
     tasks: day.tasks.map(withRights),
     overdue: day.overdue.map(withRights),
-    links,
     back: `/today?date=${date}${viewer.userQuery}`,
   });
 }

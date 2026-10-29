@@ -1,4 +1,5 @@
-// Trang quản lý link tài liệu: danh sách, thêm, sửa, xoá.
+// Trang link tài liệu: mọi người xem danh sách; quản lý thêm, sửa, xoá.
+import { isManager } from '#modules/tasks/tasks.service.js';
 import * as service from './links.service.js';
 
 const renderForm = (res, { link = null, values = {}, errors = {}, status = 200 }) =>
@@ -10,7 +11,7 @@ const renderForm = (res, { link = null, values = {}, errors = {}, status = 200 }
   });
 
 export async function index(req, res) {
-  res.render('links/index', { title: 'Tài liệu', links: await service.listLinks() });
+  res.render('links/index', { title: 'Tài liệu', links: await service.listLinks(), manager: isManager(req.user) });
 }
 
 export function newForm(req, res) {
