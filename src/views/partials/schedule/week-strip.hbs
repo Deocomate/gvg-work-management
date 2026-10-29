@@ -16,7 +16,7 @@
           <ul class="mt-1 hidden min-w-0 space-y-1.5 md:block">
             {{#each tasks}}
               <li class="text-sm leading-snug break-words{{#if (eq status 'done')}} text-ink-faint line-through{{else if (eq status 'doing')}} text-sun-300{{else}} text-ink{{/if}}"
-                  title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="text-xs tabular-nums opacity-60">{{start_time}} -</span> {{/if}}<span class="font-medium">{{title}}</span></li>
+                  title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="text-xs tabular-nums opacity-60">{{start_time}}</span> {{/if}}<span class="font-medium">{{title}}</span></li>
             {{/each}}
           </ul>
         {{/if}}
