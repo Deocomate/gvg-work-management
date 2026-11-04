@@ -182,6 +182,11 @@ test('thêm khách kèm hoá đơn (giá trị + file PDF) -> có trong danh sá
   assert.match(list, /1\.500\.000 đ/);
   assert.match(list, /1 hoá đơn/);
   assert.match((await admin.get('/customers?q=bình hoa')).text, /Chị Hoa/); // tìm theo mặt hàng
+  // Bấm ô Hoá đơn ở danh sách là tải file về
+  const downloadUrl = list.match(/href="(\/customers\/\d+\/invoices\/\d+\/file\?download=1)" download/)[1];
+  const download = await admin.get(downloadUrl).buffer(true);
+  assert.match(download.headers['content-disposition'], /^attachment; filename\*=UTF-8''ho%C3%A1%20%C4%91%C6%A1n%2001\.pdf$/);
+  assert.ok(Buffer.from(download.body).equals(PDF));
 
   const id = await idOf('Chị Hoa');
   const edit = (await trang.get(`/customers/${id}/edit`)).text;
@@ -214,6 +219,9 @@ test('sửa khách: thêm hoá đơn thứ hai (chỉ file ảnh), tổng cộng
   const list = (await admin.get('/customers?q=Chị Hoa')).text;
   assert.match(list, /2\.000\.000 đ/);
   assert.match(list, /2 hoá đơn/);
+  // Hai file -> danh sách chọn từng hoá đơn để tải
+  assert.equal(list.match(/\/file\?download=1" download/g).length, 2);
+  assert.match(list, /03\/11\/2026 · 500\.000 đ/);
 });
 
 test('hoá đơn sai: file không phải PDF/ảnh, giá trị chữ, chỉ có ghi chú -> báo lỗi, không lưu gì', async () => {

@@ -116,6 +116,17 @@ export const listInvoices = (customerId) =>
     [customerId],
   );
 
+/** Hoá đơn có file của nhiều khách (không lấy nội dung file) — cho nút tải ở trang danh sách. */
+export const listInvoiceFilesFor = (customerIds) =>
+  customerIds.length
+    ? all(
+        `SELECT id, customer_id, invoice_date, amount, file_name FROM customer_invoices
+         WHERE customer_id IN (${customerIds.map(() => '?').join(', ')}) AND file_data IS NOT NULL
+         ORDER BY invoice_date DESC, id DESC`,
+        customerIds,
+      )
+    : Promise.resolve([]);
+
 /** Có kèm nội dung file — chỉ dùng khi tải/xem file. */
 export const findInvoiceFile = (customerId, invoiceId) =>
   get('SELECT file_name, file_type, file_data FROM customer_invoices WHERE id = ? AND customer_id = ? AND file_data IS NOT NULL', [

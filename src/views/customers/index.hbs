@@ -69,7 +69,31 @@
             </td>
             <td class="hidden max-w-xs xl:table-cell"><p class="line-clamp-2 text-ink-soft">{{#if interest}}{{interest}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</p></td>
             <td class="whitespace-nowrap text-right tabular-nums">
-              {{#if invoice_count}}<p class="font-medium text-ink">{{formatNumber invoice_total}} đ</p><p class="text-xs text-ink-faint">{{invoice_count}} hoá đơn</p>{{else}}<span class="text-ink-faint">—</span>{{/if}}
+              {{!-- Bấm vào ô là tải hoá đơn: 1 file thì tải luôn, nhiều file thì mở danh sách để chọn --}}
+              {{#if invoice_count}}
+                {{#if (gt invoiceFiles.length 1)}}
+                  <details class="group">
+                    <summary class="cursor-pointer list-none rounded-lg hover:bg-raised [&::-webkit-details-marker]:hidden" title="Bấm để chọn hoá đơn cần tải">
+                      <p class="font-medium text-ink">{{formatNumber invoice_total}} đ</p>
+                      <p class="text-xs text-ink-faint">⬇ {{invoice_count}} hoá đơn</p>
+                    </summary>
+                    <ul class="mt-1 space-y-0.5 text-xs">
+                      {{#each invoiceFiles}}
+                        <li><a href="/customers/{{customer_id}}/invoices/{{id}}/file?download=1" download class="link font-normal">{{formatDay invoice_date}}{{#if amount}} · {{formatNumber amount}} đ{{/if}}</a></li>
+                      {{/each}}
+                    </ul>
+                  </details>
+                {{else if invoiceFiles.length}}
+                  {{#with invoiceFiles.[0]}}
+                    <a href="/customers/{{customer_id}}/invoices/{{id}}/file?download=1" download class="block rounded-lg hover:bg-raised" title="Tải hoá đơn: {{file_name}}">
+                      <p class="font-medium text-ink">{{formatNumber ../invoice_total}} đ</p>
+                      <p class="text-xs text-ink-faint">⬇ {{../invoice_count}} hoá đơn</p>
+                    </a>
+                  {{/with}}
+                {{else}}
+                  <p class="font-medium text-ink">{{formatNumber invoice_total}} đ</p><p class="text-xs text-ink-faint">{{invoice_count}} hoá đơn</p>
+                {{/if}}
+              {{else}}<span class="text-ink-faint">—</span>{{/if}}
             </td>
             <td class="hidden whitespace-nowrap lg:table-cell">{{#if sourceLabel}}{{sourceLabel}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</td>
             <td><span class="{{statusInfo.badge}} whitespace-nowrap">{{statusInfo.label}}</span></td>

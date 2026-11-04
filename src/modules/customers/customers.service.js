@@ -32,6 +32,9 @@ export async function listCustomers(filters, page) {
     repo.list(filters, { limit: page.perPage, offset: page.offset }),
     repo.count(filters),
   ]);
+  // Gắn danh sách file hoá đơn vào từng khách để bấm ô "Hoá đơn" là tải về.
+  const files = await repo.listInvoiceFilesFor(customers.map((c) => c.id));
+  for (const c of customers) c.invoiceFiles = files.filter((f) => f.customer_id === c.id);
   return { customers, total };
 }
 
