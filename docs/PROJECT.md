@@ -29,6 +29,7 @@
 - [x] Tài liệu cần thiết: trang `/links` (menu "Tài liệu") cho mọi người xem, mở tab mới; chỉ quản lý thêm/sửa/xoá. Không hiện ở trang Hôm nay
 - [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
 - [x] Trang trí ngày lễ: tự bật 7 ngày trước lễ (thẻ tròn đếm ngược treo góc phải menu, đồ treo dưới menu, emoji rơi nhẹ phía sau nội dung, menu hắt màu lễ), hết lễ tự trở lại bình thường. Lễ: Năm mới, Tết (tới mùng 4), Valentine, 8/3, 30/4–1/5, 2/9, Trung thu, 20/10, Halloween, 20/11, Giáng sinh
+- [x] Data khách hàng (`/customers`, menu "Data khách hàng"): quản lý + nhân viên được tick quyền ở trang Nhân viên (VD: chị Trang) xem/thêm/sửa/xoá. Trường: loại khách (cá nhân/doanh nghiệp), tên, ngày sinh, công ty + MST (khi là doanh nghiệp), SĐT, email, Zalo, Facebook, TikTok, kênh khác (mỗi kênh một ô), địa chỉ, nguồn khách, trạng thái chăm sóc (Mới → Đang tư vấn → Đã mua → Khách quen / Ngừng), người phụ trách, mặt hàng quan tâm, ghi chú, người nhập. Hoá đơn: mỗi lần mua thêm một hoá đơn (ngày, giá trị, file PDF/ảnh ≤10MB, ghi chú hoá đơn) ngay trong form khách; trang sửa khách liệt kê hoá đơn (mở file, xoá), danh sách khách hiện tổng giá trị + số hoá đơn. Tìm theo tên/SĐT/công ty/email/mặt hàng, lọc trạng thái/nguồn/phụ trách, đếm theo trạng thái. Chặn trùng số điện thoại
 - [ ] Nhắc việc qua email/Zalo/Telegram (cần dịch vụ ngoài)
 - [ ] Bình luận / đính kèm file cho từng việc
 <!-- [vibe:features] -->
@@ -37,9 +38,11 @@
 | Bảng | Mô tả |
 |------|-------|
 | _migrations | (hệ thống) các migration đã chạy |
-| users | tài khoản: email, tên, số điện thoại (phone, có thể trống), vai trò admin/member |
+| users | tài khoản: email, tên, số điện thoại (phone, có thể trống), vai trò admin/member, can_customers (1 = được xem/nhập Data khách hàng) |
 | tasks | công việc: tiêu đề, ghi chú, link liên quan (mỗi dòng một link), người làm (assignee_id), người tạo, ngày, giờ bắt đầu/kết thúc, mức độ, trạng thái todo/doing/done, thời điểm xong |
 | links | link tài liệu cần thiết: tên, đường link (chỉ http/https), ghi chú |
+| customers | khách hàng: liên hệ, loại khách, công ty/MST, nguồn, trạng thái, nhu cầu, ghi chú, người phụ trách (owner_id), người nhập (created_by); phone_digits = SĐT chỉ còn chữ số (unique) để chặn trùng |
+| customer_invoices | hoá đơn của khách: ngày, giá trị (đồng), ghi chú, file (tên, loại, cỡ, nội dung BLOB); xoá khách thì xoá theo |
 <!-- [vibe:tables] -->
 
 ## Quyết định quan trọng
@@ -56,8 +59,15 @@
 - Ngày lễ khai báo một chỗ trong `src/lib/holidays.js` (ngày, lời chúc, 3 emoji, số ngày trang trí thêm sau lễ); màu mỗi lễ (2 màu) trong `src/styles/app.css` theo `data-holiday`. Tết & Trung thu (âm lịch) tra bảng năm 2026–2035 — sau 2035 phải bổ sung. Hai lễ sát nhau thì hiện lễ gần nhất. Khi chạy dev xem trước được bằng `?holiday=<key>` (VD `/today?holiday=christmas`); production bỏ qua tham số này.
 - Ô ngày/giờ/select trong view vẫn viết bằng thẻ chuẩn (`<input type="date|time">`, `<select>`); `pickers.js` tự thay bằng ô tự vẽ và giữ nguyên tên trường → server/test không đổi, tắt JS vẫn dùng được. Thuộc tính hỗ trợ: `data-min-from`, `data-after`, `data-clear-label`, `data-show-when="tên!=giá trị"`.
 
+- Data khách hàng là dữ liệu nhạy cảm: không mở cho mọi nhân viên, chỉ quản lý + người được tick quyền (`users.can_customers`). Ai có quyền thì sửa/xoá được mọi khách. Chặn trùng SĐT bằng unique index trên `phone_digits` (chuẩn hoá +84 → 0) để hai người nhập cùng lúc cũng không trùng.
+
+- File hoá đơn lưu ngay trong DB (BLOB, tối đa 10MB) thay vì thư mục trên ổ đĩa: sao lưu/chuyển máy chỉ cần mang DB, chạy được cả Turso. Chỉ nhận PDF/JPG/PNG/WEBP, kiểm tra theo nội dung file (không tin đuôi). Nhận file bằng thư viện `multer` (`src/middleware/upload.js`), chạy trước csrf và chỉ khi đã đăng nhập.
+
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-04 — Data khách hàng: tách ô mạng xã hội thành Zalo, Facebook, TikTok, Kênh khác (migration 009; cột social cũ thành Kênh khác).
+- 2026-11-04 — Data khách hàng: thêm hoá đơn (giá trị, file đính kèm, ghi chú hoá đơn — migration 008), đổi "Nhu cầu" thành "Mặt hàng quan tâm". Sửa `numericId` để dùng được cho tham số khác `id`.
+- 2026-11-04 — Thêm mục Data khách hàng (migration 007) + quyền "Được xem & nhập Data khách hàng" cho từng nhân viên (để chị Trang nhập).
 - 2026-10-29 — Chỉnh màu Halloween sang tone cam bí ngô (nền cam bí ngô, viền thêu chỉ vàng ấm ánh nến).
 - 2026-10-29 — Trang trí theo ngày lễ (tự bật ~1 tuần trước lễ, đang có Halloween).
 - 2026-10-29 — Đổi tên app thành "Work Calendar", logo mới (`public/img/logo.svg`); menu chính căn giữa thanh menu.

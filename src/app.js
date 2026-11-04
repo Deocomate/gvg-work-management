@@ -9,6 +9,7 @@ import { engine } from 'express-handlebars';
 import { config } from '#config';
 import { helpers } from '#lib/view-helpers.js';
 import { csrf } from '#middleware/csrf.js';
+import { upload } from '#middleware/upload.js';
 import { flash } from '#middleware/flash.js';
 import { locals } from '#middleware/locals.js';
 import { errorHandler, notFoundHandler } from '#middleware/errors.js';
@@ -62,6 +63,7 @@ export function createApp() {
 
   app.use(locals);
   app.use(flash);
+  app.use(upload); // form có file: đọc multipart trước để csrf thấy _csrf
   app.use(csrf);
   app.use(loadUser);
   app.use(taskBadge);

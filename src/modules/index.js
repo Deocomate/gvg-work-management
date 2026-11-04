@@ -14,6 +14,8 @@ import tasksRoutes from './tasks/tasks.routes.js';
 import staffRoutes from './staff/staff.routes.js';
 import linksRoutes from './links/links.routes.js';
 import performanceRoutes from './performance/performance.routes.js';
+import customersRoutes from './customers/customers.routes.js';
+import { requireCustomerAccess } from './customers/customers.service.js';
 // [vibe:module-imports]
 
 export const modules = [
@@ -24,6 +26,7 @@ export const modules = [
   { path: '/staff', router: staffRoutes, middleware: [requireRole('admin')] },
   { path: '/links', router: linksRoutes, middleware: [requireAuth] }, // xem: mọi người; thêm/sửa/xoá: quản lý
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
+  { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + nhân viên được cấp quyền
   // [vibe:module-mounts]
 ];
 

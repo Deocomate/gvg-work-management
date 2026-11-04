@@ -92,3 +92,15 @@ window.api = async (url, { method = 'GET', body } = {}) => {
   if (!response.ok) throw new Error(data.error || `Lỗi ${response.status}`);
   return data;
 };
+
+// <input type="file" data-max-mb="10"> -> báo ngay khi chọn file quá lớn, khỏi chờ tải lên mới biết.
+document.addEventListener('change', (event) => {
+  const input = event.target;
+  if (!input.matches('input[type="file"][data-max-mb]')) return;
+  const maxMb = Number(input.dataset.maxMb);
+  const tooBig = [...input.files].some((f) => f.size > maxMb * 1024 * 1024);
+  if (tooBig) {
+    window.alert(`File quá lớn. Tối đa ${maxMb}MB, hãy chụp/scan nhỏ lại rồi chọn lại.`);
+    input.value = '';
+  }
+});

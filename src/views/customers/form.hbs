@@ -1,0 +1,100 @@
+{{#> page-header title=title}}
+  <a href="/customers" class="btn-secondary">← Danh sách</a>
+{{/page-header}}
+
+{{#if customer}}
+  {{!-- Hoá đơn đã có: để ngoài form chính vì mỗi nút Xoá là một form riêng --}}
+  <section class="card card-body mb-6 max-w-3xl space-y-4">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="form-section-title">Hoá đơn đã có</h2>
+      {{#if invoices.length}}<p class="text-sm text-ink-soft">{{invoices.length}} hoá đơn · Tổng <span class="font-semibold text-ink">{{formatNumber customer.invoice_total}} đ</span></p>{{/if}}
+    </div>
+    {{#if invoices.length}}
+      <ul class="divide-y divide-line">
+        {{#each invoices}}
+          <li class="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+            <span class="w-24 text-sm text-ink-faint tabular-nums">{{formatDay invoice_date}}</span>
+            <span class="min-w-28 font-semibold text-ink tabular-nums">{{#if amount}}{{formatNumber amount}} đ{{else}}<span class="font-normal text-ink-faint">—</span>{{/if}}</span>
+            <span class="min-w-0 flex-1 text-sm">
+              {{#if file_name}}<a href="/customers/{{../customer.id}}/invoices/{{id}}/file" target="_blank" rel="noopener" class="link font-normal break-all">📎 {{file_name}}</a>{{/if}}
+              {{#if note}}<span class="block text-xs text-ink-faint">{{note}}</span>{{/if}}
+            </span>
+            {{> form/delete-button action=(concat "/customers/" ../customer.id "/invoices/" id "/delete") confirm="Xoá hoá đơn này (cả file đính kèm)?"}}
+          </li>
+        {{/each}}
+      </ul>
+    {{else}}
+      <p class="text-sm text-ink-faint">Chưa có hoá đơn nào. Thêm ở mục "Thêm hoá đơn" bên dưới.</p>
+    {{/if}}
+  </section>
+{{/if}}
+
+<form method="post" action="{{#if customer}}/customers/{{customer.id}}{{else}}/customers{{/if}}" class="card card-body max-w-3xl space-y-8" enctype="multipart/form-data" novalidate>
+  {{> form/csrf}}
+  {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+  <section class="form-section">
+    <h2 class="form-section-title">Thông tin khách</h2>
+    {{> form/segmented name="customer_type" label="Loại khách" options=typeOptions value=values.customer_type error=errors.customer_type}}
+    <div class="grid gap-5 sm:grid-cols-2">
+      {{> form/field name="name" label="Tên khách hàng" value=values.name error=errors.name required=true placeholder="VD: Chị Nguyễn Thu Hà"}}
+      {{> form/field name="birthday" label="Ngày sinh" type="date" value=values.birthday error=errors.birthday clearLabel="Bỏ chọn" placeholder="Không bắt buộc" hint="Để chúc mừng sinh nhật, tặng ưu đãi"}}
+    </div>
+    <div class="grid gap-5 sm:grid-cols-2" data-show-when="customer_type!=personal">
+      {{> form/field name="company" label="Tên công ty" value=values.company error=errors.company placeholder="VD: Công ty TNHH ABC"}}
+      {{> form/field name="tax_code" label="Mã số thuế" value=values.tax_code error=errors.tax_code hint="Để xuất hoá đơn VAT"}}
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Liên hệ</h2>
+    <div class="grid gap-5 sm:grid-cols-2">
+      {{> form/field name="phone" label="Số điện thoại" type="tel" value=values.phone error=errors.phone placeholder="VD: 0912 345 678" hint="Không cho nhập trùng số đã có"}}
+      {{> form/field name="email" label="Email" type="email" value=values.email error=errors.email}}
+    </div>
+    {{> form/field name="address" label="Địa chỉ" value=values.address error=errors.address placeholder="Số nhà, đường, phường, tỉnh/thành"}}
+    {{!-- Mỗi kênh một ô: khách có thể có cả Zalo, Facebook, TikTok --}}
+    <div class="grid gap-5 sm:grid-cols-2">
+      {{> form/field name="zalo" label="Zalo" value=values.zalo error=errors.zalo placeholder="Số Zalo hoặc tên Zalo"}}
+      {{> form/field name="facebook" label="Facebook" value=values.facebook error=errors.facebook placeholder="Link hoặc tên Facebook"}}
+      {{> form/field name="tiktok" label="TikTok" value=values.tiktok error=errors.tiktok placeholder="@tên hoặc link TikTok"}}
+      {{> form/field name="social" label="Kênh khác" value=values.social error=errors.social placeholder="VD: Instagram @thuha, Shopee…"}}
+    </div>
+    <p class="hint">Cần ít nhất một cách liên lạc: số điện thoại, email, Zalo, Facebook hoặc TikTok. Kênh nào khách không dùng thì để trống.</p>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Chăm sóc & bán hàng</h2>
+    <div class="grid gap-5 sm:grid-cols-3">
+      {{> form/select name="source" label="Nguồn khách" options=sourceOptions value=values.source error=errors.source placeholder="Chọn nguồn"}}
+      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status}}
+      {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao"}}
+    </div>
+    {{> form/textarea name="interest" label="Mặt hàng quan tâm" value=values.interest error=errors.interest rows=2 placeholder="VD: Đặt 50 bộ quà Tết, ngân sách ~300k/bộ"}}
+    {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=3 hint="Lịch sử trao đổi, sở thích, lưu ý khi chăm sóc…"}}
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">{{#if customer}}Thêm hoá đơn mới{{else}}Hoá đơn{{/if}}</h2>
+    <div class="grid gap-5 sm:grid-cols-2">
+      {{> form/field name="invoice_amount" label="Giá trị hoá đơn (đ)" value=values.invoice_amount error=errors.invoice_amount placeholder="VD: 1.500.000"}}
+      {{> form/field name="invoice_date" label="Ngày hoá đơn" type="date" value=values.invoice_date error=errors.invoice_date}}
+    </div>
+    <div class="field">
+      <label for="f-invoice_file" class="label">File hoá đơn</label>
+      <input id="f-invoice_file" name="invoice_file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"
+        class="input file:mr-3 file:rounded-lg file:border-0 file:bg-raised file:px-3 file:py-1.5 file:text-sm file:text-ink{{#if errors.invoice_file}} input-error{{/if}}"
+        data-max-mb="{{maxUploadMb}}"
+        {{#if errors.invoice_file}}aria-invalid="true" aria-describedby="f-invoice_file-error"{{/if}}>
+      <p class="hint">PDF hoặc ảnh chụp (JPG, PNG), tối đa {{maxUploadMb}}MB.{{#if reselectFile}} <span class="text-sun-300">Nếu đã chọn file, hãy chọn lại trước khi lưu.</span>{{/if}}</p>
+      {{#if errors.invoice_file}}<p id="f-invoice_file-error" class="field-error">{{errors.invoice_file}}</p>{{/if}}
+    </div>
+    {{> form/field name="invoice_note" label="Ghi chú hoá đơn" value=values.invoice_note error=errors.invoice_note placeholder="VD: 20 bộ quà Tết, đã chuyển khoản"}}
+    <p class="hint">Không bắt buộc. Để trống giá trị và file thì không thêm hoá đơn.{{#if customer}} Khách mua thêm lần nữa thì thêm hoá đơn mới ở đây.{{/if}}</p>
+  </section>
+
+  <div class="flex gap-2">
+    <button type="submit" class="btn-primary">{{#if customer}}Lưu thay đổi{{else}}Thêm khách hàng{{/if}}</button>
+    <a href="/customers" class="btn-ghost">Huỷ</a>
+  </div>
+</form>

@@ -27,6 +27,8 @@ const base = {
     ROLES.map((r) => r.value),
     { error: 'Vai trò không hợp lệ' },
   ),
+  // Ô tick "Được xem & nhập Data khách hàng": có tick -> "1", không tick -> form không gửi gì.
+  can_customers: z.preprocess((v) => (v === '1' || v === 'on' || v === true || v === 1 ? 1 : 0), z.number()),
 };
 
 const password = z

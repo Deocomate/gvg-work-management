@@ -1,0 +1,91 @@
+{{#> page-header title="Data khách hàng" subtitle="Thông tin liên hệ, nhu cầu và tình trạng chăm sóc từng khách"}}
+  <a href="/customers/new" class="btn-primary">+ Thêm khách hàng</a>
+{{/page-header}}
+
+{{!-- Dải đếm theo trạng thái: bấm để lọc nhanh --}}
+<div class="mb-4 flex flex-wrap gap-2">
+  <a href="/customers" class="btn-sm {{#if filters.status}}btn-ghost{{else}}btn-secondary{{/if}}">Tất cả</a>
+  {{#each summary}}
+    <a href="/customers?status={{value}}" class="btn-sm {{#if (eq value @root.filters.status)}}btn-secondary{{else}}btn-ghost{{/if}}">
+      {{label}} <span class="{{badge}} ml-1">{{total}}</span>
+    </a>
+  {{/each}}
+</div>
+
+<form method="get" action="/customers" class="card card-body mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end">
+  <div class="field">
+    <label for="f-q" class="label">Tìm kiếm</label>
+    <input id="f-q" name="q" type="search" value="{{filters.q}}" class="input" placeholder="Tên, SĐT, Zalo, Facebook, công ty, mặt hàng…">
+  </div>
+  <div class="field">
+    <label for="f-status" class="label">Trạng thái</label>
+    <select id="f-status" name="status" class="input" data-autosubmit>
+      <option value="">Tất cả</option>
+      {{#each statusOptions}}<option value="{{value}}" {{selected value @root.filters.status}}>{{label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-source" class="label">Nguồn</label>
+    <select id="f-source" name="source" class="input" data-autosubmit>
+      <option value="">Tất cả</option>
+      {{#each sourceOptions}}<option value="{{value}}" {{selected value @root.filters.source}}>{{label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-owner" class="label">Phụ trách</label>
+    <select id="f-owner" name="owner" class="input" data-autosubmit>
+      <option value="">Tất cả</option>
+      {{#each ownerOptions}}<option value="{{value}}" {{selected value @root.filters.owner}}>{{label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="flex gap-2">
+    <button type="submit" class="btn-secondary">Tìm</button>
+    {{#if filtered}}<a href="/customers" class="btn-ghost">Xoá lọc</a>{{/if}}
+  </div>
+</form>
+
+{{#if customers.length}}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        {{!-- Màn hẹp: ẩn Nhu cầu, Nguồn (vẫn xem được khi bấm Sửa) để bảng không bị bóp --}}
+        <tr><th>Khách hàng</th><th>Liên hệ</th><th class="hidden xl:table-cell">Mặt hàng quan tâm</th><th class="text-right">Hoá đơn</th><th class="hidden lg:table-cell">Nguồn</th><th>Trạng thái</th><th class="hidden md:table-cell">Phụ trách</th><th class="text-right">Thao tác</th></tr>
+      </thead>
+      <tbody>
+        {{#each customers}}
+          <tr>
+            <td class="min-w-44">
+              <a href="/customers/{{id}}/edit" class="font-medium text-ink hover:underline">{{name}}</a>
+              {{#if company}}<p class="text-xs text-ink-faint">{{company}}</p>{{/if}}
+              <p class="text-xs text-ink-faint">Nhập {{formatDay created_at}}{{#if creator_name}} · {{creator_name}}{{/if}}</p>
+            </td>
+            <td class="whitespace-nowrap">
+              {{#if phone}}<a href="tel:{{phone}}" class="block hover:underline">{{phone}}</a>{{/if}}
+              {{#if email}}<a href="mailto:{{email}}" class="block text-xs text-ink-faint hover:underline">{{email}}</a>{{/if}}
+              {{#if zalo}}<p class="max-w-48 truncate text-xs text-ink-faint" title="Zalo: {{zalo}}"><span class="font-semibold text-ink-soft">Zalo</span> {{zalo}}</p>{{/if}}
+              {{#if facebook}}<p class="max-w-48 truncate text-xs text-ink-faint" title="Facebook: {{facebook}}"><span class="font-semibold text-ink-soft">FB</span> {{facebook}}</p>{{/if}}
+              {{#if tiktok}}<p class="max-w-48 truncate text-xs text-ink-faint" title="TikTok: {{tiktok}}"><span class="font-semibold text-ink-soft">TikTok</span> {{tiktok}}</p>{{/if}}
+              {{#if social}}<p class="max-w-48 truncate text-xs text-ink-faint" title="{{social}}">{{social}}</p>{{/if}}
+            </td>
+            <td class="hidden max-w-xs xl:table-cell"><p class="line-clamp-2 text-ink-soft">{{#if interest}}{{interest}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</p></td>
+            <td class="whitespace-nowrap text-right tabular-nums">
+              {{#if invoice_count}}<p class="font-medium text-ink">{{formatNumber invoice_total}} đ</p><p class="text-xs text-ink-faint">{{invoice_count}} hoá đơn</p>{{else}}<span class="text-ink-faint">—</span>{{/if}}
+            </td>
+            <td class="hidden whitespace-nowrap lg:table-cell">{{#if sourceLabel}}{{sourceLabel}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</td>
+            <td><span class="{{statusInfo.badge}} whitespace-nowrap">{{statusInfo.label}}</span></td>
+            <td class="hidden whitespace-nowrap md:table-cell">{{#if owner_name}}{{owner_name}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</td>
+            <td class="whitespace-nowrap text-right">
+              <a href="/customers/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
+              {{> form/delete-button action=(concat "/customers/" id "/delete") confirm="Xoá khách hàng này khỏi data?"}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  {{> pagination pagination}}
+{{else if filtered}}
+  {{> empty-state title="Không tìm thấy khách hàng phù hợp" text="Thử từ khoá khác hoặc bỏ bớt bộ lọc." actionHref="/customers" actionLabel="Xoá lọc"}}
+{{else}}
+  {{> empty-state title="Chưa có khách hàng nào" text="Nhập khách hàng đầu tiên: tên, số điện thoại, nhu cầu, nguồn khách…" actionHref="/customers/new" actionLabel="+ Thêm khách hàng"}}
+{{/if}}

@@ -91,7 +91,7 @@ test('quản lý mặc định thấy việc cả nhóm (khớp phiếu công vi
 test('trang Hôm nay có lịch cả tuần (T2–CN); bấm ngày khác vẫn thấy cả tuần, ngày đó được chọn', async () => {
   const html = (await hoa.get('/today')).text;
   assert.match(html, /T2[\s\S]*T3[\s\S]*T4[\s\S]*T5[\s\S]*T6[\s\S]*T7[\s\S]*CN/);
-  assert.match(html, /08:00<\/span> Họp sáng/);
+  assert.match(html, /08:00<\/span> <span class="font-medium">Họp sáng/);
   assert.match(html, new RegExp(`href="/today\\?date=${today}"[^>]*aria-current="date"`));
   // Chọn một ngày khác trong tuần: lịch tuần vẫn hiện việc hôm nay, chi tiết là ngày được chọn
   const other = weekDays(today).find((d) => d !== today);

@@ -182,6 +182,8 @@
   .badge-yellow { @apply badge bg-sun-400/15 text-sun-300; }
   .badge-red { @apply badge bg-brand-500/20 text-brand-300; }
   .badge-pink { @apply badge bg-bloom-400/15 text-bloom-300; }
+  .badge-blue { @apply badge bg-sky-400/15 text-sky-300 light:bg-sky-500/15 light:text-sky-700; }
+  .badge-orange { @apply badge bg-orange-400/15 text-orange-300 light:bg-orange-500/15 light:text-orange-700; }
 
   .alert-success { @apply alert border-pine-400/40 bg-pine-500/25 text-pine-200; }
   .alert-error { @apply alert border-brand-400/40 bg-brand-500/15 text-brand-300; }
