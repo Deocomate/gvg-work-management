@@ -55,7 +55,8 @@
         {{#each customers}}
           <tr>
             <td class="min-w-44">
-              <a href="/customers/{{id}}/edit" class="font-medium text-ink hover:underline">{{name}}</a>
+              {{!-- Bấm tên -> popup thẻ chi tiết (public/js/customer-card.js); không có JS thì mở trang chi tiết --}}
+              <a href="/customers/{{id}}" data-customer-card class="font-medium text-ink hover:underline">{{name}}</a>
               {{#if company}}<p class="text-xs text-ink-faint">{{company}}</p>{{/if}}
               <p class="text-xs text-ink-faint">Nhập {{formatDay created_at}}{{#if creator_name}} · {{creator_name}}{{/if}}</p>
             </td>
@@ -108,6 +109,9 @@
     </table>
   </div>
   {{> pagination pagination}}
+  <dialog id="customer-dialog" class="customer-dialog" aria-label="Chi tiết khách hàng"></dialog>
+  <script src="/vendor/html-to-image.js" defer></script>
+  <script src="/js/customer-card.js" defer></script>
 {{else if filtered}}
   {{> empty-state title="Không tìm thấy khách hàng phù hợp" text="Thử từ khoá khác hoặc bỏ bớt bộ lọc." actionHref="/customers" actionLabel="Xoá lọc"}}
 {{else}}

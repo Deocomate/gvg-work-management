@@ -2,8 +2,10 @@
 import { z } from 'zod';
 import { emptyToUndefined } from '#lib/validate.js';
 
+// Sale = nhân viên thường + được xem & nhập Data khách hàng.
 export const ROLES = [
   { value: 'member', label: 'Nhân viên', badge: 'badge-gray' },
+  { value: 'sale', label: 'Sale', badge: 'badge-orange' },
   { value: 'admin', label: 'Quản lý', badge: 'badge-pink' },
 ];
 
@@ -27,8 +29,6 @@ const base = {
     ROLES.map((r) => r.value),
     { error: 'Vai trò không hợp lệ' },
   ),
-  // Ô tick "Được xem & nhập Data khách hàng": có tick -> "1", không tick -> form không gửi gì.
-  can_customers: z.preprocess((v) => (v === '1' || v === 'on' || v === true || v === 1 ? 1 : 0), z.number()),
 };
 
 const password = z

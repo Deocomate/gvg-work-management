@@ -1,6 +1,6 @@
 import { get, run } from '#db';
 
-const PUBLIC_COLUMNS = 'id, email, name, role, can_customers, created_at';
+const PUBLIC_COLUMNS = 'id, email, name, role, created_at';
 
 export const findById = (id) => get(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = ?`, [id]);
 
@@ -9,10 +9,10 @@ export const findByEmailWithHash = (email) => get('SELECT * FROM users WHERE ema
 
 export const existsByEmail = async (email) => Boolean(await get('SELECT 1 FROM users WHERE email = ?', [email]));
 
-export async function create({ email, name, phone = null, passwordHash, role = 'member', can_customers = 0 }) {
+export async function create({ email, name, phone = null, passwordHash, role = 'member' }) {
   const { id } = await run(
-    'INSERT INTO users (email, name, phone, password_hash, role, can_customers) VALUES (?, ?, ?, ?, ?, ?)',
-    [email, name, phone, passwordHash, role, can_customers],
+    'INSERT INTO users (email, name, phone, password_hash, role) VALUES (?, ?, ?, ?, ?)',
+    [email, name, phone, passwordHash, role],
   );
   return findById(id);
 }

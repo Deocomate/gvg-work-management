@@ -13,7 +13,7 @@
           <td class="font-medium text-ink">{{name}}{{#if isMe}} <span class="text-xs font-normal text-ink-faint">(bạn)</span>{{/if}}</td>
           <td>{{email}}</td>
           <td class="whitespace-nowrap">{{#if phone}}<a href="tel:{{phone}}" class="hover:underline">{{phone}}</a>{{else}}<span class="text-ink-faint">—</span>{{/if}}</td>
-          <td class="whitespace-nowrap"><span class="{{roleInfo.badge}}">{{roleInfo.label}}</span>{{#if (and can_customers (eq role 'member'))}} <span class="badge-green" title="Được xem & nhập Data khách hàng">Data KH</span>{{/if}}</td>
+          <td class="whitespace-nowrap"><span class="{{roleInfo.badge}}">{{roleInfo.label}}</span></td>
           <td class="whitespace-nowrap text-right">
             <a href="/today?user={{id}}" class="btn-ghost btn-sm">Xem việc</a>
             <a href="/staff/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>

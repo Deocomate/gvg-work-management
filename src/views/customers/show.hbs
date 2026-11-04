@@ -1,0 +1,67 @@
+{{!--
+  Thẻ chi tiết khách hàng. Hai cách mở:
+  - Popup ở trang danh sách (bấm tên khách): ?modal=1, không layout, chèn vào <dialog id="customer-dialog">.
+  - Trang riêng /customers/:id (khi tắt JS hoặc mở link trực tiếp).
+  Thẻ .cust-card luôn là "giấy trắng" (không theo giao diện tối) để ảnh PNG/PDF tải về dễ đọc, dễ gửi khách.
+  Nút tải xử lý trong public/js/customer-card.js.
+--}}
+{{#unless modal}}
+  {{#> page-header title="Chi tiết khách hàng"}}
+    <a href="/customers" class="btn-ghost">← Danh sách</a>
+  {{/page-header}}
+{{/unless}}
+
+<div class="customer-sheet" data-customer-sheet>
+  <div class="customer-sheet-bar">
+    <button type="button" class="btn-secondary btn-sm" data-card-export="png">⬇ Tải PNG</button>
+    <button type="button" class="btn-secondary btn-sm" data-card-export="pdf">⬇ Tải PDF</button>
+    <a href="/customers/{{customer.id}}/edit" class="btn-ghost btn-sm">Sửa</a>
+    {{#if modal}}<button type="button" class="btn-ghost btn-sm ml-auto" data-dialog-close aria-label="Đóng">✕ Đóng</button>{{/if}}
+  </div>
+
+  <article class="cust-card" data-card data-filename="{{exportName}}">
+    <header class="cust-card-head">
+      <div>
+        <p class="cust-card-kicker">Thông tin khách hàng</p>
+        <h2 class="cust-card-name">{{customer.name}}</h2>
+        {{#if customer.company}}<p class="cust-card-sub">{{customer.company}}</p>{{/if}}
+      </div>
+      <span class="cust-status cust-status-{{customer.status}}">{{statusInfo.label}}</span>
+    </header>
+
+    <dl class="cust-card-info">
+      <div><dt>Số điện thoại</dt><dd>{{#if customer.phone}}{{customer.phone}}{{else}}<span class="cust-muted">—</span>{{/if}}</dd></div>
+      <div><dt>Trạng thái</dt><dd>{{statusInfo.label}}</dd></div>
+      <div class="cust-wide"><dt>Địa chỉ</dt><dd>{{#if customer.address}}{{customer.address}}{{else}}<span class="cust-muted">—</span>{{/if}}</dd></div>
+    </dl>
+
+    <section>
+      <h3 class="cust-card-title">Hoá đơn{{#if invoices.length}} ({{invoices.length}}){{/if}}</h3>
+      {{#if invoices.length}}
+        <table class="cust-invoices">
+          <thead><tr><th>#</th><th>Ngày</th><th>Ghi chú</th><th class="cust-num">Số tiền</th></tr></thead>
+          <tbody>
+            {{#each invoices}}
+              <tr>
+                <td>{{inc @index}}</td>
+                <td class="cust-nowrap">{{formatDay invoice_date}}</td>
+                <td>{{#if note}}{{note}}{{else}}<span class="cust-muted">—</span>{{/if}}</td>
+                <td class="cust-num">{{#if amount}}{{formatNumber amount}} đ{{else}}<span class="cust-muted">—</span>{{/if}}</td>
+              </tr>
+            {{/each}}
+          </tbody>
+          <tfoot><tr><td colspan="3">Tổng cộng</td><td class="cust-num">{{formatNumber customer.invoice_total}} đ</td></tr></tfoot>
+        </table>
+      {{else}}
+        <p class="cust-muted">Chưa có hoá đơn.</p>
+      {{/if}}
+    </section>
+
+    <footer class="cust-card-foot">{{appName}} · Xuất ngày {{formatDay printedAt}}</footer>
+  </article>
+</div>
+
+{{#unless modal}}
+  <script src="/vendor/html-to-image.js" defer></script>
+  <script src="/js/customer-card.js" defer></script>
+{{/unless}}

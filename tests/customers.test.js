@@ -6,8 +6,8 @@ import { loginAs, loginAsAdmin } from './auth-helpers.js';
 const { agent: admin } = await setup();
 await loginAsAdmin(admin);
 
-// Trang: nhân viên được cấp quyền Data khách hàng. Mai: nhân viên thường.
-await postForm(admin, '/staff', { name: 'Trang', email: 'trang@test.local', role: 'member', can_customers: '1', password: 'mat-khau-123' }, { from: '/staff/new' });
+// Trang: vai trò Sale (được dùng Data khách hàng). Mai: nhân viên thường.
+await postForm(admin, '/staff', { name: 'Trang', email: 'trang@test.local', role: 'sale', password: 'mat-khau-123' }, { from: '/staff/new' });
 await postForm(admin, '/staff', { name: 'Lê Mai', email: 'mai@test.local', role: 'member', password: 'mat-khau-123' }, { from: '/staff/new' });
 const { agent: trang } = await setup();
 await loginAs(trang, { email: 'trang@test.local', password: 'mat-khau-123' });
@@ -122,8 +122,9 @@ test('hai người nhập cùng một số cùng lúc -> chỉ lưu một', asyn
     add(admin, { name: 'Song song B', phone: '0977 000 111' }),
   ]);
   assert.deepEqual(results.map((r) => r.status).sort(), [302, 422]);
-  const page = (await admin.get('/customers?q=0977000111')).text;
-  assert.equal((page.match(/Song song/g) ?? []).length, 1);
+  // Chỉ đếm trong bảng: nếu admin là người lưu được, thông báo "Đã thêm khách hàng Song song B" cũng hiện trên trang.
+  const rows = (await admin.get('/customers?q=0977000111')).text.split('<tbody>')[1] ?? '';
+  assert.equal((rows.match(/Song song/g) ?? []).length, 1);
 });
 
 test('tìm theo tên, số điện thoại; lọc theo trạng thái, nguồn', async () => {
@@ -224,6 +225,34 @@ test('sửa khách: thêm hoá đơn thứ hai (chỉ file ảnh), tổng cộng
   assert.match(list, /03\/11\/2026 · 500\.000 đ/);
 });
 
+test('bấm tên khách -> thẻ chi tiết: tên, SĐT, địa chỉ, trạng thái, từng hoá đơn và tổng tiền', async () => {
+  const id = await idOf('Chị Hoa');
+  assert.match((await admin.get('/customers?q=Chị Hoa')).text, new RegExp(`href="/customers/${id}" data-customer-card`));
+
+  // Popup: chỉ khung thẻ, không layout
+  const modal = await trang.get(`/customers/${id}?modal=1`);
+  assert.equal(modal.status, 200);
+  assert.doesNotMatch(modal.text, /<html/);
+  assert.match(modal.text, /Chị Hoa/);
+  assert.match(modal.text, /0901222333/);
+  assert.match(modal.text, /Hoá đơn \(2\)/);
+  assert.match(modal.text, /01\/11\/2026[\s\S]*Đã chuyển khoản[\s\S]*1\.500\.000 đ/);
+  assert.match(modal.text, /500\.000 đ/);
+  assert.match(modal.text, /Tổng cộng[\s\S]*2\.000\.000 đ/);
+  assert.match(modal.text, /data-card-export="png"/);
+  assert.match(modal.text, /data-card-export="pdf"/);
+  assert.match(modal.text, /data-filename="khach-hang-chi-hoa"/);
+
+  // Mở link trực tiếp: trang đầy đủ có nạp script xuất file
+  const page = await trang.get(`/customers/${id}`);
+  assert.match(page.text, /<html/);
+  assert.match(page.text, /\/vendor\/html-to-image\.js/);
+  assert.equal((await trang.get('/vendor/html-to-image.js')).status, 200);
+
+  assert.equal((await mai.get(`/customers/${id}?modal=1`)).status, 403);
+  assert.equal((await admin.get('/customers/99999')).status, 404);
+});
+
 test('hoá đơn sai: file không phải PDF/ảnh, giá trị chữ, chỉ có ghi chú -> báo lỗi, không lưu gì', async () => {
   const exe = await postMultipart(trang, '/customers', { name: 'Khách lỗi', phone: '0901999888' }, { from: '/customers/new', file: { buffer: Buffer.from('MZ fake program content here'), name: 'hoadon.pdf' } });
   assert.equal(exe.status, 422);
@@ -266,12 +295,26 @@ test('id lạ -> 404', async () => {
   assert.equal((await postForm(admin, '/customers/99999/delete', {}, { from: '/customers' })).status, 404);
 });
 
-test('quản lý bỏ quyền -> Trang không vào được nữa', async () => {
+test('vai trò Sale: hiện trong danh sách nhân viên; quản lý đổi Trang về Nhân viên -> không vào được nữa', async () => {
   const staff = (await admin.get('/staff')).text;
-  const trangId = staff.split('<tr>').slice(1).find((r) => r.includes('trang@test.local')).match(/\/staff\/(\d+)\/edit/)[1];
-  assert.match(staff, /Data KH/);
-  assert.match((await admin.get(`/staff/${trangId}/edit`)).text, /name="can_customers" value="1" class="[^"]*" checked/);
+  const trangRow = staff.split('<tr>').slice(1).find((r) => r.includes('trang@test.local'));
+  const trangId = trangRow.match(/\/staff\/(\d+)\/edit/)[1];
+  assert.match(trangRow, />Sale</);
+  assert.match((await admin.get(`/staff/${trangId}/edit`)).text, /name="role" value="sale" checked/);
+  // Sale vẫn là nhân viên: không vào được trang quản lý
+  assert.equal((await trang.get('/staff')).status, 403);
+  assert.equal((await trang.get('/performance')).status, 403);
 
   await postForm(admin, `/staff/${trangId}`, { name: 'Trang', email: 'trang@test.local', role: 'member' }, { from: `/staff/${trangId}/edit` });
   assert.equal((await trang.get('/customers')).status, 403);
+  assert.doesNotMatch((await trang.get('/links')).text, /href="\/customers"/);
+
+  await postForm(admin, `/staff/${trangId}`, { name: 'Trang', email: 'trang@test.local', role: 'sale' }, { from: `/staff/${trangId}/edit` });
+  assert.equal((await trang.get('/customers')).status, 200);
+});
+
+test('vai trò lạ -> báo lỗi, không lưu', async () => {
+  const res = await postForm(admin, '/staff', { name: 'Lạ', email: 'la@test.local', role: 'boss', password: 'mat-khau-123' }, { from: '/staff/new' });
+  assert.equal(res.status, 422);
+  assert.match(res.text, /Vai trò không hợp lệ/);
 });

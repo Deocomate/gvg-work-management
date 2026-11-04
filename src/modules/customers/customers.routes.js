@@ -1,4 +1,4 @@
-// Data khách hàng: quản lý + nhân viên được cấp quyền (requireCustomerAccess gắn trong modules/index.js).
+// Data khách hàng: quản lý + Sale (requireCustomerAccess gắn trong modules/index.js).
 // Ai có quyền thì xem, thêm, sửa, xoá được hết.
 import { Router } from 'express';
 import { numericId } from '#middleware/params.js';
@@ -11,6 +11,7 @@ router.param('invoiceId', numericId);
 router.get('/', controller.index);
 router.get('/new', controller.newForm);
 router.post('/', controller.create);
+router.get('/:id', controller.show);
 router.get('/:id/edit', controller.editForm);
 router.post('/:id', controller.update);
 router.post('/:id/delete', controller.destroy);

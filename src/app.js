@@ -46,6 +46,10 @@ export function createApp() {
 
   app.use(helmet({ contentSecurityPolicy: { directives: { 'upgrade-insecure-requests': null } } }));
   app.use(express.static(path.join(ROOT, 'public'), { maxAge: config.isProd ? '7d' : 0 }));
+  // Thư viện chụp ảnh khung HTML (tải PNG/PDF thẻ khách hàng). Phục vụ từ node_modules vì CSP chỉ cho script cùng nguồn.
+  app.get('/vendor/html-to-image.js', (req, res) =>
+    res.sendFile(path.join(ROOT, 'node_modules', 'html-to-image', 'dist', 'html-to-image.js'), { maxAge: config.isProd ? '7d' : 0 }),
+  );
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(express.json({ limit: '1mb' }));
   app.use(

@@ -1,4 +1,4 @@
-// Nghiệp vụ Data khách hàng. Ai vào được: quản lý + nhân viên được tick quyền ở trang Nhân viên.
+// Nghiệp vụ Data khách hàng. Ai vào được: quản lý + nhân viên vai trò Sale.
 import { forbidden, notFound } from '#lib/errors.js';
 import { validate } from '#lib/validate.js';
 import * as staffRepo from '#modules/staff/staff.repo.js';
@@ -6,12 +6,12 @@ import { todayISO } from '#lib/dates.js';
 import { CUSTOMER_SOURCES, CUSTOMER_STATUSES, customerSchema, detectInvoiceType, invoiceSchema, phoneDigits } from './customers.schema.js';
 import * as repo from './customers.repo.js';
 
-export const canUseCustomers = (user) => user?.role === 'admin' || Number(user?.can_customers) === 1;
+export const canUseCustomers = (user) => user?.role === 'admin' || user?.role === 'sale';
 
 /** Middleware: chặn người không có quyền xem Data khách hàng. */
 export function requireCustomerAccess(req, res, next) {
   if (canUseCustomers(req.user)) return next();
-  next(forbidden('Bạn chưa được cấp quyền xem Data khách hàng. Hãy nhờ quản lý cấp quyền ở trang Nhân viên.'));
+  next(forbidden('Chỉ quản lý và Sale được xem Data khách hàng. Hãy nhờ quản lý đổi vai trò của bạn thành Sale ở trang Nhân viên.'));
 }
 
 const pick = (list, value) => (list.some((o) => o.value === value) ? value : '');
@@ -48,6 +48,19 @@ export async function getCustomer(id) {
   const customer = await repo.findById(id);
   if (!customer) throw notFound('Không tìm thấy khách hàng này.');
   return customer;
+}
+
+/** Tên file khi tải thẻ khách: "khach-hang-nguyen-thu-ha" (bỏ dấu, chỉ chữ thường, số và gạch). */
+export function exportFileName(name) {
+  const slug = String(name ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return slug ? `khach-hang-${slug}` : 'khach-hang';
 }
 
 /** Kiểm tra + chuẩn hoá dữ liệu form. Trả về { ok, data } hoặc { ok: false, errors }. */

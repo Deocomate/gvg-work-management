@@ -21,14 +21,7 @@
     {{/if}}
     {{> form/segmented name="role" label="Vai trò" options=roleOptions value=values.role error=errors.role}}
   </div>
-  <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
-    <input type="checkbox" name="can_customers" value="1" class="mt-1 h-4 w-4 accent-pine-500" {{checked (eq values.can_customers 1)}}>
-    <span>
-      <span class="block text-sm font-medium text-ink">Được xem & nhập Data khách hàng</span>
-      <span class="hint">Quản lý luôn có quyền này. Tick cho nhân viên phụ trách khách hàng (VD: sale, CSKH).</span>
-    </span>
-  </label>
-  <p class="hint">Quản lý: giao việc cho mọi người và quản lý nhân viên. Nhân viên: xem việc của mình, tự thêm việc cá nhân, đánh dấu hoàn thành.</p>
+  <p class="hint">Nhân viên: xem việc của mình, tự thêm việc cá nhân, đánh dấu hoàn thành. Sale: như nhân viên, thêm quyền xem & nhập Data khách hàng. Quản lý: giao việc cho mọi người, quản lý nhân viên và Data khách hàng.</p>
 
   <div class="flex gap-2 pt-2">
     <button type="submit" class="btn-primary">{{#if staff}}Lưu thay đổi{{else}}Thêm nhân viên{{/if}}</button>

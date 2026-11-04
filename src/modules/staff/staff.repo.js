@@ -1,7 +1,7 @@
 // Quản lý tài khoản (bảng users). Tạo tài khoản dùng chung auth.repo.create.
 import { all, get, run } from '#db';
 
-const PUBLIC_COLUMNS = 'id, email, name, phone, role, can_customers, created_at';
+const PUBLIC_COLUMNS = 'id, email, name, phone, role, created_at';
 
 export const listAll = () =>
   all(`SELECT ${PUBLIC_COLUMNS} FROM users ORDER BY role = 'admin' DESC, name COLLATE NOCASE`);
@@ -17,10 +17,10 @@ export async function countAdmins() {
   return Number(row.total);
 }
 
-export async function update(id, { name, email, phone = null, role, can_customers = 0 }) {
+export async function update(id, { name, email, phone = null, role }) {
   await run(
-    `UPDATE users SET name = ?, email = ?, phone = ?, role = ?, can_customers = ?, updated_at = datetime('now') WHERE id = ?`,
-    [name, email, phone, role, can_customers, id],
+    `UPDATE users SET name = ?, email = ?, phone = ?, role = ?, updated_at = datetime('now') WHERE id = ?`,
+    [name, email, phone, role, id],
   );
   return findById(id);
 }

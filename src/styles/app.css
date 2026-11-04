@@ -368,4 +368,45 @@
   @media (prefers-reduced-motion: reduce) {
     .holiday-tag, .holiday-hang { animation: none; }
   }
+
+  /* Popup + thẻ chi tiết khách hàng (customers/show.hbs). Thẻ luôn nền giấy trắng để ảnh/PDF tải về dễ đọc. */
+  .customer-dialog { @apply m-auto w-[calc(100%-2rem)] max-w-2xl bg-transparent p-0 text-ink backdrop:bg-black/60 backdrop:backdrop-blur-sm; }
+  .customer-dialog-loading { @apply rounded-xl bg-surface p-6 text-center text-sm text-ink-soft; }
+  .customer-sheet { @apply mx-auto max-w-2xl space-y-3; }
+  .customer-sheet-bar { @apply flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-2; }
+
+  .cust-card {
+    @apply space-y-5 rounded-xl p-6 sm:p-8;
+    background: #fff;
+    color: #1f2328;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .cust-card-head { @apply flex items-start justify-between gap-4 border-b pb-4; border-color: #e5e7eb; }
+  .cust-card-kicker { @apply text-xs font-semibold tracking-wider uppercase; color: #6c4f8b; }
+  .cust-card-name { @apply mt-1 text-2xl font-bold break-words; color: #111827; }
+  .cust-card-sub { @apply text-sm; color: #6b7280; }
+  .cust-card-info { @apply grid gap-x-6 gap-y-3 sm:grid-cols-2; }
+  .cust-card-info dt { @apply text-xs font-medium tracking-wide uppercase; color: #6b7280; }
+  .cust-card-info dd { @apply mt-0.5 font-medium break-words; color: #111827; }
+  .cust-card-info .cust-wide { @apply sm:col-span-2; }
+  .cust-card-title { @apply mb-2 text-sm font-semibold tracking-wide uppercase; color: #374151; }
+  .cust-invoices { @apply w-full border-collapse text-sm; }
+  .cust-invoices th { @apply px-2 py-2 text-left text-xs font-semibold uppercase; color: #6b7280; background: #f3f4f6; }
+  .cust-invoices td { @apply border-b px-2 py-2 align-top; border-color: #e5e7eb; color: #1f2328; }
+  .cust-invoices tfoot td { @apply border-b-0 pt-3 text-base font-bold; color: #111827; }
+  .cust-num { @apply text-right whitespace-nowrap tabular-nums; }
+  .cust-nowrap { @apply whitespace-nowrap; }
+  .cust-muted { color: #9ca3af; }
+  .cust-card-foot { @apply border-t pt-3 text-xs; border-color: #e5e7eb; color: #9ca3af; }
+
+  /* Màu trạng thái trên giấy trắng (cùng tông với badge ở danh sách) */
+  .cust-status { @apply shrink-0 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap; }
+  .cust-status-new { background: #e0f2fe; color: #0369a1; }
+  .cust-status-consulting { background: #fef3c7; color: #a16207; }
+  .cust-status-deposited { background: #ffedd5; color: #c2410c; }
+  .cust-status-bought { background: #dcfce7; color: #15803d; }
+  .cust-status-loyal { background: #fce7f3; color: #be185d; }
+  .cust-status-stopped { background: #f3f4f6; color: #4b5563; }
 }

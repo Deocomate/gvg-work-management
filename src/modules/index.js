@@ -26,7 +26,7 @@ export const modules = [
   { path: '/staff', router: staffRoutes, middleware: [requireRole('admin')] },
   { path: '/links', router: linksRoutes, middleware: [requireAuth] }, // xem: mọi người; thêm/sửa/xoá: quản lý
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
-  { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + nhân viên được cấp quyền
+  { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + Sale
   // [vibe:module-mounts]
 ];
 
