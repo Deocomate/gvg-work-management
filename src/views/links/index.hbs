@@ -9,16 +9,16 @@
   {{!-- Cột thư mục: máy tính là cột dọc bên trái, điện thoại là hàng nút trượt ngang --}}
   <nav class="links-folders" aria-label="Thư mục tài liệu">
     <a href="/links" class="folder-item {{#unless current}}{{#unless query}}folder-item-active{{/unless}}{{/unless}}">
-      <span class="truncate">📚 Tất cả</span><span class="folder-count">{{total}}</span>
+      <span class="truncate">Tất cả</span><span class="folder-count">{{total}}</span>
     </a>
     {{#each folders}}
       <a href="/links?folder={{id}}" class="folder-item {{#if (eq id @root.current.id)}}folder-item-active{{/if}}">
-        <span class="truncate">📁 {{name}}</span><span class="folder-count">{{total}}</span>
+        <span class="truncate">{{name}}</span><span class="folder-count">{{total}}</span>
       </a>
     {{/each}}
     {{#if unsortedTotal}}
       <a href="/links?folder=none" class="folder-item {{#if current.unsorted}}folder-item-active{{/if}}">
-        <span class="truncate">🗂 Chưa phân loại</span><span class="folder-count">{{unsortedTotal}}</span>
+        <span class="truncate">Chưa phân loại</span><span class="folder-count">{{unsortedTotal}}</span>
       </a>
     {{/if}}
   </nav>
@@ -51,7 +51,7 @@
               <p class="font-medium text-ink">{{title}}</p>
               {{#if note}}<p class="text-xs text-ink-faint">{{note}}</p>{{/if}}
               <p class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                {{#unless @root.current}}<span class="badge-gray">📁 {{default folder_name "Chưa phân loại"}}</span>{{/unless}}
+                {{#unless @root.current}}<span class="badge-gray">{{default folder_name "Chưa phân loại"}}</span>{{/unless}}
                 <a href="{{url}}" target="_blank" rel="noopener noreferrer" class="link max-w-full truncate font-normal">{{url}}</a>
               </p>
             </div>

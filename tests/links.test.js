@@ -83,7 +83,7 @@ test('id lạ -> 404', async () => {
 const addFolder = (name) => postForm(admin, '/links/folders', { name }, { from: '/links/folders/new' });
 const folderIdOf = async (name) => {
   const html = (await admin.get('/links')).text;
-  const item = html.split('<a href="/links?folder=').find((part) => part.includes(`📁 ${name}<`));
+  const item = html.split('<a href="/links?folder=').find((part) => part.includes(`">${name}<`));
   return item.match(/^(\d+)/)[1];
 };
 
@@ -139,7 +139,7 @@ test('đổi tên, xoá thư mục -> link bên trong chuyển về Chưa phân 
   const id = await folderIdOf('Biểu mẫu nhân sự');
   assert.equal((await postForm(admin, `/links/folders/${id}`, { name: 'quy TRÌNH' }, { from: '/links' })).status, 422); // trùng tên
   assert.equal((await postForm(admin, `/links/folders/${id}`, { name: 'Biểu mẫu' }, { from: '/links' })).status, 302);
-  assert.match((await mai.get('/links')).text, /📁 Biểu mẫu</);
+  assert.match((await mai.get('/links')).text, /">Biểu mẫu</);
 
   assert.equal((await postForm(admin, `/links/folders/${id}/delete`, {}, { from: '/links' })).status, 302);
   assert.equal((await mai.get(`/links?folder=${id}`)).status, 404);
