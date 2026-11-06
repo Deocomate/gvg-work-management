@@ -143,13 +143,13 @@ test('tìm theo tên, số điện thoại; lọc theo trạng thái, nguồn', 
   assert.match(fb, /Chị Thu Hà/);
   assert.doesNotMatch(fb, /Anh Minh/);
 
-  await add(admin, { name: 'Chị Zalo Thôi', zalo: 'chi.zalo' });
-  const hasPhone = (await trang.get('/customers?phone=has')).text;
+  await add(admin, { name: 'Chị Zalo Thôi', zalo: 'chi.zalo', tiktok: '@chizalo', interest: 'Bộ ấm trà' });
+  const hasPhone = (await trang.get('/customers?info=phone')).text;
   assert.match(hasPhone, /Anh Minh/);
   assert.doesNotMatch(hasPhone, /Chị Zalo Thôi/);
-  const noPhone = (await trang.get('/customers?phone=none')).text;
-  assert.match(noPhone, /Chị Zalo Thôi/);
-  assert.doesNotMatch(noPhone, /Anh Minh/);
+  assert.match((await trang.get('/customers?info=tiktok')).text, /Chị Zalo Thôi/);
+  assert.match((await trang.get('/customers?info=interest')).text, /Chị Zalo Thôi/);
+  assert.doesNotMatch((await trang.get('/customers?info=address')).text, /Chị Zalo Thôi/);
 
   const none = await trang.get('/customers?q=khongcoai');
   assert.match(none.text, /Không tìm thấy khách hàng phù hợp/);

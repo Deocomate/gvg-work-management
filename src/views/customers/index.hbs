@@ -39,11 +39,10 @@
     </select>
   </div>
   <div class="field">
-    <label for="f-phone" class="label">SĐT</label>
-    <select id="f-phone" name="phone" class="input" data-autosubmit>
+    <label for="f-info" class="label">Thông tin</label>
+    <select id="f-info" name="info" class="input" data-autosubmit>
       <option value="">Tất cả</option>
-      <option value="has" {{selected "has" filters.phone}}>Đã có SĐT</option>
-      <option value="none" {{selected "none" filters.phone}}>Chưa có SĐT</option>
+      {{#each infoOptions}}<option value="{{value}}" {{selected value @root.filters.info}}>{{label}}</option>{{/each}}
     </select>
   </div>
   <div class="flex gap-2">

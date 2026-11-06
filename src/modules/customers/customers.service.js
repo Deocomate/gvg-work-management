@@ -3,7 +3,7 @@ import { forbidden, notFound } from '#lib/errors.js';
 import { validate } from '#lib/validate.js';
 import * as staffRepo from '#modules/staff/staff.repo.js';
 import { todayISO } from '#lib/dates.js';
-import { CUSTOMER_SOURCES, CUSTOMER_STATUSES, customerSchema, detectInvoiceType, invoiceSchema, phoneDigits } from './customers.schema.js';
+import { CUSTOMER_INFO_FILTERS, CUSTOMER_SOURCES, CUSTOMER_STATUSES, customerSchema, detectInvoiceType, invoiceSchema, phoneDigits } from './customers.schema.js';
 import * as repo from './customers.repo.js';
 
 export const canUseCustomers = (user) => user?.role === 'admin' || user?.role === 'sale';
@@ -24,8 +24,8 @@ export function parseFilters(query = {}) {
     status: pick(CUSTOMER_STATUSES, query.status),
     source: pick(CUSTOMER_SOURCES, query.source),
     owner: owner > 0 ? owner : '',
-    // has = đã có SĐT, none = chưa có SĐT
-    phone: ['has', 'none'].includes(query.phone) ? query.phone : '',
+    // VD phone = đã có SĐT, interest = đã trả lời nhu cầu
+    info: pick(CUSTOMER_INFO_FILTERS, query.info),
   };
 }
 

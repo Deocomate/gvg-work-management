@@ -7,6 +7,15 @@ export const CUSTOMER_TYPES = [
   { value: 'business', label: 'Doanh nghiệp' },
 ];
 
+// Lọc khách đã có thông tin nào (VD: đã có SĐT để gọi, đã trả lời nhu cầu). value = tên trường, repo tự map -> cột.
+export const CUSTOMER_INFO_FILTERS = [
+  { value: 'phone', label: 'Đã có SĐT' },
+  { value: 'facebook', label: 'Đã có Facebook' },
+  { value: 'tiktok', label: 'Đã có TikTok' },
+  { value: 'address', label: 'Đã có địa chỉ' },
+  { value: 'interest', label: 'Đã trả lời nhu cầu' },
+];
+
 // Nguồn khách: biết kênh nào mang về nhiều khách để đầu tư đúng chỗ.
 export const CUSTOMER_SOURCES = [
   { value: 'facebook', label: 'Facebook' },

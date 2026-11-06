@@ -14,8 +14,11 @@ const FROM = `FROM customers c
 // Các cột ô "Tìm kiếm" dò theo (ngoài số điện thoại).
 const SEARCH_COLUMNS = ['c.name', 'c.company', 'c.email', 'c.zalo', 'c.facebook', 'c.tiktok', 'c.social', 'c.interest'];
 
+// Cột cho bộ lọc "Thông tin" đã có (whitelist, không ghép chuỗi người dùng vào SQL).
+const INFO_COLUMNS = { phone: 'c.phone_digits', facebook: 'c.facebook', tiktok: 'c.tiktok', address: 'c.address', interest: 'c.interest' };
+
 /** Điều kiện lọc dùng chung cho danh sách và đếm. */
-function where({ q, status, source, owner, phone }) {
+function where({ q, status, source, owner, info }) {
   const parts = [];
   const args = [];
   if (q) {
@@ -42,8 +45,8 @@ function where({ q, status, source, owner, phone }) {
     parts.push('c.owner_id = ?');
     args.push(owner);
   }
-  if (phone === 'has') parts.push("COALESCE(c.phone_digits, '') <> ''");
-  if (phone === 'none') parts.push("COALESCE(c.phone_digits, '') = ''");
+  const infoCol = Object.hasOwn(INFO_COLUMNS, info) ? INFO_COLUMNS[info] : null;
+  if (infoCol) parts.push(`TRIM(COALESCE(${infoCol}, '')) <> ''`);
   const conditionsSql = parts.join(' AND ');
   return { whereSql: parts.length ? `WHERE ${conditionsSql}` : '', args };
 }

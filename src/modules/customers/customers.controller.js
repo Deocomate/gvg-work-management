@@ -3,7 +3,7 @@ import { buildPagination, parsePage } from '#lib/pagination.js';
 import { todayISO } from '#lib/dates.js';
 import { MAX_UPLOAD_MB } from '#middleware/upload.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
-import { CUSTOMER_SOURCES, CUSTOMER_STATUSES, CUSTOMER_TYPES } from './customers.schema.js';
+import { CUSTOMER_INFO_FILTERS, CUSTOMER_SOURCES, CUSTOMER_STATUSES, CUSTOMER_TYPES } from './customers.schema.js';
 import * as service from './customers.service.js';
 
 const byValue = (list) => Object.fromEntries(list.map((o) => [o.value, o]));
@@ -44,6 +44,7 @@ export async function index(req, res) {
     filtered: Object.keys(query).length > 0,
     sourceOptions: CUSTOMER_SOURCES,
     statusOptions: CUSTOMER_STATUSES,
+    infoOptions: CUSTOMER_INFO_FILTERS,
     ownerOptions: owners,
     pagination: buildPagination({ ...page, total, query }),
   });
