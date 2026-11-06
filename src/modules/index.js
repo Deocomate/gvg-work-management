@@ -16,6 +16,7 @@ import linksRoutes from './links/links.routes.js';
 import performanceRoutes from './performance/performance.routes.js';
 import customersRoutes from './customers/customers.routes.js';
 import { requireCustomerAccess } from './customers/customers.service.js';
+import planRoutes from './plan/plan.routes.js';
 // [vibe:module-imports]
 
 export const modules = [
@@ -27,6 +28,7 @@ export const modules = [
   { path: '/links', router: linksRoutes, middleware: [requireAuth] }, // xem: mọi người; thêm/sửa/xoá: quản lý
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
   { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + Sale
+  { path: '/plan', router: planRoutes, middleware: [requireAuth] }, // Idea bank + lịch quay/đăng; mọi người
   // [vibe:module-mounts]
 ];
 

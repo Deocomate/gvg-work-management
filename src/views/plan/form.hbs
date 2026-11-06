@@ -1,0 +1,46 @@
+{{#> page-header title=title}}
+  <a href="{{back}}" class="btn-secondary">← Quay lại</a>
+{{/page-header}}
+
+<form method="post" action="{{#if plan}}/plan/{{plan.id}}{{else}}/plan{{/if}}" class="card card-body max-w-3xl" novalidate>
+  {{> form/csrf}}
+  <input type="hidden" name="back" value="{{back}}">
+  {{#if errors._form}}<div class="alert-error mb-5">{{errors._form}}</div>{{/if}}
+
+  <div class="form-section">
+    <h2 class="form-section-title">Ý tưởng</h2>
+    {{> form/field name="title" label="Tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Quy trình làm một chiếc bình từ đất sét"}}
+    {{> form/textarea name="description" label="Nội dung / kịch bản ngắn" value=values.description error=errors.description rows=4 hint="Không bắt buộc. Hook, ý chính, cảnh cần quay…"}}
+    {{> form/segmented name="platform" label="Kênh đăng" options=platformOptions value=values.platform error=errors.platform}}
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="field">
+        <label for="f-topic" class="label">Nhóm / chủ đề</label>
+        <input id="f-topic" name="topic" type="text" value="{{values.topic}}" list="plan-topics" class="input{{#if errors.topic}} input-error{{/if}}" placeholder="VD: Hậu trường, Review sản phẩm">
+        <datalist id="plan-topics">{{#each topics}}<option value="{{topic}}"></option>{{/each}}</datalist>
+        <p class="hint">Gõ mới hoặc chọn nhóm đã có, để lọc ở Idea bank.</p>
+        {{#if errors.topic}}<p class="field-error">{{errors.topic}}</p>{{/if}}
+      </div>
+      {{> form/field name="reference_url" label="Link tham khảo" type="url" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/..." hint="Video mẫu, bài viết gợi ý… (không bắt buộc)"}}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h2 class="form-section-title">Lịch quay / đăng</h2>
+    <p class="hint -mt-2">Để trống nếu chưa chốt — ý tưởng nằm trong Idea bank. Có ngày thì hiện trên lịch.</p>
+    <div class="grid gap-4 sm:grid-cols-3">
+      {{> form/field name="shoot_date" label="Ngày quay" type="date" value=values.shoot_date error=errors.shoot_date clearLabel="Chưa chốt"}}
+      {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
+      {{> form/field name="post_time" label="Giờ đăng" type="time" value=values.post_time error=errors.post_time clearLabel="Chưa chốt"}}
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao"}}
+      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì “Ý tưởng” tự thành “Đã lên lịch”."}}
+    </div>
+    {{> form/field name="post_url" label="Link bài đã đăng" type="url" value=values.post_url error=errors.post_url placeholder="https://..." hint="Dán sau khi đăng để cả nhóm xem lại."}}
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 border-t border-line pt-5">
+    <button type="submit" class="btn-primary">{{#if plan}}Lưu thay đổi{{else}}Thêm ý tưởng{{/if}}</button>
+    <a href="{{back}}" class="btn-ghost">Huỷ</a>
+  </div>
+</form>

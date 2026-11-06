@@ -18,6 +18,7 @@
       {{#if currentUser}}
         {{> nav-link href="/today" label="Hôm nay" count=todayUnfinished}}
         {{> nav-link href="/calendar" label="Tháng"}}
+        {{> nav-link href="/plan" label="Plan"}}
         {{> nav-link href="/links" label="Tài liệu"}}
         {{#if (or (eq currentUser.role 'admin') (eq currentUser.role 'sale'))}}
           {{> nav-link href="/customers" label="Data khách hàng"}}

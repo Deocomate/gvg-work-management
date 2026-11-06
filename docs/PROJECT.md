@@ -34,6 +34,11 @@
 - [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
 - [x] Trang trí ngày lễ: tự bật 7 ngày trước lễ (thẻ tròn đếm ngược treo góc phải menu, đồ treo dưới menu, emoji rơi nhẹ phía sau nội dung, menu hắt màu lễ), hết lễ tự trở lại bình thường. Lễ: Năm mới, Tết (tới mùng 4), Valentine, 8/3, 30/4–1/5, 2/9, Trung thu, 20/10, Halloween, 20/11, Giáng sinh
 - [x] Data khách hàng (`/customers`, menu "Data khách hàng"): quản lý + nhân viên vai trò **Sale** (VD: chị Trang) xem/thêm/sửa/xoá. Bấm tên khách mở thẻ chi tiết, tải PNG/PDF. Trường: loại khách (cá nhân/doanh nghiệp), tên, ngày sinh, công ty + MST (khi là doanh nghiệp), SĐT, email, Zalo, Facebook, TikTok, kênh khác (mỗi kênh một ô), địa chỉ, nguồn khách, trạng thái chăm sóc (Mới → Đang tư vấn → Đã mua → Khách quen / Ngừng), người phụ trách, mặt hàng quan tâm, ghi chú, người nhập. Hoá đơn: mỗi lần mua thêm một hoá đơn (ngày, giá trị, file PDF/ảnh ≤10MB, ghi chú hoá đơn) ngay trong form khách; trang sửa khách liệt kê hoá đơn (mở file, xoá), danh sách khách hiện tổng giá trị + số hoá đơn. Tìm theo tên/SĐT/công ty/email/mặt hàng, lọc trạng thái/nguồn/phụ trách, đếm theo trạng thái. Chặn trùng số điện thoại
+- [x] Plan nội dung (`/plan`, menu "Plan", mọi người dùng): 2 tab con
+  - **Idea bank**: ghi ý tưởng (tên, nội dung/kịch bản ngắn, kênh TikTok/Facebook/Instagram/YouTube/Khác, nhóm/chủ đề gõ tự do có gợi ý, link tham khảo). Lọc nhanh Chưa lên lịch (mặc định) / Đang làm / từng trạng thái / Tất cả, lọc kênh, nhóm, tìm không dấu. Nút nhanh Lên lịch · Đã quay · Đã đăng · Đưa về ý tưởng
+  - **Lịch quay / đăng** (`/plan/calendar`): lịch tháng hiện 🎬 ngày quay và 📤 ngày đăng (kèm giờ), màu theo trạng thái, đếm buổi quay/bài cần đăng/đã đăng; nút + ở mỗi ngày để thêm nội dung đăng ngày đó; danh sách chi tiết theo ngày bên dưới (điện thoại xem ở đây)
+  - Trạng thái: Ý tưởng → Đã lên lịch → Đã quay → Đã đăng (hoặc Bỏ); gắn ngày quay/đăng thì Ý tưởng tự thành Đã lên lịch. Có người phụ trách, link bài đã đăng
+  - Quyền: ai cũng xem/thêm; sửa + đổi trạng thái: quản lý, người tạo, người phụ trách; xoá: quản lý hoặc người tạo
 - [ ] Nhắc việc qua email/Zalo/Telegram (cần dịch vụ ngoài)
 - [ ] Bình luận / đính kèm file cho từng việc
 <!-- [vibe:features] -->
@@ -48,6 +53,7 @@
 | link_folders | thư mục tài liệu: tên, name_key (tên viết thường, unique — chặn trùng kể cả chữ có dấu) |
 | customers | khách hàng: liên hệ, loại khách, công ty/MST, nguồn, trạng thái, nhu cầu, ghi chú, người phụ trách (owner_id), người nhập (created_by); phone_digits = SĐT chỉ còn chữ số (unique) để chặn trùng |
 | customer_invoices | hoá đơn của khách: ngày, giá trị (đồng), ghi chú, file (tên, loại, cỡ, nội dung BLOB); xoá khách thì xoá theo |
+| content_plans | Plan nội dung: tên, mô tả, link tham khảo, kênh (platform), nhóm (topic), trạng thái idea/scheduled/filmed/posted/dropped, ngày quay, ngày + giờ đăng, link bài đã đăng, người phụ trách (owner_id), người tạo (created_by) |
 <!-- [vibe:tables] -->
 
 ## Quyết định quan trọng
@@ -69,6 +75,8 @@
 - File hoá đơn lưu ngay trong DB (BLOB, tối đa 10MB) thay vì thư mục trên ổ đĩa: sao lưu/chuyển máy chỉ cần mang DB, chạy được cả Turso. Chỉ nhận PDF/JPG/PNG/WEBP, kiểm tra theo nội dung file (không tin đuôi). Nhận file bằng thư viện `multer` (`src/middleware/upload.js`), chạy trước csrf và chỉ khi đã đăng nhập.
 
 - Tài liệu: tìm kiếm lọc trong JS (bỏ dấu bằng `#lib/text.js`) thay vì SQL LIKE — SQLite không bỏ dấu tiếng Việt được, số link ít nên lọc trong bộ nhớ đủ nhanh. Xem trước chỉ nhúng các dịch vụ cho phép nhúng; link nhúng do server tính trong `src/lib/link-preview.js`, CSP `frame-src` (src/app.js) chỉ mở đúng các tên miền đó — thêm dịch vụ mới phải sửa cả hai. Tài liệu Google riêng tư chỉ xem được khi trình duyệt đang đăng nhập Google có quyền.
+
+- Plan nội dung: ý tưởng và lịch quay/đăng là CÙNG một dòng trong `content_plans` (chưa có ngày = nằm ở Idea bank, có ngày = lên lịch) — không phải chép ý tưởng sang lịch, đổi ngày là lịch tự đổi. Lịch Plan tách riêng lịch công việc (`tasks`) để không lẫn việc hằng ngày.
 
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->

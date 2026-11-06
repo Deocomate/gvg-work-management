@@ -1,0 +1,90 @@
+{{#> page-header title="Plan nội dung" subtitle="Lịch quay và đăng bài theo tháng"}}
+  <a href="/plan/new?back={{urlEncode back}}" class="btn-primary">+ Thêm nội dung</a>
+{{/page-header}}
+
+{{> plan/tabs}}
+
+<div class="mb-5 flex flex-wrap items-center gap-2">
+  <a href="/plan/calendar?month={{prev}}" class="btn-secondary btn-sm">‹ Tháng trước</a>
+  <h2 class="px-2 text-lg font-semibold text-ink">{{monthLabel}}</h2>
+  <a href="/plan/calendar?month={{next}}" class="btn-secondary btn-sm">Tháng sau ›</a>
+  {{#if (ne month thisMonth)}}<a href="/plan/calendar?month={{thisMonth}}" class="btn-ghost btn-sm">Tháng này</a>{{/if}}
+  <p class="flex flex-wrap gap-2 text-xs sm:ml-auto">
+    <span class="badge-yellow">🎬 {{summary.shoots}} buổi quay</span>
+    <span class="badge-blue">📤 {{summary.posts}} bài cần đăng</span>
+    <span class="badge-green">✅ {{summary.posted}} đã đăng</span>
+  </p>
+</div>
+
+<div class="card overflow-hidden">
+  <div class="grid grid-cols-7 border-b border-line bg-raised text-center text-xs font-semibold text-ink-faint">
+    {{#each weekdayLabels}}<div class="py-2">{{this}}</div>{{/each}}
+  </div>
+  {{#each weeks}}
+    <div class="grid grid-cols-7 border-b border-line last:border-b-0">
+      {{#each this}}
+        <div class="min-h-16 min-w-0 border-r border-line p-1 last:border-r-0 sm:min-h-28 sm:p-2{{#unless inMonth}} bg-canvas/60 text-ink-faint{{/unless}}" data-plan-day="{{date}}">
+          <div class="flex items-center justify-between gap-1">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium{{#if isToday}} bg-brand-500 text-cream{{/if}}">{{day}}</span>
+            <a href="/plan/new?post_date={{date}}&back={{urlEncode @root.back}}" class="plan-day-add" title="Thêm nội dung đăng ngày {{formatDay date}}" aria-label="Thêm nội dung đăng ngày {{formatDay date}}">+</a>
+          </div>
+          {{#if total}}
+            {{!-- Điện thoại: chỉ hiện số; máy tính: hiện từng nội dung --}}
+            <p class="mt-1 text-center text-[11px] leading-tight sm:hidden">
+              {{#if shoots}}<span class="block text-sun-300">🎬{{shoots}}</span>{{/if}}
+              {{#if posts}}<span class="block text-sky-300 light:text-sky-700">📤{{posts}}</span>{{/if}}
+            </p>
+            <ul class="mt-1 hidden space-y-1 sm:block">
+              {{#each entries}}
+                <li>
+                  <a href="{{#if canEdit}}/plan/{{id}}/edit?back={{urlEncode @root.back}}{{else}}/plan?status=all&q={{urlEncode title}}{{/if}}"
+                     class="block truncate rounded px-1.5 py-0.5 text-xs {{statusInfo.chip}}"
+                     title="{{#if (eq kind 'shoot')}}Quay{{else}}Đăng{{/if}}: {{title}} — {{platformInfo.label}} · {{statusInfo.label}}{{#if owner_name}} · {{owner_name}}{{/if}}">
+                    {{#if (eq kind 'shoot')}}🎬{{else}}📤{{/if}}{{#if (and (eq kind 'post') post_time)}} <span class="tabular-nums">{{post_time}}</span>{{/if}} {{title}}
+                  </a>
+                </li>
+              {{/each}}
+              {{#if more}}<li class="px-1.5 text-xs text-ink-faint">+{{more}} nội dung khác</li>{{/if}}
+            </ul>
+          {{/if}}
+        </div>
+      {{/each}}
+    </div>
+  {{/each}}
+</div>
+
+<p class="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
+  <span>🎬 Ngày quay</span>
+  <span>📤 Ngày đăng</span>
+  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-sky-400/15 ring-1 ring-sky-400/40"></span> Đã lên lịch</span>
+  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-sun-400/15 ring-1 ring-sun-400/40"></span> Đã quay</span>
+  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-pine-500/40 ring-1 ring-pine-400/50"></span> Đã đăng</span>
+</p>
+
+{{#if agenda.length}}
+  <h2 class="mt-8 mb-3 text-lg font-semibold text-ink">Chi tiết trong tháng</h2>
+  <ul class="card divide-y divide-line" data-plan-agenda>
+    {{#each agenda}}
+      <li class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:gap-4{{#if isPast}} opacity-70{{/if}}">
+        <p class="w-36 shrink-0 text-sm font-medium {{#if isToday}}text-brand-300{{else}}text-ink-soft{{/if}}">{{formatWeekday date}}</p>
+        <ul class="min-w-0 flex-1 space-y-1.5">
+          {{#each entries}}
+            <li class="flex flex-wrap items-center gap-2 text-sm">
+              <span aria-hidden="true">{{#if (eq kind 'shoot')}}🎬{{else}}📤{{/if}}</span>
+              <span class="text-ink-faint">{{#if (eq kind 'shoot')}}Quay{{else}}Đăng{{#if post_time}} {{post_time}}{{/if}}{{/if}}</span>
+              {{#if canEdit}}
+                <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="min-w-0 truncate font-medium text-ink hover:underline">{{title}}</a>
+              {{else}}
+                <span class="min-w-0 truncate font-medium text-ink">{{title}}</span>
+              {{/if}}
+              <span class="{{platformInfo.badge}}">{{platformInfo.label}}</span>
+              <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
+              {{#if owner_name}}<span class="text-xs text-ink-faint">👤 {{owner_name}}</span>{{/if}}
+            </li>
+          {{/each}}
+        </ul>
+      </li>
+    {{/each}}
+  </ul>
+{{/if}}
+
