@@ -169,3 +169,36 @@ test('previewUrl: đổi link Google/YouTube thành link nhúng, link khác -> k
     assert.equal(previewUrl(url), null, url);
   }
 });
+
+test('thêm link kèm tạo thư mục mới ngay trong form; trùng tên thì dùng thư mục cũ', async () => {
+  const form = (await admin.get('/links/new')).text;
+  assert.match(form, /<option value="new"/);
+  assert.match(form, /data-show-when="folder_id=new"/);
+
+  const res = await addLink({ title: 'Mẫu hợp đồng lao động', url: 'https://a.vn/hd', folder_id: 'new', new_folder: '  Hợp   đồng ' });
+  assert.equal(res.status, 302);
+  const id = await folderIdOf('Hợp đồng');
+  assert.equal(res.headers.location, `/links?folder=${id}`);
+
+  await addLink({ title: 'Phụ lục hợp đồng', url: 'https://a.vn/pl', folder_id: 'new', new_folder: 'HỢP ĐỒNG' });
+  const page = (await mai.get(`/links?folder=${id}`)).text;
+  assert.match(page, /Mẫu hợp đồng lao động/);
+  assert.match(page, /Phụ lục hợp đồng/);
+  assert.doesNotMatch((await admin.get('/links')).text, />HỢP ĐỒNG</);
+
+  // Thiếu tên thư mục mới -> báo lỗi; link sai -> không tạo thư mục thừa
+  const noName = await addLink({ title: 'X', url: 'https://a.vn', folder_id: 'new', new_folder: ' ' });
+  assert.equal(noName.status, 422);
+  assert.match(noName.text, /Vui lòng nhập tên thư mục/);
+  const badLink = await addLink({ title: 'X', url: 'sai', folder_id: 'new', new_folder: 'Thư mục thừa' });
+  assert.equal(badLink.status, 422);
+  assert.doesNotMatch((await admin.get('/links')).text, /Thư mục thừa</);
+});
+
+test('nút Mở / Sửa / Xoá chỉ là biểu tượng, có nhãn cho trình đọc màn hình', async () => {
+  const row = (await admin.get('/links')).text.split('data-link-row').find((r) => r.includes('Phụ lục hợp đồng'));
+  assert.match(row, /class="btn-ghost btn-icon" title="Mở tab mới" aria-label="Mở Phụ lục hợp đồng ở tab mới"/);
+  assert.match(row, /title="Sửa" aria-label="Sửa Phụ lục hợp đồng"/);
+  assert.match(row, /title="Xoá" aria-label="Xoá Phụ lục hợp đồng"/);
+  assert.doesNotMatch(row, />\s*(Mở ↗|Sửa|Xoá)\s*</);
+});

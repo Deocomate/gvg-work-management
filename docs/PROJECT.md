@@ -27,7 +27,8 @@
 - [x] Nhân viên (`/staff`, chỉ quản lý): thêm/sửa/xoá tài khoản, đặt lại mật khẩu, phân vai trò, số điện thoại (không bắt buộc, bấm để gọi)
 - [x] Menu "Hôm nay" có số đỏ = số việc chưa xong hôm nay
 - [x] Tài liệu cần thiết: trang `/links` (menu "Tài liệu") cho mọi người xem, mở tab mới; chỉ quản lý thêm/sửa/xoá. Không hiện ở trang Hôm nay
-  - Chia **thư mục** (cột trái trên máy tính, hàng nút trượt ngang trên điện thoại; có số link mỗi thư mục, mục "Chưa phân loại"). Quản lý tạo/đổi tên/xoá thư mục (xoá thì link chuyển về Chưa phân loại), chọn thư mục trong form link
+  - Chia **thư mục** (cột trái trên máy tính, hàng nút trượt ngang trên điện thoại; có số link mỗi thư mục, mục "Chưa phân loại"). Quản lý tạo/đổi tên/xoá thư mục (xoá thì link chuyển về Chưa phân loại), chọn thư mục trong form link hoặc chọn "+ Tạo thư mục mới…" để tạo luôn (trùng tên thì dùng thư mục cũ)
+  - Nút Mở / Sửa / Xoá của từng link chỉ là biểu tượng (rê chuột hiện chữ)
   - **Tìm kiếm** trong mọi thư mục theo tên, ghi chú, đường link, tên thư mục — gõ không dấu vẫn ra
   - **Xem trước** ngay trong app (cửa sổ nổi) cho link Google Drive (file, thư mục), Docs, Sheets, Slides, Forms, YouTube; link khác chỉ có nút "Mở ↗"
 - [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)

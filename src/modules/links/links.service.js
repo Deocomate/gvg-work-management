@@ -57,13 +57,31 @@ export async function getLink(id) {
   return link;
 }
 
-/** Kiểm tra form link; thư mục đã chọn phải còn tồn tại (có thể vừa bị người khác xoá). */
-async function prepareLink(input) {
-  const result = validate(linkSchema, input);
-  if (!result.ok) return result;
-  if (result.data.folder_id && !(await repo.findFolder(result.data.folder_id)))
+/** Giá trị folder_id khi người dùng chọn "+ Tạo thư mục mới…" trong form link. */
+export const NEW_FOLDER = 'new';
+
+/**
+ * Kiểm tra form link; thư mục đã chọn phải còn tồn tại (có thể vừa bị người khác xoá).
+ * Chọn "Tạo thư mục mới": kiểm tra tên, và chỉ tạo thư mục khi mọi ô của link đều hợp lệ (tránh thư mục rỗng thừa).
+ */
+async function prepareLink(input = {}) {
+  const wantsNew = input.folder_id === NEW_FOLDER;
+  const result = validate(linkSchema, { ...input, folder_id: wantsNew ? '' : input.folder_id });
+  const folder = wantsNew ? validate(folderSchema, { name: input.new_folder }) : { ok: true };
+  if (!result.ok || !folder.ok) return { ok: false, errors: { ...result.errors, ...(folder.ok ? {} : { new_folder: folder.errors.name }) } };
+
+  if (wantsNew) {
+    result.data.folder_id = (await findOrCreateFolder(folder.data.name)).id;
+  } else if (result.data.folder_id && !(await repo.findFolder(result.data.folder_id))) {
     return { ok: false, errors: { folder_id: 'Thư mục này không còn, vui lòng chọn lại' } };
+  }
   return result;
+}
+
+/** Tên trùng thư mục đã có (không phân biệt hoa thường) thì dùng luôn thư mục đó. */
+async function findOrCreateFolder(name) {
+  const data = folderData(name);
+  return (await repo.createFolder(data)) ?? repo.findFolderByKey(data.name_key);
 }
 
 export async function createLink(input) {

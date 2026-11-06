@@ -41,6 +41,8 @@ export const listFolders = () =>
 
 export const findFolder = (id) => get('SELECT id, name FROM link_folders WHERE id = ?', [id]);
 
+export const findFolderByKey = (nameKey) => get('SELECT id, name FROM link_folders WHERE name_key = ?', [nameKey]);
+
 /** Thêm thư mục; trùng name_key (unique) thì bỏ qua và trả null — hai người tạo cùng lúc cũng không trùng. */
 export async function createFolder({ name, name_key }) {
   const { changes, id } = await run(

@@ -8,11 +8,11 @@
 
   {{> form/field name="title" label="Tên tài liệu" value=values.title error=errors.title required=true placeholder="VD: Quy trình nghỉ phép"}}
   {{> form/field name="url" label="Đường link" type="url" value=values.url error=errors.url required=true placeholder="https://drive.google.com/..." hint="Link Google Drive, Docs, Sheets, Slides, Forms, YouTube sẽ có nút “Xem trước” ngay trong app."}}
-  {{#if hasFolders}}
-    {{> form/select name="folder_id" label="Thư mục" options=folderOptions value=values.folder_id error=errors.folder_id placeholder="Chưa phân loại"}}
-  {{else}}
-    <p class="hint">Chưa có thư mục nào — link sẽ nằm ở “Chưa phân loại”. <a href="/links/folders/new" class="link">+ Tạo thư mục</a></p>
-  {{/if}}
+  {{!-- Chọn thư mục có sẵn, hoặc "+ Tạo thư mục mới…" -> hiện ô nhập tên (data-show-when, pickers.js) --}}
+  {{> form/select name="folder_id" label="Thư mục" options=folderOptions value=values.folder_id error=errors.folder_id placeholder="Chưa phân loại"}}
+  <div data-show-when="folder_id=new">
+    {{> form/field name="new_folder" label="Tên thư mục mới" value=values.new_folder error=errors.new_folder placeholder="VD: Biểu mẫu, Quy trình, Hợp đồng" hint="Thư mục được tạo cùng lúc với link. Trùng tên thư mục đã có thì link vào thư mục đó."}}
+  </div>
   {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=2 hint="Không bắt buộc. VD: dùng khi nào, ai phụ trách"}}
 
   <div class="flex gap-2 pt-2">

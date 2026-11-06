@@ -148,6 +148,8 @@
   .btn-danger { @apply btn bg-brand-600 text-cream hover:bg-brand-700 focus-visible:outline-brand-400; }
   .btn-ghost { @apply btn text-ink-soft hover:bg-raised hover:text-ink focus-visible:outline-pine-400; }
   .btn-sm { @apply px-3 py-1.5 text-xs; }
+  /* Nút vuông chỉ có biểu tượng (Mở/Sửa/Xoá) — luôn kèm title + aria-label */
+  .btn-icon { @apply h-8 w-8 p-0; }
 
   .link { @apply font-medium text-bloom-300 hover:underline; }
 

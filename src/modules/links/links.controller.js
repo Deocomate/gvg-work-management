@@ -12,8 +12,10 @@ async function renderForm(res, { link = null, values = {}, errors = {}, status =
     link,
     values,
     errors,
-    folderOptions: folders.map((f) => ({ value: String(f.id), label: f.name })),
-    hasFolders: folders.length > 0,
+    folderOptions: [
+      ...folders.map((f) => ({ value: String(f.id), label: f.name })),
+      { value: service.NEW_FOLDER, label: '+ Tạo thư mục mới…' },
+    ],
   });
 }
 

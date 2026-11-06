@@ -59,10 +59,15 @@
               {{#if preview}}
                 <button type="button" class="btn-secondary btn-sm" data-preview="{{preview}}" data-preview-title="{{title}}" data-preview-open="{{url}}">👁 Xem trước</button>
               {{/if}}
-              <a href="{{url}}" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-sm">Mở ↗</a>
+              {{!-- Mở / Sửa / Xoá: chỉ biểu tượng, rê chuột hiện chữ (title), trình đọc màn hình đọc aria-label --}}
+              <a href="{{url}}" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-icon" title="Mở tab mới" aria-label="Mở {{title}} ở tab mới">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+              </a>
               {{#if @root.manager}}
-                <a href="/links/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
-                {{> form/delete-button action=(concat "/links/" id "/delete") confirm="Xoá link này?"}}
+                <a href="/links/{{id}}/edit" class="btn-ghost btn-icon" title="Sửa" aria-label="Sửa {{title}}">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg>
+                </a>
+                {{> form/delete-button action=(concat "/links/" id "/delete") confirm="Xoá link này?" icon=true label=(concat "Xoá " title)}}
               {{/if}}
             </div>
           </li>
