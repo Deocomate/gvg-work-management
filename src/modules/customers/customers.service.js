@@ -24,6 +24,8 @@ export function parseFilters(query = {}) {
     status: pick(CUSTOMER_STATUSES, query.status),
     source: pick(CUSTOMER_SOURCES, query.source),
     owner: owner > 0 ? owner : '',
+    // has = đã có SĐT, none = chưa có SĐT
+    phone: ['has', 'none'].includes(query.phone) ? query.phone : '',
   };
 }
 

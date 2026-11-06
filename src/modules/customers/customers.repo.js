@@ -15,7 +15,7 @@ const FROM = `FROM customers c
 const SEARCH_COLUMNS = ['c.name', 'c.company', 'c.email', 'c.zalo', 'c.facebook', 'c.tiktok', 'c.social', 'c.interest'];
 
 /** Điều kiện lọc dùng chung cho danh sách và đếm. */
-function where({ q, status, source, owner }) {
+function where({ q, status, source, owner, phone }) {
   const parts = [];
   const args = [];
   if (q) {
@@ -42,6 +42,8 @@ function where({ q, status, source, owner }) {
     parts.push('c.owner_id = ?');
     args.push(owner);
   }
+  if (phone === 'has') parts.push("COALESCE(c.phone_digits, '') <> ''");
+  if (phone === 'none') parts.push("COALESCE(c.phone_digits, '') = ''");
   const conditionsSql = parts.join(' AND ');
   return { whereSql: parts.length ? `WHERE ${conditionsSql}` : '', args };
 }

@@ -12,7 +12,7 @@
   {{/each}}
 </div>
 
-<form method="get" action="/customers" class="card card-body mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end">
+<form method="get" action="/customers" class="card card-body mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
   <div class="field">
     <label for="f-q" class="label">Tìm kiếm</label>
     <input id="f-q" name="q" type="search" value="{{filters.q}}" class="input" placeholder="Tên, SĐT, Zalo, Facebook, công ty, mặt hàng…">
@@ -36,6 +36,14 @@
     <select id="f-owner" name="owner" class="input" data-autosubmit>
       <option value="">Tất cả</option>
       {{#each ownerOptions}}<option value="{{value}}" {{selected value @root.filters.owner}}>{{label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-phone" class="label">SĐT</label>
+    <select id="f-phone" name="phone" class="input" data-autosubmit>
+      <option value="">Tất cả</option>
+      <option value="has" {{selected "has" filters.phone}}>Đã có SĐT</option>
+      <option value="none" {{selected "none" filters.phone}}>Chưa có SĐT</option>
     </select>
   </div>
   <div class="flex gap-2">
