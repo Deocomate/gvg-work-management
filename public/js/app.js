@@ -27,6 +27,29 @@ document.addEventListener('click', (event) => {
   }
 });
 
+// <button data-preview="link nhúng" data-preview-title data-preview-open="link gốc"> (trang Tài liệu)
+// -> mở <dialog id="link-preview"> có khung xem trước. Link nhúng do server tính (src/lib/link-preview.js);
+// CSP frame-src trong src/app.js chỉ cho nhúng đúng các tên miền đó.
+{
+  const dialog = document.getElementById('link-preview');
+  if (dialog) {
+    const frame = dialog.querySelector('iframe');
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-preview]');
+      if (!button) return;
+      dialog.querySelector('[data-preview-heading]').textContent = button.dataset.previewTitle || '';
+      dialog.querySelector('[data-preview-link]').href = button.dataset.previewOpen;
+      frame.src = button.dataset.preview;
+      dialog.showModal();
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog || event.target.closest('[data-dialog-close]')) dialog.close();
+    });
+    // Đóng thì bỏ trang đang nhúng (dừng video, giải phóng bộ nhớ).
+    dialog.addEventListener('close', () => frame.removeAttribute('src'));
+  }
+}
+
 // <button data-print> -> mở hộp thoại in (in giấy hoặc lưu PDF).
 document.addEventListener('click', (event) => {
   if (event.target.closest('[data-print]')) window.print();

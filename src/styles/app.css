@@ -369,6 +369,24 @@
     .holiday-tag, .holiday-hang { animation: none; }
   }
 
+  /* Trang Tài liệu: cột thư mục (máy tính) / hàng nút trượt ngang (điện thoại) */
+  .links-layout { @apply grid gap-5 lg:grid-cols-[15rem_1fr] lg:items-start; }
+  .links-folders { @apply -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:rounded-xl lg:border lg:border-line lg:bg-surface/80 lg:p-2 lg:backdrop-blur-sm; }
+  .folder-item {
+    @apply flex shrink-0 items-center justify-between gap-3 rounded-lg border border-line bg-surface/80 px-3 py-2 text-sm font-medium text-ink-soft transition
+      hover:bg-raised hover:text-ink lg:border-transparent lg:bg-transparent;
+  }
+  .folder-item-active { @apply border-pine-400/40 bg-pine-500/50 text-cream hover:bg-pine-500/50 hover:text-cream light:bg-pine-500 lg:border-transparent lg:bg-pine-500/50 light:lg:bg-pine-500; }
+  .folder-count { @apply rounded-full bg-black/15 px-2 text-xs font-semibold; }
+  .link-row { @apply flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center; }
+
+  /* Khung xem trước tài liệu (Google Drive/Docs, YouTube) */
+  .preview-dialog { @apply m-auto h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-5xl bg-transparent p-0 text-ink backdrop:bg-black/60 backdrop:backdrop-blur-sm; }
+  .preview-box { @apply flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface; }
+  .preview-bar { @apply flex items-center gap-2 border-b border-line px-3 py-2; }
+  .preview-frame { @apply w-full flex-1 bg-white; }
+  .preview-tip { @apply border-t border-line px-3 py-1.5 text-xs text-ink-faint; }
+
   /* Popup + thẻ chi tiết khách hàng (customers/show.hbs). Thẻ luôn nền giấy trắng để ảnh/PDF tải về dễ đọc. */
   .customer-dialog { @apply m-auto w-[calc(100%-2rem)] max-w-2xl bg-transparent p-0 text-ink backdrop:bg-black/60 backdrop:backdrop-blur-sm; }
   .customer-dialog-loading { @apply rounded-xl bg-surface p-6 text-center text-sm text-ink-soft; }

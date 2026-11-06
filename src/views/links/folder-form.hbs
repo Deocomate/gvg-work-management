@@ -1,0 +1,15 @@
+{{#> page-header title=title}}
+  <a href="/links{{#if folder}}?folder={{folder.id}}{{/if}}" class="btn-secondary">← Tài liệu</a>
+{{/page-header}}
+
+<form method="post" action="{{#if folder}}/links/folders/{{folder.id}}{{else}}/links/folders{{/if}}" class="card card-body max-w-xl space-y-5" novalidate>
+  {{> form/csrf}}
+  {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+  {{> form/field name="name" label="Tên thư mục" value=values.name error=errors.name required=true autofocus=true placeholder="VD: Biểu mẫu, Quy trình, Hợp đồng"}}
+
+  <div class="flex gap-2 pt-2">
+    <button type="submit" class="btn-primary">{{#if folder}}Lưu tên mới{{else}}Tạo thư mục{{/if}}</button>
+    <a href="/links{{#if folder}}?folder={{folder.id}}{{/if}}" class="btn-ghost">Huỷ</a>
+  </div>
+</form>

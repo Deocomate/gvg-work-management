@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, postForm } from './helpers.js';
 import { loginAs, loginAsAdmin } from './auth-helpers.js';
+import { previewUrl } from '../src/lib/link-preview.js';
 
 const { agent: admin } = await setup();
 await loginAsAdmin(admin);
@@ -11,7 +12,7 @@ await loginAs(mai, { email: 'mai@test.local', password: 'mat-khau-123' });
 
 const addLink = (data) => postForm(admin, '/links', data, { from: '/links/new' });
 const idOf = async (title) => {
-  const row = (await admin.get('/links')).text.split('<tr>').slice(1).find((r) => r.includes(title));
+  const row = (await admin.get('/links')).text.split('data-link-row').slice(1).find((r) => r.includes(title));
   return row.match(/\/links\/(\d+)\/edit/)[1];
 };
 
@@ -75,4 +76,96 @@ test('id lạ -> 404', async () => {
   assert.equal((await admin.get('/links/99999/edit')).status, 404);
   assert.equal((await admin.get('/links/abc/edit')).status, 404);
   assert.equal((await postForm(admin, '/links/99999/delete', {}, { from: '/links' })).status, 404);
+});
+
+// ---------- Thư mục, tìm kiếm, xem trước ----------
+
+const addFolder = (name) => postForm(admin, '/links/folders', { name }, { from: '/links/folders/new' });
+const folderIdOf = async (name) => {
+  const html = (await admin.get('/links')).text;
+  const item = html.split('<a href="/links?folder=').find((part) => part.includes(`📁 ${name}<`));
+  return item.match(/^(\d+)/)[1];
+};
+
+test('quản lý tạo thư mục, thêm link vào thư mục -> xem theo thư mục', async () => {
+  assert.equal((await addFolder('Biểu mẫu nhân sự')).status, 302);
+  assert.equal((await addFolder('Quy trình')).status, 302);
+  const dup = await addFolder('  biểu mẫu NHÂN SỰ ');
+  assert.equal(dup.status, 422);
+  assert.match(dup.text, /Đã có thư mục tên này/);
+  assert.equal((await addFolder(' ')).status, 422);
+
+  const formsId = await folderIdOf('Biểu mẫu nhân sự');
+  const res = await addLink({ title: 'Đơn xin nghỉ phép', url: 'https://docs.google.com/document/d/1AbCdEfGhIjKlMnOp/edit', folder_id: formsId });
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.location, `/links?folder=${formsId}`);
+  await addLink({ title: 'Hướng dẫn chấm công', url: 'https://a.vn/cham-cong', note: 'Dùng máy vân tay' });
+
+  const inFolder = (await mai.get(`/links?folder=${formsId}`)).text;
+  assert.match(inFolder, /Đơn xin nghỉ phép/);
+  assert.doesNotMatch(inFolder, /Hướng dẫn chấm công/);
+  assert.doesNotMatch(inFolder, /Đổi tên thư mục/); // nhân viên không sửa thư mục
+  assert.match((await admin.get(`/links?folder=${formsId}`)).text, /Đổi tên thư mục/);
+
+  const unsorted = (await mai.get('/links?folder=none')).text;
+  assert.match(unsorted, /Hướng dẫn chấm công/);
+  assert.doesNotMatch(unsorted, /Đơn xin nghỉ phép/);
+
+  assert.equal((await mai.get('/links?folder=99999')).status, 404);
+  const bad = await addLink({ title: 'X', url: 'https://a.vn', folder_id: '99999' });
+  assert.equal(bad.status, 422);
+  assert.match(bad.text, /Thư mục này không còn/);
+});
+
+test('tìm kiếm: không dấu, không phân biệt hoa thường, tìm trong mọi thư mục', async () => {
+  const page = (await mai.get('/links?q=' + encodeURIComponent('NGHI PHEP'))).text;
+  assert.match(page, /Đơn xin nghỉ phép/);
+  assert.doesNotMatch(page, /Hướng dẫn chấm công/);
+  assert.match((await mai.get('/links?q=van%20tay')).text, /Hướng dẫn chấm công/); // theo ghi chú
+  assert.match((await mai.get('/links?q=bieu%20mau')).text, /Đơn xin nghỉ phép/); // theo tên thư mục
+  assert.match((await mai.get('/links?q=zzzz')).text, /Không tìm thấy tài liệu nào/);
+});
+
+test('nút Xem trước chỉ hiện với link nhúng được (Google Docs…), CSP cho phép nhúng', async () => {
+  const res = await mai.get('/links');
+  assert.match(res.text, /data-preview="https:\/\/docs.google.com\/document\/d\/1AbCdEfGhIjKlMnOp\/preview"/);
+  const row = res.text.split('data-link-row').find((r) => r.includes('Hướng dẫn chấm công'));
+  assert.doesNotMatch(row, /data-preview=/);
+  assert.match(res.text, /<dialog id="link-preview"/);
+  assert.match(res.headers['content-security-policy'], /frame-src 'self' https:\/\/drive.google.com https:\/\/docs.google.com/);
+});
+
+test('đổi tên, xoá thư mục -> link bên trong chuyển về Chưa phân loại', async () => {
+  const id = await folderIdOf('Biểu mẫu nhân sự');
+  assert.equal((await postForm(admin, `/links/folders/${id}`, { name: 'quy TRÌNH' }, { from: '/links' })).status, 422); // trùng tên
+  assert.equal((await postForm(admin, `/links/folders/${id}`, { name: 'Biểu mẫu' }, { from: '/links' })).status, 302);
+  assert.match((await mai.get('/links')).text, /📁 Biểu mẫu</);
+
+  assert.equal((await postForm(admin, `/links/folders/${id}/delete`, {}, { from: '/links' })).status, 302);
+  assert.equal((await mai.get(`/links?folder=${id}`)).status, 404);
+  assert.match((await mai.get('/links?folder=none')).text, /Đơn xin nghỉ phép/);
+  assert.equal((await postForm(admin, '/links/folders/99999/delete', {}, { from: '/links' })).status, 404);
+});
+
+test('nhân viên không tạo/sửa/xoá được thư mục', async () => {
+  const id = await folderIdOf('Quy trình');
+  assert.equal((await mai.get('/links/folders/new')).status, 403);
+  assert.equal((await postForm(mai, '/links/folders', { name: 'Hack' }, { from: '/links' })).status, 403);
+  assert.equal((await postForm(mai, `/links/folders/${id}`, { name: 'Hack' }, { from: '/links' })).status, 403);
+  assert.equal((await postForm(mai, `/links/folders/${id}/delete`, {}, { from: '/links' })).status, 403);
+});
+
+test('previewUrl: đổi link Google/YouTube thành link nhúng, link khác -> không có', () => {
+  const id = '1AbCdEfGhIjKlMnOp';
+  assert.equal(previewUrl(`https://drive.google.com/file/d/${id}/view?usp=sharing`), `https://drive.google.com/file/d/${id}/preview`);
+  assert.equal(previewUrl(`https://drive.google.com/open?id=${id}`), `https://drive.google.com/file/d/${id}/preview`);
+  assert.equal(previewUrl(`https://drive.google.com/drive/folders/${id}`), `https://drive.google.com/embeddedfolderview?id=${id}#list`);
+  assert.equal(previewUrl(`https://docs.google.com/spreadsheets/u/0/d/${id}/edit#gid=0`), `https://docs.google.com/spreadsheets/d/${id}/preview`);
+  assert.equal(previewUrl(`https://docs.google.com/presentation/d/${id}/edit`), `https://docs.google.com/presentation/d/${id}/preview`);
+  assert.equal(previewUrl(`https://docs.google.com/forms/d/e/${id}/viewform`), `https://docs.google.com/forms/d/e/${id}/viewform?embedded=true`);
+  assert.equal(previewUrl('https://youtu.be/dQw4w9WgXcQ'), 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+  assert.equal(previewUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10'), 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+  for (const url of ['https://a.vn/x', 'https://drive.google.com/', 'https://evil.com/drive.google.com/file/d/abc', 'nope']) {
+    assert.equal(previewUrl(url), null, url);
+  }
 });

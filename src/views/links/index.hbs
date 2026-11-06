@@ -1,34 +1,98 @@
-{{#> page-header title="Tài liệu" subtitle="Link tài liệu cần thiết cho cả nhóm"}}
-  {{#if manager}}<a href="/links/new" class="btn-primary">+ Thêm link</a>{{/if}}
+{{#> page-header title=title subtitle="Link tài liệu cần thiết cho cả nhóm, chia theo thư mục"}}
+  {{#if manager}}
+    <a href="/links/folders/new" class="btn-secondary">+ Thư mục</a>
+    <a href="/links/new{{#if current.id}}{{#unless current.unsorted}}?folder={{current.id}}{{/unless}}{{/if}}" class="btn-primary">+ Thêm link</a>
+  {{/if}}
 {{/page-header}}
 
-{{#if links.length}}
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr><th>Tên tài liệu</th><th>Link</th>{{#if manager}}<th class="text-right">Thao tác</th>{{/if}}</tr>
-      </thead>
-      <tbody>
+<div class="links-layout">
+  {{!-- Cột thư mục: máy tính là cột dọc bên trái, điện thoại là hàng nút trượt ngang --}}
+  <nav class="links-folders" aria-label="Thư mục tài liệu">
+    <a href="/links" class="folder-item {{#unless current}}{{#unless query}}folder-item-active{{/unless}}{{/unless}}">
+      <span class="truncate">📚 Tất cả</span><span class="folder-count">{{total}}</span>
+    </a>
+    {{#each folders}}
+      <a href="/links?folder={{id}}" class="folder-item {{#if (eq id @root.current.id)}}folder-item-active{{/if}}">
+        <span class="truncate">📁 {{name}}</span><span class="folder-count">{{total}}</span>
+      </a>
+    {{/each}}
+    {{#if unsortedTotal}}
+      <a href="/links?folder=none" class="folder-item {{#if current.unsorted}}folder-item-active{{/if}}">
+        <span class="truncate">🗂 Chưa phân loại</span><span class="folder-count">{{unsortedTotal}}</span>
+      </a>
+    {{/if}}
+  </nav>
+
+  <div class="min-w-0 space-y-4">
+    {{!-- Tìm trong mọi thư mục; gõ không dấu vẫn ra --}}
+    <form method="get" action="/links" class="flex gap-2" role="search">
+      <label for="f-q" class="sr-only">Tìm tài liệu</label>
+      <input id="f-q" name="q" type="search" value="{{query}}" class="input" placeholder="Tìm tài liệu theo tên, ghi chú, thư mục… (gõ không dấu cũng được)">
+      <button type="submit" class="btn-secondary">Tìm</button>
+      {{#if query}}<a href="/links" class="btn-ghost">Xoá</a>{{/if}}
+    </form>
+
+    {{#if query}}
+      <p class="text-sm text-ink-faint">Tìm thấy <strong class="text-ink">{{links.length}}</strong> tài liệu cho “{{query}}”.</p>
+    {{/if}}
+
+    {{#if (and manager current.id (not current.unsorted))}}
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <a href="/links/folders/{{current.id}}/edit" class="btn-ghost btn-sm">✎ Đổi tên thư mục</a>
+        {{> form/delete-button action=(concat "/links/folders/" current.id "/delete") label="Xoá thư mục" confirm="Xoá thư mục này? Các link bên trong KHÔNG bị xoá, chỉ chuyển về “Chưa phân loại”."}}
+      </div>
+    {{/if}}
+
+    {{#if links.length}}
+      <ul class="card divide-y divide-line">
         {{#each links}}
-          <tr>
-            <td>
+          <li class="link-row" data-link-row>
+            <div class="min-w-0 flex-1">
               <p class="font-medium text-ink">{{title}}</p>
               {{#if note}}<p class="text-xs text-ink-faint">{{note}}</p>{{/if}}
-            </td>
-            <td class="max-w-xs truncate"><a href="{{url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">{{url}}</a></td>
-            {{#if ../manager}}
-              <td class="whitespace-nowrap text-right">
+              <p class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                {{#unless @root.current}}<span class="badge-gray">📁 {{default folder_name "Chưa phân loại"}}</span>{{/unless}}
+                <a href="{{url}}" target="_blank" rel="noopener noreferrer" class="link max-w-full truncate font-normal">{{url}}</a>
+              </p>
+            </div>
+            <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
+              {{#if preview}}
+                <button type="button" class="btn-secondary btn-sm" data-preview="{{preview}}" data-preview-title="{{title}}" data-preview-open="{{url}}">👁 Xem trước</button>
+              {{/if}}
+              <a href="{{url}}" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-sm">Mở ↗</a>
+              {{#if @root.manager}}
                 <a href="/links/{{id}}/edit" class="btn-ghost btn-sm">Sửa</a>
                 {{> form/delete-button action=(concat "/links/" id "/delete") confirm="Xoá link này?"}}
-              </td>
-            {{/if}}
-          </tr>
+              {{/if}}
+            </div>
+          </li>
         {{/each}}
-      </tbody>
-    </table>
+      </ul>
+    {{else if query}}
+      {{> empty-state title="Không tìm thấy tài liệu nào" text="Thử gõ từ khác ngắn hơn, hoặc xem theo từng thư mục bên cạnh."}}
+    {{else if current}}
+      {{#if manager}}
+        {{> empty-state title="Thư mục này chưa có link" text="Thêm link vào thư mục để cả nhóm mở nhanh." actionHref=(concat "/links/new?folder=" current.id) actionLabel="+ Thêm link"}}
+      {{else}}
+        {{> empty-state title="Thư mục này chưa có link" text="Quản lý sẽ thêm tài liệu vào đây."}}
+      {{/if}}
+    {{else if manager}}
+      {{> empty-state title="Chưa có link tài liệu nào" text="Tạo thư mục (Biểu mẫu, Quy trình…) rồi thêm link Google Drive, biểu mẫu… để cả nhóm mở nhanh." actionHref="/links/new" actionLabel="+ Thêm link"}}
+    {{else}}
+      {{> empty-state title="Chưa có link tài liệu nào" text="Quản lý sẽ thêm link Google Drive, biểu mẫu, quy trình… ở đây."}}
+    {{/if}}
   </div>
-{{else if manager}}
-  {{> empty-state title="Chưa có link tài liệu nào" text="Thêm link Google Drive, biểu mẫu, quy trình… để cả nhóm mở nhanh ở trang Tài liệu." actionHref="/links/new" actionLabel="+ Thêm link"}}
-{{else}}
-  {{> empty-state title="Chưa có link tài liệu nào" text="Quản lý sẽ thêm link Google Drive, biểu mẫu, quy trình… ở đây."}}
-{{/if}}
+</div>
+
+{{!-- Khung xem trước (public/js/app.js mở khi bấm "Xem trước"). Chỉ nhúng Google Drive/Docs/YouTube — xem src/lib/link-preview.js --}}
+<dialog id="link-preview" class="preview-dialog" aria-label="Xem trước tài liệu">
+  <div class="preview-box">
+    <div class="preview-bar">
+      <p class="min-w-0 flex-1 truncate font-medium text-ink" data-preview-heading></p>
+      <a href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm" data-preview-link>Mở tab mới ↗</a>
+      <button type="button" class="btn-ghost btn-sm" data-dialog-close aria-label="Đóng">✕ Đóng</button>
+    </div>
+    <iframe class="preview-frame" title="Xem trước tài liệu" allow="autoplay; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <p class="preview-tip">Không thấy nội dung? Tài liệu có thể chưa được chia sẻ cho tài khoản Google của bạn — bấm “Mở tab mới”.</p>
+  </div>
+</dialog>

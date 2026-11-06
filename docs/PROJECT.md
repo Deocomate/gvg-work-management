@@ -27,6 +27,9 @@
 - [x] Nhân viên (`/staff`, chỉ quản lý): thêm/sửa/xoá tài khoản, đặt lại mật khẩu, phân vai trò, số điện thoại (không bắt buộc, bấm để gọi)
 - [x] Menu "Hôm nay" có số đỏ = số việc chưa xong hôm nay
 - [x] Tài liệu cần thiết: trang `/links` (menu "Tài liệu") cho mọi người xem, mở tab mới; chỉ quản lý thêm/sửa/xoá. Không hiện ở trang Hôm nay
+  - Chia **thư mục** (cột trái trên máy tính, hàng nút trượt ngang trên điện thoại; có số link mỗi thư mục, mục "Chưa phân loại"). Quản lý tạo/đổi tên/xoá thư mục (xoá thì link chuyển về Chưa phân loại), chọn thư mục trong form link
+  - **Tìm kiếm** trong mọi thư mục theo tên, ghi chú, đường link, tên thư mục — gõ không dấu vẫn ra
+  - **Xem trước** ngay trong app (cửa sổ nổi) cho link Google Drive (file, thư mục), Docs, Sheets, Slides, Forms, YouTube; link khác chỉ có nút "Mở ↗"
 - [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
 - [x] Trang trí ngày lễ: tự bật 7 ngày trước lễ (thẻ tròn đếm ngược treo góc phải menu, đồ treo dưới menu, emoji rơi nhẹ phía sau nội dung, menu hắt màu lễ), hết lễ tự trở lại bình thường. Lễ: Năm mới, Tết (tới mùng 4), Valentine, 8/3, 30/4–1/5, 2/9, Trung thu, 20/10, Halloween, 20/11, Giáng sinh
 - [x] Data khách hàng (`/customers`, menu "Data khách hàng"): quản lý + nhân viên vai trò **Sale** (VD: chị Trang) xem/thêm/sửa/xoá. Bấm tên khách mở thẻ chi tiết, tải PNG/PDF. Trường: loại khách (cá nhân/doanh nghiệp), tên, ngày sinh, công ty + MST (khi là doanh nghiệp), SĐT, email, Zalo, Facebook, TikTok, kênh khác (mỗi kênh một ô), địa chỉ, nguồn khách, trạng thái chăm sóc (Mới → Đang tư vấn → Đã mua → Khách quen / Ngừng), người phụ trách, mặt hàng quan tâm, ghi chú, người nhập. Hoá đơn: mỗi lần mua thêm một hoá đơn (ngày, giá trị, file PDF/ảnh ≤10MB, ghi chú hoá đơn) ngay trong form khách; trang sửa khách liệt kê hoá đơn (mở file, xoá), danh sách khách hiện tổng giá trị + số hoá đơn. Tìm theo tên/SĐT/công ty/email/mặt hàng, lọc trạng thái/nguồn/phụ trách, đếm theo trạng thái. Chặn trùng số điện thoại
@@ -40,7 +43,8 @@
 | _migrations | (hệ thống) các migration đã chạy |
 | users | tài khoản: email, tên, số điện thoại (phone, có thể trống), vai trò admin (Quản lý) / sale (Sale: như nhân viên + Data khách hàng) / member (Nhân viên) |
 | tasks | công việc: tiêu đề, ghi chú, link liên quan (mỗi dòng một link), người làm (assignee_id), người tạo, ngày, giờ bắt đầu/kết thúc, mức độ, trạng thái todo/doing/done, thời điểm xong |
-| links | link tài liệu cần thiết: tên, đường link (chỉ http/https), ghi chú |
+| links | link tài liệu cần thiết: tên, đường link (chỉ http/https), ghi chú, thư mục (folder_id, trống = Chưa phân loại) |
+| link_folders | thư mục tài liệu: tên, name_key (tên viết thường, unique — chặn trùng kể cả chữ có dấu) |
 | customers | khách hàng: liên hệ, loại khách, công ty/MST, nguồn, trạng thái, nhu cầu, ghi chú, người phụ trách (owner_id), người nhập (created_by); phone_digits = SĐT chỉ còn chữ số (unique) để chặn trùng |
 | customer_invoices | hoá đơn của khách: ngày, giá trị (đồng), ghi chú, file (tên, loại, cỡ, nội dung BLOB); xoá khách thì xoá theo |
 <!-- [vibe:tables] -->
@@ -63,8 +67,11 @@
 
 - File hoá đơn lưu ngay trong DB (BLOB, tối đa 10MB) thay vì thư mục trên ổ đĩa: sao lưu/chuyển máy chỉ cần mang DB, chạy được cả Turso. Chỉ nhận PDF/JPG/PNG/WEBP, kiểm tra theo nội dung file (không tin đuôi). Nhận file bằng thư viện `multer` (`src/middleware/upload.js`), chạy trước csrf và chỉ khi đã đăng nhập.
 
+- Tài liệu: tìm kiếm lọc trong JS (bỏ dấu bằng `#lib/text.js`) thay vì SQL LIKE — SQLite không bỏ dấu tiếng Việt được, số link ít nên lọc trong bộ nhớ đủ nhanh. Xem trước chỉ nhúng các dịch vụ cho phép nhúng; link nhúng do server tính trong `src/lib/link-preview.js`, CSP `frame-src` (src/app.js) chỉ mở đúng các tên miền đó — thêm dịch vụ mới phải sửa cả hai. Tài liệu Google riêng tư chỉ xem được khi trình duyệt đang đăng nhập Google có quyền.
+
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-06 — Tài liệu: chia thư mục (migration 011), ô tìm kiếm không dấu, nút Xem trước cho link Google Drive/Docs/Sheets/Slides/Forms/YouTube.
 - 2026-11-04 — Thêm vai trò Sale (như nhân viên + được dùng Data khách hàng), thay cho ô tick "Được xem & nhập Data khách hàng". Migration 010 dựng lại bảng users: nhân viên đang được tick thành Sale, bỏ cột can_customers.
 - 2026-11-04 — Data khách hàng: bấm tên khách mở thẻ chi tiết (tên, SĐT, địa chỉ, trạng thái, từng hoá đơn + tổng tiền), tải về PNG hoặc PDF. Chụp ảnh bằng thư viện `html-to-image` (phục vụ ở `/vendor/html-to-image.js`), PDF tự ghép trong `public/js/customer-card.js`.
 - 2026-11-04 — Data khách hàng: tách ô mạng xã hội thành Zalo, Facebook, TikTok, Kênh khác (migration 009; cột social cũ thành Kênh khác).

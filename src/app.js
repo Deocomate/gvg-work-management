@@ -8,6 +8,7 @@ import { engine } from 'express-handlebars';
 
 import { config } from '#config';
 import { helpers } from '#lib/view-helpers.js';
+import { PREVIEW_HOSTS } from '#lib/link-preview.js';
 import { csrf } from '#middleware/csrf.js';
 import { upload } from '#middleware/upload.js';
 import { flash } from '#middleware/flash.js';
@@ -44,7 +45,14 @@ export function createApp() {
   app.set('view engine', 'hbs');
   app.set('views', VIEWS);
 
-  app.use(helmet({ contentSecurityPolicy: { directives: { 'upgrade-insecure-requests': null } } }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        // frame-src: chỉ cho nhúng khung "Xem trước" của Google Drive/Docs, YouTube (trang Tài liệu).
+        directives: { 'upgrade-insecure-requests': null, 'frame-src': ["'self'", ...PREVIEW_HOSTS] },
+      },
+    }),
+  );
   app.use(express.static(path.join(ROOT, 'public'), { maxAge: config.isProd ? '7d' : 0 }));
   // Thư viện chụp ảnh khung HTML (tải PNG/PDF thẻ khách hàng). Phục vụ từ node_modules vì CSP chỉ cho script cùng nguồn.
   app.get('/vendor/html-to-image.js', (req, res) =>
