@@ -57,13 +57,9 @@
     </details>
 
     <details class="plan-fold"{{#if open.post}} open{{/if}}>
-      <summary>📤 Đăng bài <span>ngày, giờ, kênh, link</span></summary>
+      <summary>📤 Đăng bài <span>ngày đăng, link</span></summary>
       <div class="plan-fold-body">
-        <div class="grid gap-4 sm:grid-cols-2">
-          {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
-          {{> form/field name="post_time" label="Giờ đăng" type="time" value=values.post_time error=errors.post_time clearLabel="Chưa chốt"}}
-        </div>
-        {{> form/segmented name="platform" label="Kênh đăng" options=platformOptions value=values.platform error=errors.platform}}
+        {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
         <div class="grid gap-4 sm:grid-cols-2">
           {{> form/field name="source_url" label="Link source (file quay)" type="url" value=values.source_url error=errors.source_url placeholder="https://drive.google.com/..."}}
           {{> form/field name="post_url" label="Link bài đã đăng" type="url" value=values.post_url error=errors.post_url placeholder="https://..."}}

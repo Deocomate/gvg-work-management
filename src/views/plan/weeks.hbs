@@ -42,21 +42,26 @@
             <ul class="space-y-1.5">
               {{#each entries}}
                 <li class="plan-entry {{statusInfo.chip}}" data-plan-row>
-                  <p class="flex items-center gap-1 text-[11px] font-semibold">
-                    {{#if time}}<span class="tabular-nums">{{time}}</span>{{else}}<span class="opacity-70">Chưa có giờ</span>{{/if}}
-                    {{#if conflict}}{{#if (eq kind 'shoot')}}<span title="Người phụ trách bị xếp quay cùng giờ ở địa điểm khác">⚠</span>{{/if}}{{/if}}
-                    {{#if (eq kind 'post')}}
-                      {{#if missingShoot}}<span title="Chưa có ngày quay">❗</span>{{/if}}
-                    {{/if}}
-                    {{#if shootTight}}<span title="Quay cách ngày đăng dưới 2 ngày">⏱</span>{{/if}}
-                  </p>
+                  {{!-- Lịch quay: dòng khung giờ + cảnh báo. Lịch đăng: không ghi giờ, chỉ hiện cảnh báo nếu có --}}
+                  {{#if (eq kind 'shoot')}}
+                    <p class="flex items-center gap-1 text-[11px] font-semibold">
+                      {{#if time}}<span class="tabular-nums">{{time}}</span>{{else}}<span class="opacity-70">Chưa có giờ</span>{{/if}}
+                      {{#if conflict}}<span title="Người phụ trách bị xếp quay cùng giờ ở địa điểm khác">⚠</span>{{/if}}
+                      {{#if shootTight}}<span title="Quay cách ngày đăng dưới 2 ngày">⏱</span>{{/if}}
+                    </p>
+                  {{else if (or missingShoot shootTight)}}
+                    <p class="flex items-center gap-1 text-[11px] font-semibold">
+                      {{#if missingShoot}}<span title="Chưa có ngày quay">❗ Chưa có ngày quay</span>{{/if}}
+                      {{#if shootTight}}<span title="Quay cách ngày đăng dưới 2 ngày">⏱ Quay sát ngày</span>{{/if}}
+                    </p>
+                  {{/if}}
                   {{#if canEdit}}
                     <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="plan-entry-title hover:underline" title="{{title}}">{{title}}</a>
                   {{else}}
                     <span class="plan-entry-title" title="{{title}}">{{title}}</span>
                   {{/if}}
                   <p class="mt-0.5 truncate text-[11px] opacity-80">
-                    {{#if (eq kind 'shoot')}}{{#if location}}📍 {{location}} · {{/if}}{{else}}{{platformInfo.label}} · {{/if}}{{#if owner_name}}{{owner_name}}{{else}}Chưa giao{{/if}}
+                    {{#if (eq kind 'shoot')}}{{#if location}}📍 {{location}} · {{/if}}{{/if}}{{#if owner_name}}{{owner_name}}{{else}}Chưa giao{{/if}}
                   </p>
                 </li>
               {{/each}}

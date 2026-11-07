@@ -46,12 +46,11 @@
               <p class="mt-1.5 flex flex-wrap gap-1 text-[11px]">
                 {{#if brand}}<span class="badge-pink">{{brand}}</span>{{/if}}
                 {{#if video_type}}<span class="badge-gray">{{video_type}}</span>{{/if}}
-                {{#if (ne platform 'tiktok')}}<span class="badge-gray">{{platformInfo.label}}</span>{{/if}}
               </p>
               {{#if topic}}<p class="mt-1 truncate text-xs text-ink-faint" title="{{topic}}">{{topic}}</p>{{/if}}
               <p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
                 {{#if shoot_date}}<span>🎬 {{formatDay shoot_date}}</span>{{/if}}
-                {{#if post_date}}<span>📤 {{formatDay post_date}}{{#if post_time}} {{post_time}}{{/if}}</span>{{/if}}
+                {{#if post_date}}<span>📤 {{formatDay post_date}}</span>{{/if}}
                 {{#if owner_name}}<span>👤 {{owner_name}}</span>{{/if}}
                 {{#if writer_name}}<span>✍ {{writer_name}}</span>{{/if}}
                 {{#if (and (not owner_name) (not writer_name) proposer_name)}}<span>💡 {{proposer_name}}</span>{{/if}}

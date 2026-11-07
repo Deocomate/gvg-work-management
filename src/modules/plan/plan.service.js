@@ -123,7 +123,8 @@ export async function getMonth(month, { kind, brand } = {}, user) {
     const item = { ...decorate(plan, user), brandInfo: brandOf(plan), kind: type };
     byDate.set(plan[key], [...(byDate.get(plan[key]) ?? []), item]);
   }
-  const timeOf = (p) => (type === 'post' ? p.post_time : parseTimeRange(p.shoot_time).start) ?? '~';
+  // Lịch đăng không theo giờ (xếp theo tên); lịch quay theo giờ bắt đầu.
+  const timeOf = (p) => (type === 'post' ? null : parseTimeRange(p.shoot_time).start) ?? '~';
   for (const list of byDate.values()) list.sort((a, b) => timeOf(a).localeCompare(timeOf(b)));
 
   const inMonth = plans.filter((p) => p[key].startsWith(month));
@@ -213,7 +214,7 @@ export async function getWeek(date, { kind, brand } = {}, user) {
   const entries = all
     .filter((p) => inWeek(p[key]) && (!only || p.brand === only))
     .map((p) => {
-      if (type === 'post') return { ...p, kind: type, day: p.post_date, time: p.post_time, sortTime: p.post_time };
+      if (type === 'post') return { ...p, kind: type, day: p.post_date, time: null, sortTime: null };
       const { start, end } = parseTimeRange(p.shoot_time);
       return { ...p, kind: type, day: p.shoot_date, time: start ? `${start}${end ? `–${end}` : ''}` : p.shoot_time, sortTime: start };
     })

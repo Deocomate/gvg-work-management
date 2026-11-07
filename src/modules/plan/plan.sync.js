@@ -1,14 +1,12 @@
 // Đồng bộ Plan nội dung <-> lịch làm việc (bảng tasks), 2 chiều:
 // - Plan -> lịch: nội dung có người phụ trách tạo việc "🎬 Quay: …" (ngày quay, khung giờ, địa điểm, CSVC)
-//   và "📤 Đăng: …" (ngày + giờ đăng) cho người đó. Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo;
+//   và "📤 Đăng: …" (ngày đăng, cả ngày) cho người đó. Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo;
 //   bỏ ngày, bỏ người phụ trách hoặc chuyển "Bỏ" thì việc bị xoá.
 // - Lịch -> Plan: tick ✓ Xong việc quay -> Plan "Đã quay"; tick xong việc đăng -> "Đã đăng"; mở lại thì lùi bước.
 // Việc lấy từ Plan chỉ sửa ở Plan (tasks.service chặn sửa/xoá trực tiếp).
 import * as tasksRepo from '#modules/tasks/tasks.repo.js';
-import { PLATFORMS } from './plan.schema.js';
 import * as repo from './plan.repo.js';
 
-const PLATFORM_LABEL = Object.fromEntries(PLATFORMS.map((p) => [p.value, p.label]));
 const isUrl = (v) => typeof v === 'string' && /^https?:\/\/\S+$/i.test(v.trim());
 const lines = (...items) => items.filter(Boolean).join('\n') || null;
 const cut = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
@@ -60,10 +58,10 @@ function desiredTasks(plan) {
       ...base,
       title: cut(`📤 Đăng: ${plan.title}`, 200),
       date: plan.post_date,
-      start_time: plan.post_time ?? null,
+      start_time: null, // lịch đăng không theo giờ -> cả ngày
       end_time: null,
       facilities: null,
-      note: lines(`Kênh: ${PLATFORM_LABEL[plan.platform] ?? plan.platform}`, plan.brand && `Brand: ${plan.brand}`, plan.note),
+      note: lines(plan.brand && `Brand: ${plan.brand}`, plan.note),
       links: lines(...[plan.source_url, plan.post_url].filter(isUrl).map((u) => u.trim())),
     };
   }

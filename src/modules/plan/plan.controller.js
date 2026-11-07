@@ -19,7 +19,7 @@ const afterSave = (plan) => {
 };
 
 const KIND_TEXT = {
-  post: { title: 'Lịch đăng', subtitle: 'Bài cần đăng theo ngày + giờ, chia theo brand', icon: '📤', verb: 'Đăng', dateParam: 'post_date', unit: 'bài cần đăng', done: 'đã đăng' },
+  post: { title: 'Lịch đăng', subtitle: 'Bài cần đăng theo ngày, chia theo brand', icon: '📤', verb: 'Đăng', dateParam: 'post_date', unit: 'bài cần đăng', done: 'đã đăng' },
   shoot: { title: 'Lịch quay', subtitle: 'Buổi quay theo ngày, khung giờ, địa điểm, chia theo brand', icon: '🎬', verb: 'Quay', dateParam: 'shoot_date', unit: 'buổi quay', done: 'đã quay' },
 };
 
@@ -48,7 +48,7 @@ const SECTION_FIELDS = {
   idea: ['description', 'proposer_id', 'note'],
   script: ['writer_id', 'script'],
   shoot: ['shoot_date', 'shoot_time', 'location', 'props'],
-  post: ['post_date', 'post_time', 'source_url', 'post_url'],
+  post: ['post_date', 'source_url', 'post_url'],
 };
 const openSections = (values, errors) =>
   Object.fromEntries(Object.entries(SECTION_FIELDS).map(([name, fields]) => [name, fields.some((f) => values[f] || errors[f])]));

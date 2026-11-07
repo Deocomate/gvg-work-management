@@ -117,12 +117,15 @@ test('Lịch đăng và Lịch quay tách riêng, mỗi brand một hàng; đặ
   const base = { owner_id: namId, shoot_time: '15h00 - 15h30' };
   await add(admin, { ...base, title: 'Quay ở xưởng', brand: 'GSXD', shoot_date: '2026-12-01', post_date: '2026-12-02', location: 'Xưởng' });
   await add(admin, { ...base, title: 'Quay ở số 18', brand: 'Klayy', shoot_date: '2026-12-01', post_date: '2026-12-10', location: '18' });
-  await add(admin, { title: 'Chưa quay gì', brand: 'Vũ Gia', post_date: '2026-12-03', post_time: '19:00' });
+  await add(admin, { title: 'Chưa quay gì', brand: 'Vũ Gia', post_date: '2026-12-03' });
 
   // Lịch đăng: chỉ bài đăng, theo hàng brand
   const posts = (await mai.get('/plan/weeks?kind=post&week=2026-12-01')).text;
   const lane = (html, brand) => html.split(`data-plan-brand="${brand}"`)[1].split('data-plan-brand=')[0];
-  assert.match(lane(posts, 'Vũ Gia').split('data-plan-day="2026-12-03"')[1], /19:00[\s\S]*Chưa quay gì/);
+  const dec3 = lane(posts, 'Vũ Gia').split('data-plan-day="2026-12-03"')[1];
+  assert.match(dec3, /Chưa quay gì/);
+  assert.match(dec3, /❗ Chưa có ngày quay/);
+  assert.doesNotMatch(posts, /Chưa có giờ|TikTok/); // lịch đăng không ghi giờ, không ghi nền tảng
   assert.match(lane(posts, 'GSXD'), /Quay ở xưởng/);
   assert.doesNotMatch(lane(posts, 'GSXD'), /Chưa quay gì/);
   assert.doesNotMatch(posts, /Quay 15:00/); // không lẫn buổi quay
@@ -160,7 +163,7 @@ test('đồng bộ sang lịch làm việc: người phụ trách có việc Qua
   const maiId = await userId('Lê Mai');
   const res = await add(admin, {
     title: 'Mở lò vẽ vàng', owner_id: namId, shoot_date: '2026-12-14', shoot_time: '9h30 - 11h', location: 'Xưởng',
-    props: 'Đèn, chân máy', post_date: '2026-12-16', post_time: '20:00', script: 'https://docs.google.com/document/d/abc',
+    props: 'Đèn, chân máy', post_date: '2026-12-16', script: 'https://docs.google.com/document/d/abc',
   });
   assert.equal(res.status, 302);
 
@@ -172,7 +175,9 @@ test('đồng bộ sang lịch làm việc: người phụ trách có việc Qua
   assert.match(shootDay, /docs\.google\.com\/document\/d\/abc/);
   assert.match(shootDay, />Plan</);
   assert.match(shootDay, /Xem ở Plan/);
-  assert.match((await nam.get('/today?date=2026-12-16')).text, /📤 Đăng: Mở lò vẽ vàng[\s\S]*20:00|20:00[\s\S]*📤 Đăng: Mở lò vẽ vàng/);
+  const postDay = (await nam.get('/today?date=2026-12-16')).text;
+  assert.match(postDay, /📤 Đăng: Mở lò vẽ vàng/);
+  assert.doesNotMatch(postDay, /Kênh: TikTok/);
 
   // Không sửa/xoá trực tiếp trên lịch — chuyển sang Plan
   const taskId = shootDay.match(/\/tasks\/(\d+)\/status/)[1];
@@ -316,4 +321,12 @@ test('lịch tuần: brand không có nội dung thì ẩn hẳn; tuần trống
   const posts = (await mai.get(`/plan/weeks?kind=post&week=${addDays(today, -1)}`)).text;
   assert.match(posts, /Bài đăng hôm qua/);
   assert.doesNotMatch(posts, /quá ngày đăng|⏰/i);
+});
+
+test('form không còn ô giờ đăng và chọn nền tảng; thẻ Idea bank không ghi nền tảng', async () => {
+  const form = (await mai.get('/plan/new')).text;
+  assert.doesNotMatch(form, /name="post_time"/);
+  assert.doesNotMatch(form, /name="platform"/);
+  await add(mai, { title: 'Ý tưởng không nền tảng' });
+  assert.doesNotMatch((await cardOf(mai, 'Ý tưởng không nền tảng')).html, /TikTok/);
 });

@@ -38,7 +38,6 @@
                      class="flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-xs {{statusInfo.chip}}"
                      title="{{@root.text.verb}}: {{title}} — {{brandInfo.label}} · {{statusInfo.label}}{{#if owner_name}} · {{owner_name}}{{/if}}">
                     <span class="{{brandInfo.badge}} shrink-0 px-1 py-0 text-[10px]">{{brandInfo.short}}</span>
-                    {{#if (eq kind 'post')}}{{#if post_time}}<span class="tabular-nums">{{post_time}}</span>{{/if}}{{/if}}
                     <span class="truncate">{{title}}</span>
                   </a>
                 </li>
@@ -66,7 +65,7 @@
           {{#each entries}}
             <li class="flex flex-wrap items-center gap-2 text-sm">
               <span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>
-              {{#if (eq kind 'post')}}{{#if post_time}}<span class="tabular-nums text-ink-faint">{{post_time}}</span>{{/if}}{{else}}{{#if shoot_time}}<span class="text-ink-faint">{{shoot_time}}</span>{{/if}}{{/if}}
+              {{#if (eq kind 'shoot')}}{{#if shoot_time}}<span class="text-ink-faint">{{shoot_time}}</span>{{/if}}{{/if}}
               {{#if canEdit}}
                 <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="min-w-0 truncate font-medium text-ink hover:underline">{{title}}</a>
               {{else}}
