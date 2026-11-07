@@ -10,7 +10,7 @@
   </p>
   <p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
     {{#if shoot_date}}<span>Quay {{formatDay shoot_date}}</span>{{/if}}
-    {{#if post_date}}<span>Đăng {{formatDay post_date}}</span>{{/if}}
+    {{#if post_date}}<span>Đăng {{formatDay post_date}}</span>{{else if (eq status 'selected')}}<span class="italic text-ink-faint">Chưa có ngày đăng</span>{{/if}}
     {{#if owner_name}}<span>{{owner_name}}</span>{{/if}}
     {{#if writer_name}}<span>Kịch bản: {{writer_name}}</span>{{/if}}
     {{#if (and (not owner_name) (not writer_name) proposer_name)}}<span>{{proposer_name}}</span>{{/if}}

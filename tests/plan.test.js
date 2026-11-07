@@ -102,6 +102,11 @@ test('chỉ 3 bước Mới → Đã chọn → Đã xong; ý tưởng Mới g�
   assert.equal(edit.headers.location, `/plan/weeks?kind=post&week=${today}`);
   assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
   assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, />\s*Xong\s*</);
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /Đăng \d{2}\/\d{2}\/\d{4}/);
+  // Đã chọn mà chưa có ngày đăng -> ghi rõ
+  await add(mai, { title: 'Chọn rồi chưa có ngày', status: 'selected' });
+  assert.match((await cardOf(mai, 'Chọn rồi chưa có ngày')).html, /Chưa có ngày đăng/);
+  assert.doesNotMatch((await cardOf(mai, 'Hậu trường nung gốm')).html, /Chưa có ngày đăng/);
 
   // Xong -> rời bảng Idea bank, vào Lưu trữ (có nút Mở lại)
   await postForm(mai, `/plan/${id}/status`, { status: 'posted', back: '/plan' }, { from: '/plan' });
