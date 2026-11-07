@@ -46,10 +46,8 @@ function calendarNav({ kind, brand, view, week, month }) {
 
 // Form gọn: mỗi nhóm ô là một mục gập lại, tự mở khi đã có dữ liệu hoặc có lỗi.
 const SECTION_FIELDS = {
-  idea: ['proposer_id', 'note'],
   script: ['writer_id', 'script'],
   shoot: ['shoot_date', 'shoot_time', 'location', 'props'],
-  post: ['post_date', 'source_url', 'post_url'],
 };
 const openSections = (values, errors) =>
   Object.fromEntries(Object.entries(SECTION_FIELDS).map(([name, fields]) => [name, fields.some((f) => values[f] || errors[f])]));

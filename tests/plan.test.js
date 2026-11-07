@@ -66,10 +66,8 @@ test('thiếu tên, link sai, ngày đăng trước ngày quay -> báo lỗi, gi
   assert.match(noTitle.text, /Vui lòng nhập tên ý tưởng/);
   assert.match(noTitle.text, /Giữ lại nội dung này/);
 
-  const badUrl = await add(mai, { title: 'X', post_url: 'javascript:alert(1)' });
-  assert.equal(badUrl.status, 422);
-  assert.match(badUrl.text, /http:\/\/ hoặc https:\/\//);
-  assert.match(badUrl.text, /<details class="plan-fold" open>\s*<summary>📤 Đăng bài/); // phần có lỗi tự mở
+  // Link bài đăng không phải http(s) -> từ chối (chặn link "javascript:")
+  assert.equal((await add(mai, { title: 'X', post_url: 'javascript:alert(1)' })).status, 422);
 
   const badDates = await add(mai, { title: 'X', shoot_date: addDays(today, 3), post_date: today });
   assert.equal(badDates.status, 422);
@@ -80,13 +78,13 @@ test('thiếu tên, link sai, ngày đăng trước ngày quay -> báo lỗi, gi
   assert.match(bad.text, /Brand không hợp lệ/);
 });
 
-test('form gọn: ý tưởng mới chỉ mở phần chính; bấm + ở một ngày -> mở sẵn phần Đăng bài', async () => {
+test('form gọn: ý tưởng mới chỉ mở phần chính; bấm + ở một ngày -> điền sẵn ngày đăng', async () => {
   const blank = (await mai.get('/plan/new')).text;
   assert.doesNotMatch(blank, /plan-fold" open/);
   const day = addDays(today, 2);
   const page = (await mai.get(`/plan/new?post_date=${day}`)).text;
   assert.match(page, new RegExp(`name="post_date" type="date" value="${day}"`));
-  assert.match(page, /<details class="plan-fold" open>\s*<summary>📤 Đăng bài/);
+  assert.doesNotMatch(page, /plan-fold" open/); // ngày đăng ở phần chính, không cần mở phần nào
 });
 
 test('nút bước tiếp theo: Mới → Đã chọn → Đã viết kịch bản; gắn ngày -> Đã lên lịch', async () => {
@@ -359,4 +357,25 @@ test('form không còn Loại video / Tuyến nội dung; sửa nội dung cũ v
   await postForm(mai, `/plan/${id}`, { title: 'Ý tưởng có tuyến cũ (sửa)' }, { from: `/plan/${id}/edit` });
   assert.match((await mai.get('/plan?q=xuong+nghe+nhan')).text, /Ý tưởng có tuyến cũ \(sửa\)/); // tuyến cũ vẫn còn (tìm được)
   assert.doesNotMatch((await cardOf(mai, 'tuyến cũ (sửa)')).html, /A – Phức tạp|VG – Xưởng/); // nhưng không hiện trên thẻ
+});
+
+test('form không còn phần Chi tiết ý tưởng (người góp, ghi chú); sửa vẫn giữ ghi chú cũ', async () => {
+  const form = (await mai.get('/plan/new')).text;
+  assert.doesNotMatch(form, /Chi tiết ý tưởng|name="proposer_id"|name="note"/);
+
+  await add(mai, { title: 'Ý tưởng có ghi chú cũ', note: 'Hook: gõ chén thành nhạc' });
+  const id = (await cardOf(mai, 'Ý tưởng có ghi chú cũ')).id;
+  await postForm(mai, `/plan/${id}`, { title: 'Ý tưởng có ghi chú cũ (sửa)' }, { from: `/plan/${id}/edit` });
+  assert.match((await mai.get('/plan?q=go+chen')).text, /Ý tưởng có ghi chú cũ \(sửa\)/);
+});
+
+test('form không còn phần Đăng bài; Ngày đăng nằm ở phần chính; sửa vẫn giữ link cũ', async () => {
+  const form = (await mai.get('/plan/new')).text;
+  assert.doesNotMatch(form, /📤 Đăng bài|name="source_url"|name="post_url"/);
+  assert.match(form.split('<details')[0], /name="post_date"/);
+
+  await add(mai, { title: 'Bài có link cũ', post_url: 'https://www.tiktok.com/@vugia/video/1' });
+  const id = (await cardOf(mai, 'Bài có link cũ')).id;
+  await postForm(mai, `/plan/${id}`, { title: 'Bài có link cũ' }, { from: `/plan/${id}/edit` });
+  assert.match((await cardOf(mai, 'Bài có link cũ')).html, /tiktok\.com\/@vugia\/video\/1/);
 });

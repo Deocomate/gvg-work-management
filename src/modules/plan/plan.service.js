@@ -292,8 +292,10 @@ export async function updatePlan(id, input, user) {
   const existing = await getEditablePlan(id, user);
   const result = prepare(input);
   if (!result.ok) return result;
-  // Form không còn ô Loại video / Tuyến nội dung: giữ nguyên giá trị cũ (VD nhập từ Sheet) khi lưu.
-  const plan = await repo.update(id, { ...result.data, topic: existing.topic, video_type: existing.video_type });
+  // Form không còn ô Loại video, Tuyến nội dung, Người góp, Ghi chú, Link source, Link bài đã đăng:
+  // giữ nguyên giá trị cũ (VD nhập từ Sheet) khi lưu.
+  const kept = Object.fromEntries(['topic', 'video_type', 'proposer_id', 'note', 'source_url', 'post_url'].map((f) => [f, existing[f]]));
+  const plan = await repo.update(id, { ...result.data, ...kept });
   if (!plan) throw notFound('Không tìm thấy nội dung này.');
   await syncPlan(id);
   return { ok: true, data: plan };
