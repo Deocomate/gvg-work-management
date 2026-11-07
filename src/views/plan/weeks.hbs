@@ -16,7 +16,6 @@
   <span class="badge-green">✅ {{summary.done}} {{text.done}}</span>
   {{#if (eq kind 'post')}}
     {{#if summary.missingShoot}}<span class="badge-orange">❗ {{summary.missingShoot}} chưa có ngày quay</span>{{/if}}
-    {{#if summary.overdue}}<span class="badge-red">⏰ {{summary.overdue}} quá ngày đăng</span>{{/if}}
   {{else}}
     {{#if summary.conflicts}}<span class="badge-red">⚠ {{summary.conflicts}} trùng giờ quay</span>{{/if}}
     {{#if summary.tight}}<span class="badge-orange">⏱ {{summary.tight}} quay sát ngày đăng</span>{{/if}}
@@ -25,13 +24,14 @@
 
 {{!-- Mỗi brand một hàng riêng, 7 ngày. Máy tính: 7 cột; điện thoại: chỉ hiện ngày có nội dung --}}
 <div class="space-y-4" data-plan-week>
-  <div class="plan-week-head" aria-hidden="true">
-    {{#each weekdays}}<div class="{{#if isToday}}text-brand-300{{/if}}"><span class="font-semibold">{{weekday}}</span> {{dayMonth}}</div>{{/each}}
-  </div>
+  {{#if groups.length}}
+    <div class="plan-week-head" aria-hidden="true">
+      {{#each weekdays}}<div class="{{#if isToday}}text-brand-300{{/if}}"><span class="font-semibold">{{weekday}}</span> {{dayMonth}}</div>{{/each}}
+    </div>
+  {{/if}}
   {{#each groups}}
     <section class="plan-lane" data-plan-brand="{{label}}">
       <h3 class="plan-lane-head"><span class="{{badge}}">{{label}}</span> <span class="text-xs font-normal text-ink-faint">{{total}} {{@root.text.unit}}</span></h3>
-      {{#if total}}
       <div class="plan-week">
         {{#each days}}
           <div class="plan-day{{#if isToday}} plan-day-today{{/if}}{{#if isPast}} plan-day-past{{/if}}{{#unless entries.length}} plan-day-empty{{/unless}}" data-plan-day="{{date}}">
@@ -46,7 +46,6 @@
                     {{#if time}}<span class="tabular-nums">{{time}}</span>{{else}}<span class="opacity-70">Chưa có giờ</span>{{/if}}
                     {{#if conflict}}{{#if (eq kind 'shoot')}}<span title="Người phụ trách bị xếp quay cùng giờ ở địa điểm khác">⚠</span>{{/if}}{{/if}}
                     {{#if (eq kind 'post')}}
-                      {{#if overdue}}<span title="Quá ngày đăng mà chưa đánh dấu Đã đăng">⏰</span>{{/if}}
                       {{#if missingShoot}}<span title="Chưa có ngày quay">❗</span>{{/if}}
                     {{/if}}
                     {{#if shootTight}}<span title="Quay cách ngày đăng dưới 2 ngày">⏱</span>{{/if}}
@@ -65,19 +64,14 @@
           </div>
         {{/each}}
       </div>
-      {{else}}
-        {{!-- Brand không có gì trong tuần: gọn một dòng, vẫn thêm nhanh được --}}
-        <p class="flex flex-wrap items-center gap-3 px-1 text-xs text-ink-faint">
-          Chưa có nội dung trong tuần này.
-          {{#if value}}<a href="/plan/new?{{@root.text.dateParam}}={{@root.week}}&brand={{urlEncode value}}&back={{urlEncode @root.back}}" class="link font-normal">+ Thêm cho {{label}}</a>{{/if}}
-        </p>
-      {{/if}}
     </section>
+  {{else}}
+    <p class="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-ink-faint" data-plan-empty>Tuần này chưa có {{text.unit}} nào.</p>
   {{/each}}
 </div>
 
 <p class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
-  {{#if (eq kind 'post')}}<span>❗ Chưa có ngày quay</span><span>⏰ Quá ngày đăng</span>{{else}}<span>⚠ Trùng giờ quay</span>{{/if}}
+  {{#if (eq kind 'post')}}<span>❗ Chưa có ngày quay</span>{{else}}<span>⚠ Trùng giờ quay</span>{{/if}}
   <span>⏱ Quay sát ngày đăng (&lt; 2 ngày)</span>
   <span>Màu thẻ = bước hiện tại. Nội dung có người phụ trách tự hiện ở “Hôm nay” / “Tháng” của người đó.</span>
 </p>

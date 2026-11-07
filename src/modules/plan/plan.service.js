@@ -17,7 +17,6 @@ const PLATFORM = byValue(PLATFORMS);
 const BRAND = byValue(BRANDS);
 // Đã quay / đăng / bỏ = không còn phải lo lịch quay nữa.
 const DONE_SHOOTING = new Set(['filmed', 'posted', 'dropped']);
-const CLOSED = new Set(['posted', 'dropped']);
 // Còn ở giai đoạn ý tưởng: gắn ngày quay/đăng thì tự thành "Đã lên lịch".
 const IDEA_STAGES = new Set(['idea', 'selected', 'scripted']);
 
@@ -176,7 +175,7 @@ export function weekLabel(days) {
   };
 }
 
-/** Cảnh báo giống Sheet cũ: chưa có ngày quay, quay sát ngày đăng (< 2 ngày), quá ngày đăng mà chưa đăng. */
+/** Cảnh báo giống Sheet cũ: chưa có ngày quay, quay sát ngày đăng (< 2 ngày). */
 function withChecks(plan, today) {
   const leadDays = plan.shoot_date && plan.post_date ? daysBetween(plan.shoot_date, plan.post_date) : null;
   return {
@@ -184,7 +183,6 @@ function withChecks(plan, today) {
     leadDays,
     shootTight: leadDays != null && leadDays < 2 && !DONE_SHOOTING.has(plan.status),
     missingShoot: Boolean(plan.post_date) && !plan.shoot_date && !DONE_SHOOTING.has(plan.status),
-    overdue: Boolean(plan.post_date) && plan.post_date < today && !CLOSED.has(plan.status),
   };
 }
 
@@ -221,8 +219,9 @@ export async function getWeek(date, { kind, brand } = {}, user) {
     })
     .sort((a, b) => (a.sortTime ?? '~').localeCompare(b.sortTime ?? '~'));
 
+  // Chỉ hiện brand có nội dung trong tuần (không có gì thì ẩn hẳn hàng đó).
   const groups = [...BRANDS, NO_BRAND]
-    .filter((b) => (only ? b.value === only : b !== NO_BRAND || entries.some((e) => brandOf(e) === NO_BRAND)))
+    .filter((b) => entries.some((e) => brandOf(e) === b))
     .map((b) => {
       const mine = entries.filter((e) => brandOf(e) === b);
       return {
@@ -256,7 +255,6 @@ export async function getWeek(date, { kind, brand } = {}, user) {
       total: entries.length,
       done: entries.filter((e) => (type === 'post' ? e.status === 'posted' : DONE_SHOOTING.has(e.status))).length,
       missingShoot: entries.filter((e) => e.missingShoot).length,
-      overdue: entries.filter((e) => e.overdue).length,
       conflicts: entries.filter((e) => e.conflict).length,
       tight: entries.filter((e) => e.shootTight).length,
     },

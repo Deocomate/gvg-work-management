@@ -301,3 +301,19 @@ test('form thêm ý tưởng có sẵn ô Link tham khảo ở phần chính (kh
   assert.match(main, /name="reference_url"/);
   assert.match(main, /Link tham khảo/);
 });
+
+test('lịch tuần: brand không có nội dung thì ẩn hẳn; tuần trống báo một dòng; không báo quá ngày đăng', async () => {
+  const shoots = (await mai.get('/plan/weeks?kind=shoot&week=2026-12-01')).text;
+  assert.match(shoots, /data-plan-brand="GSXD"/);
+  assert.doesNotMatch(shoots, /data-plan-brand="Vũ Gia"/); // Vũ Gia chỉ có bài đăng, không có buổi quay tuần này
+  assert.doesNotMatch(shoots, /Chưa có nội dung trong tuần này/);
+
+  const empty = (await mai.get('/plan/weeks?kind=shoot&week=2030-01-07')).text;
+  assert.doesNotMatch(empty, /data-plan-brand=/);
+  assert.match(empty, /Tuần này chưa có buổi quay nào/);
+
+  await add(admin, { title: 'Bài đăng hôm qua', brand: 'Vũ Gia', post_date: addDays(today, -1) });
+  const posts = (await mai.get(`/plan/weeks?kind=post&week=${addDays(today, -1)}`)).text;
+  assert.match(posts, /Bài đăng hôm qua/);
+  assert.doesNotMatch(posts, /quá ngày đăng|⏰/i);
+});
