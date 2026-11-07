@@ -2,7 +2,8 @@
 // - Plan -> lịch: nội dung có người phụ trách tạo việc "🎬 Quay: …" (ngày quay, khung giờ, địa điểm, CSVC)
 //   và "📤 Đăng: …" (ngày đăng, cả ngày) cho người đó. Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo;
 //   bỏ ngày, bỏ người phụ trách hoặc chuyển "Bỏ" thì việc bị xoá.
-// - Lịch -> Plan: tick ✓ Xong việc quay -> Plan "Đã quay"; tick xong việc đăng -> "Đã đăng"; mở lại thì lùi bước.
+// - Lịch -> Plan: tick ✓ Xong việc đăng -> Plan "Đã xong"; mở lại việc đăng -> lùi về "Đã chọn".
+//   Việc quay tick xong/mở lại tuỳ người làm (Plan không còn bước "Đã quay").
 // Việc lấy từ Plan chỉ sửa ở Plan (tasks.service chặn sửa/xoá trực tiếp).
 import * as tasksRepo from '#modules/tasks/tasks.repo.js';
 import * as repo from './plan.repo.js';
@@ -25,7 +26,7 @@ export function parseTimeRange(text) {
   return { start, end: end && end > start ? end : null };
 }
 
-const DONE_FOR = { shoot: new Set(['filmed', 'posted']), post: new Set(['posted']) };
+const isDone = (plan) => plan.status === 'posted';
 
 /** Các việc lẽ ra phải có trên lịch cho nội dung này: { shoot?, post? }. */
 function desiredTasks(plan) {
@@ -82,9 +83,10 @@ export async function syncPlan(planId) {
       if (current) deletes.push(current.id);
       continue;
     }
-    // Plan đã quay/đăng -> việc xong; Plan lùi bước -> mở lại; còn lại giữ trạng thái người làm đang đặt (VD Đang làm).
-    const done = DONE_FOR[kind].has(plan.status);
-    const status = done ? 'done' : current?.status === 'done' || !current ? 'todo' : current.status;
+    // Plan "Đã xong" -> cả 2 việc xong. Việc đăng theo sát Plan (Plan lùi bước -> mở lại);
+    // việc quay giữ trạng thái người làm đang đặt (đã quay xong thì vẫn xong).
+    const reopen = kind === 'post' && current?.status === 'done';
+    const status = isDone(plan) ? 'done' : !current || reopen ? 'todo' : current.status;
     if (current) updates.push({ id: current.id, task: { ...task, status } });
     else creates.push({ ...task, status, plan_kind: kind });
   }
@@ -97,23 +99,12 @@ export async function syncPlans(ids) {
 
 export const removePlanTasks = (planId) => tasksRepo.removeForPlan(planId);
 
-const STEP = ['idea', 'selected', 'scripted', 'scheduled', 'filmed', 'posted'];
-const before = (a, b) => STEP.indexOf(a) < STEP.indexOf(b);
-
-/** Lịch -> Plan: người làm tick ✓ Xong / Mở lại việc quay hoặc đăng. */
+/** Lịch -> Plan: người làm tick ✓ Xong / Mở lại việc đăng thì Plan thành "Đã xong" / lùi về "Đã chọn". */
 export async function applyTaskStatus(task, status) {
-  if (!task.plan_id) return;
+  if (!task.plan_id || task.plan_kind !== 'post') return;
   const plan = await repo.findById(task.plan_id);
   if (!plan || plan.status === 'dropped') return;
-  let next = plan.status;
-  if (status === 'done') {
-    const target = task.plan_kind === 'post' ? 'posted' : 'filmed';
-    if (before(plan.status, target)) next = target;
-  } else if (task.plan_kind === 'post' && plan.status === 'posted') {
-    next = plan.shoot_date ? 'filmed' : 'scheduled';
-  } else if (task.plan_kind === 'shoot' && plan.status === 'filmed') {
-    next = 'scheduled';
-  }
+  const next = status === 'done' ? 'posted' : plan.status === 'posted' ? 'selected' : plan.status;
   if (next !== plan.status) await repo.updateStatus(plan.id, next);
   await syncPlan(plan.id);
 }

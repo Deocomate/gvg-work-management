@@ -27,7 +27,7 @@ export const listForRange = ({ from, to }) =>
 export const listUpcomingWithoutShoot = (today) =>
   all(
     `SELECT ${COLUMNS} ${FROM}
-     WHERE p.post_date >= ? AND p.shoot_date IS NULL AND p.status NOT IN ('filmed', 'posted', 'dropped')
+     WHERE p.post_date >= ? AND p.shoot_date IS NULL AND p.status NOT IN ('posted', 'dropped')
      ORDER BY p.post_date, COALESCE(p.post_time, '')`,
     [today],
   );

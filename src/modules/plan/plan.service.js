@@ -15,10 +15,8 @@ const byValue = (list) => Object.fromEntries(list.map((o) => [o.value, o]));
 const STATUS = byValue(PLAN_STATUSES);
 const PLATFORM = byValue(PLATFORMS);
 const BRAND = byValue(BRANDS);
-// Đã quay / đăng / bỏ = không còn phải lo lịch quay nữa.
-const DONE_SHOOTING = new Set(['filmed', 'posted', 'dropped']);
-// Còn ở giai đoạn ý tưởng: gắn ngày quay/đăng thì tự thành "Đã lên lịch".
-const IDEA_STAGES = new Set(['idea', 'selected', 'scripted']);
+// Đã xong / bỏ = không còn phải lo lịch quay nữa.
+const DONE_SHOOTING = new Set(['posted', 'dropped']);
 
 export const canEdit = (user, plan) =>
   isManager(user) || plan.created_by === user.id || (plan.owner_id != null && plan.owner_id === user.id);
@@ -27,10 +25,7 @@ export const canDelete = (user, plan) => isManager(user) || plan.created_by === 
 // Nút "bước tiếp theo" trên thẻ ở Idea bank. edit = mở form để chọn ngày.
 const NEXT_STEP = {
   idea: { status: 'selected', label: 'Chọn' },
-  selected: { status: 'scripted', label: 'Xong kịch bản' },
-  scripted: { edit: true, label: 'Lên lịch' },
-  scheduled: { status: 'filmed', label: 'Đã quay' },
-  filmed: { status: 'posted', label: 'Đã đăng' },
+  selected: { status: 'posted', label: 'Xong' },
 };
 
 /** Thêm thông tin hiển thị (nhãn, màu, quyền, bước tiếp) cho view. */
@@ -47,11 +42,11 @@ export const decorate = (plan, user) => ({
 const searchText = (p) =>
   [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.location, p.owner_name, p.proposer_name, p.writer_name].join(' ');
 
-// Cột "Đã đăng" chỉ hiện bài mới nhất để bảng không dài mãi.
+// Cột "Đã xong" chỉ hiện bài mới nhất để bảng không dài mãi.
 const POSTED_SHOWN = 12;
 
 /**
- * Idea bank dạng bảng cột theo bước: Mới → Đã chọn → Đã viết kịch bản → Đã lên lịch → Đã quay → Đã đăng
+ * Idea bank dạng bảng cột theo bước: Mới → Đã chọn → Đã xong
  * (cột "Bỏ" chỉ hiện khi bật). Lọc brand, người phụ trách và tìm không dấu.
  * Số ý tưởng nhỏ (vài trăm) nên lọc trong JS để bỏ dấu tiếng Việt (SQLite LIKE không làm được).
  */
@@ -69,7 +64,8 @@ export async function getBoard({ brand, owner, q, dropped } = {}, user) {
   const columns = PLAN_STATUSES.filter((s) => dropped || s.value !== 'dropped').map((s) => {
     let items = shown.filter((p) => p.status === s.value);
     if (s.value === 'posted') items.sort((a, b) => (b.post_date ?? '').localeCompare(a.post_date ?? ''));
-    if (['scheduled', 'filmed'].includes(s.value)) {
+    // Đã chọn: bài có ngày (đăng, không thì quay) lên trước, gần nhất trước.
+    if (s.value === 'selected') {
       items.sort((a, b) => (a.post_date ?? a.shoot_date ?? '~').localeCompare(b.post_date ?? b.shoot_date ?? '~'));
     }
     const total = items.length;
@@ -270,12 +266,12 @@ export async function getEditablePlan(id, user) {
   return plan;
 }
 
-/** Ý tưởng (Mới / Đã chọn / Đã viết kịch bản) vừa được gắn ngày quay/đăng thì tự chuyển sang "Đã lên lịch". */
+/** Ý tưởng "Mới" vừa được gắn ngày quay/đăng thì tự chuyển sang "Đã chọn". */
 function prepare(input) {
   const result = validate(planSchema, input);
   if (!result.ok) return result;
   const data = result.data;
-  if (IDEA_STAGES.has(data.status) && (data.shoot_date || data.post_date)) data.status = 'scheduled';
+  if (data.status === 'idea' && (data.shoot_date || data.post_date)) data.status = 'selected';
   return { ok: true, data };
 }
 

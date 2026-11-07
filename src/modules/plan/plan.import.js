@@ -11,10 +11,12 @@ import { syncPlans } from './plan.sync.js';
 const SHEET_STATUS = {
   'mới': 'idea',
   'đã chọn': 'selected',
-  'đã viết kịch bản': 'scripted',
-  'đã lên lịch': 'scheduled',
-  'đã quay': 'filmed',
+  // Sheet cũ có nhiều bước hơn: các bước giữa gộp vào "Đã chọn".
+  'đã viết kịch bản': 'selected',
+  'đã lên lịch': 'selected',
+  'đã quay': 'selected',
   'đã đăng': 'posted',
+  'đã xong': 'posted',
   'bỏ': 'dropped',
 };
 const SHEET_FIELDS = [
@@ -41,7 +43,7 @@ export async function importFromSheet(user) {
   const sheet = JSON.parse(await readFile(new URL('./sheet-import.json', import.meta.url), 'utf8'));
   const userOf = nameMatcher(await staffOptions());
   const rows = [
-    ...sheet.plan.map((r) => ({ ...r, defaultStatus: 'scheduled' })),
+    ...sheet.plan.map((r) => ({ ...r, defaultStatus: 'selected' })),
     ...sheet.ideas.map((r) => ({ ...r, defaultStatus: 'idea' })),
   ];
 

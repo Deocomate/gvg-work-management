@@ -87,18 +87,23 @@ test('form gọn: ý tưởng mới chỉ mở phần chính; bấm + ở một 
   assert.doesNotMatch(page, /plan-fold" open/); // ngày đăng ở phần chính, không cần mở phần nào
 });
 
-test('nút bước tiếp theo: Mới → Đã chọn → Đã viết kịch bản; gắn ngày -> Đã lên lịch', async () => {
+test('chỉ 3 bước Mới → Đã chọn → Đã xong; ý tưởng Mới gắn ngày -> Đã chọn', async () => {
+  const board = (await mai.get('/plan')).text;
+  assert.doesNotMatch(board, /Đã viết kịch bản|Đã lên lịch|Đã quay/);
   const id = await idOf('Hậu trường nung gốm');
-  await postForm(mai, `/plan/${id}/status`, { status: 'selected', back: '/plan' }, { from: '/plan' });
-  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
-  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /Xong kịch bản/);
-  await postForm(mai, `/plan/${id}/status`, { status: 'scripted', back: '/plan' }, { from: '/plan' });
-  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /Lên lịch/);
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /Chọn/);
 
-  const edit = await postForm(mai, `/plan/${id}`, { title: 'Hậu trường nung gốm', status: 'scripted', post_date: today }, { from: `/plan/${id}/edit` });
+  const edit = await postForm(mai, `/plan/${id}`, { title: 'Hậu trường nung gốm', status: 'idea', post_date: today }, { from: `/plan/${id}/edit` });
   assert.equal(edit.status, 302);
   assert.equal(edit.headers.location, `/plan/weeks?kind=post&week=${today}`);
-  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'scheduled');
+  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, />\s*Xong\s*</);
+
+  await postForm(mai, `/plan/${id}/status`, { status: 'posted', back: '/plan' }, { from: '/plan' });
+  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'posted');
+  // Bước cũ không còn nhận
+  await postForm(mai, `/plan/${id}/status`, { status: 'filmed', back: '/plan' }, { from: '/plan' });
+  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'posted');
 
   const bad = await postForm(mai, `/plan/${id}/status`, { status: 'hack' }, { from: '/plan' });
   assert.equal(bad.status, 302);
@@ -185,13 +190,13 @@ test('đồng bộ sang lịch làm việc: người phụ trách có việc Qua
 
   // Đổi ngày quay + giao cho Mai -> việc chuyển ngày, chuyển người
   const id = await idOf('Mở lò vẽ vàng');
-  await postForm(admin, `/plan/${id}`, { title: 'Mở lò vẽ vàng', owner_id: maiId, shoot_date: '2026-12-15', post_date: '2026-12-16', status: 'scheduled' }, { from: `/plan/${id}/edit` });
+  await postForm(admin, `/plan/${id}`, { title: 'Mở lò vẽ vàng', owner_id: maiId, shoot_date: '2026-12-15', post_date: '2026-12-16', status: 'selected' }, { from: `/plan/${id}/edit` });
   assert.doesNotMatch((await nam.get('/today?date=2026-12-14')).text, /Mở lò vẽ vàng/);
   assert.match((await mai.get('/today?date=2026-12-15')).text, /🎬 Quay: Mở lò vẽ vàng/);
   assert.doesNotMatch((await mai.get('/today?date=2026-12-15')).text, /09:30/); // bỏ khung giờ -> cả ngày
 
   // Bỏ ngày quay -> việc quay biến mất, việc đăng còn
-  await postForm(admin, `/plan/${id}`, { title: 'Mở lò vẽ vàng', owner_id: maiId, post_date: '2026-12-16', status: 'scheduled' }, { from: `/plan/${id}/edit` });
+  await postForm(admin, `/plan/${id}`, { title: 'Mở lò vẽ vàng', owner_id: maiId, post_date: '2026-12-16', status: 'selected' }, { from: `/plan/${id}/edit` });
   assert.doesNotMatch((await mai.get('/today?date=2026-12-15')).text, /🎬 Quay: Mở lò vẽ vàng/);
   assert.match((await mai.get('/today?date=2026-12-16')).text, /📤 Đăng: Mở lò vẽ vàng/);
 });
@@ -204,15 +209,18 @@ test('đồng bộ 2 chiều: tick xong việc trên lịch -> Plan đổi bư�
   const taskOf = async (date) =>
     (await nam.get(`/today?date=${date}`)).text.match(/<h3[^>]*>[^<]*Bình hút lộc<\/h3>[\s\S]*?\/tasks\/(\d+)\/status/)[1];
 
+  // Tick xong việc quay: Plan giữ "Đã chọn", việc quay vẫn xong
   await postForm(nam, `/tasks/${await taskOf('2026-12-21')}/status`, { status: 'done' }, { from: '/today' });
-  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'filmed');
+  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'selected');
+  assert.match((await nam.get('/today?date=2026-12-21')).text, /🎬 Quay: Bình hút lộc[\s\S]*?Mở lại/);
 
   await postForm(nam, `/tasks/${await taskOf('2026-12-23')}/status`, { status: 'done' }, { from: '/today' });
   assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'posted');
 
-  // Mở lại việc đăng -> Plan lùi về Đã quay
+  // Mở lại việc đăng -> Plan lùi về Đã chọn, việc quay vẫn xong
   await postForm(nam, `/tasks/${await taskOf('2026-12-23')}/status`, { status: 'todo' }, { from: '/today' });
-  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'filmed');
+  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'selected');
+  assert.match((await nam.get('/today?date=2026-12-21')).text, /🎬 Quay: Bình hút lộc[\s\S]*?Mở lại/);
 
   // Đổi trạng thái ở Plan -> việc trên lịch xong theo
   await postForm(admin, `/plan/${id}/status`, { status: 'posted' }, { from: '/plan' });
@@ -222,7 +230,7 @@ test('đồng bộ 2 chiều: tick xong việc trên lịch -> Plan đổi bư�
   assert.doesNotMatch((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
   assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'dropped');
 
-  await postForm(admin, `/plan/${id}/status`, { status: 'scheduled' }, { from: '/plan' });
+  await postForm(admin, `/plan/${id}/status`, { status: 'selected' }, { from: '/plan' });
   assert.match((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
   await postForm(admin, `/plan/${id}/delete`, {}, { from: '/plan' });
   assert.doesNotMatch((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
@@ -282,7 +290,7 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
   assert.match(flash, /Chưa có tài khoản: .*Long/);
 
   assert.match((await admin.get(`/plan/weeks?week=2026-10-26`)).text, /Video men lam/);
-  assert.equal((await cardOf(admin, 'Giới thiệu xưởng')).column, 'filmed');
+  assert.equal((await cardOf(admin, 'Giới thiệu xưởng')).column, 'selected');
   assert.match((await cardOf(admin, 'Mở lò vẽ vàng', '&brand=Vũ%20Gia')).html, /Kịch bản: Lê Mai/);
   assert.match((await nhai.get('/today?date=2026-10-26')).text, /🎬 Quay: Video men lam[\s\S]*15:00/);
 

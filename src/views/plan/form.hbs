@@ -15,7 +15,7 @@
     {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
     {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
     {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao" hint="Việc quay / đăng tự lên lịch làm việc của người này."}}
-    {{> form/select name="status" label="Bước hiện tại" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì tự thành “Đã lên lịch”."}}
+    {{> form/select name="status" label="Bước hiện tại" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì “Mới” tự thành “Đã chọn”."}}
   </div>
 
   {{!-- Các phần chi tiết: gập lại, tự mở khi đã có dữ liệu --}}
