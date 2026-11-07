@@ -4,15 +4,16 @@
 @source "../views";
 @source "../../public/js";
 
-/* Bảng màu "Dusty Bloom" — app luôn ở nền tối. Đổi màu ở đây: cả app đổi theo.
-   brand (cam đất #CA5323) = nút chính · pine (xanh rêu #315E5C) = vùng chọn/hoàn thành
-   bloom (hồng #D086AB) = nhấn/thông tin · sun (vàng #E6B545) = đang làm/cảnh báo · cream (#EEEDD9) = chữ */
+/* Bảng màu: tím mận (brand) + xanh rêu (pine) — cùng một bộ cho cả nền tối lẫn sáng. Đổi màu ở đây: cả app đổi theo.
+   brand (tím mận #93408a) = nút chính, hôm nay · pine (xanh rêu #315E5C) = vùng chọn, đã xong
+   bloom (tím hồng) = nhấn/đang diễn ra · sun (vàng #E6B545) = đang làm/cảnh báo
+   bad (cam đất #CA5323) = trễ/xoá/lỗi · cream (#EEEDD9) = chữ trên nút đặc */
 @theme {
-  --color-brand-300: #e3916f;
-  --color-brand-400: #d96d43;
-  --color-brand-500: #ca5323;
-  --color-brand-600: #b0461d;
-  --color-brand-700: #8f3a19;
+  --color-brand-300: #dcaad3;
+  --color-brand-400: #b86eaa;
+  --color-brand-500: #93408a;
+  --color-brand-600: #7c3474;
+  --color-brand-700: #652a5e;
 
   --color-pine-200: #b3d3cf;
   --color-pine-300: #8bbab5;
@@ -27,6 +28,18 @@
   --color-sun-400: #e6b545;
   --color-cream: #eeedd9;
 
+  /* "Đã xong / tốt" dùng chính màu xanh rêu */
+  --color-ok-200: #b3d3cf;
+  --color-ok-300: #8bbab5;
+  --color-ok-400: #5c918d;
+  --color-ok-500: #315e5c;
+
+  --color-bad-300: #e3916f;
+  --color-bad-400: #d96d43;
+  --color-bad-500: #ca5323;
+  --color-bad-600: #b0461d;
+  --color-bad-700: #8f3a19;
+
   /* Nền & chữ theo tầng: canvas (nền trang) < surface (thẻ) < raised (bảng xổ, hover) */
   --color-canvas: #0d1514;
   --color-surface: #142120;
@@ -40,13 +53,21 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Giao diện sáng "Lavender" (tuỳ chọn, bật bằng nút ☀/☾ trên thanh menu — public/js/theme.js).
-   Cùng tên màu như trên nhưng giá trị khác: các sắc -200/-300 (dùng làm chữ) được làm đậm để đọc rõ trên nền sáng.
-   brand = mận tím (nút chính) · pine = xanh rêu đậm · bloom = tím · sun = vàng đậm. Dùng light:… trong view nếu cần riêng. */
+/* Kính mờ (glass): nền trong suốt + làm mờ phía sau + viền sáng mảnh. Đổi độ trong ở đây. */
+:root {
+  --glass-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  --glass-border: rgb(238 237 217 / 0.1);
+  --glass-hi: rgb(255 255 255 / 0.07);
+  --glass-shadow: rgb(0 0 0 / 0.5);
+}
+
+/* Giao diện sáng "Lavender" (bật bằng nút ☀/☾ trên thanh menu — public/js/theme.js).
+   Cùng tên màu như trên nhưng các sắc -200/-300 (dùng làm chữ) được làm đậm để đọc rõ trên nền sáng. */
 @custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
 
 :root[data-theme="light"] {
-  --color-brand-300: #a8336a;
+  --color-brand-300: #7c3474;
   --color-brand-400: #b8508a;
   --color-brand-500: #93408a;
   --color-brand-600: #7c3474;
@@ -64,6 +85,17 @@
   --color-sun-300: #8c5e00;
   --color-sun-400: #d49a14;
 
+  --color-ok-200: #1d4f4a;
+  --color-ok-300: #2b6c65;
+  --color-ok-400: #4a8f87;
+  --color-ok-500: #3f7f78;
+
+  --color-bad-300: #a8401a;
+  --color-bad-400: #c24e20;
+  --color-bad-500: #ca5323;
+  --color-bad-600: #b0461d;
+  --color-bad-700: #8f3a19;
+
   --color-canvas: #f6f1fc;
   --color-surface: #fdfbff;
   --color-raised: #efe6f9;
@@ -72,18 +104,24 @@
   --color-ink: #2a1a3c;
   --color-ink-soft: #4d3b62;
   --color-ink-faint: #7a6990;
+
+  --glass-bg: rgb(255 255 255 / 0.55);
+  --glass-bg-strong: rgb(253 251 255 / 0.88);
+  --glass-border: rgb(255 255 255 / 0.7);
+  --glass-hi: rgb(255 255 255 / 0.9);
+  --glass-shadow: rgb(60 30 90 / 0.18);
 }
 
-/* Thanh menu nền sáng: tím đậm, chữ trắng (đặt lại màu chữ/hover cho riêng thanh này) */
+/* Thanh menu nền sáng: kính tím đậm, chữ trắng (logo trắng vẫn rõ) */
 [data-theme="light"] .app-header {
   --color-ink: #ffffff;
   --color-ink-soft: #ece2f7;
-  --color-raised: #7d61a0;
-  --color-line: #5c4178;
-  --color-line-strong: #9a80bb;
-  background: #6c4f8b;
-  border-color: transparent;
-  box-shadow: 0 6px 20px rgb(60 30 90 / 0.25);
+  --color-raised: rgb(255 255 255 / 0.16);
+  --color-line: rgb(255 255 255 / 0.22);
+  --color-line-strong: rgb(255 255 255 / 0.4);
+  background: rgb(108 79 139 / 0.8);
+  border-color: rgb(255 255 255 / 0.3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 10px 28px rgb(60 30 90 / 0.28);
 }
 
 /* Trang trí ngày lễ (src/lib/holidays.js đặt data-holiday trên <html>, ~1 tuần trước lễ).
@@ -120,73 +158,107 @@
 
 @layer base {
   html { color-scheme: dark; }
-  /* Ảnh nền xanh mờ cho cả app; màu canvas lót bên dưới khi ảnh chưa tải xong. */
+  /* Ảnh nền xanh mờ cho cả app; màu canvas lót bên dưới khi ảnh chưa tải xong. Lớp kính phía trên làm mờ nó. */
   body { background: var(--color-canvas) url("/img/bg.jpg") center / cover no-repeat fixed; }
   /* Nền sáng: dải tím – hồng oải hương */
   html[data-theme="light"] { color-scheme: light; }
   [data-theme="light"] body {
     background: linear-gradient(135deg, #b89ad9 0%, #cf9fd3 45%, #c2b4e3 100%) fixed;
   }
-  ::selection { @apply bg-bloom-400/40 text-cream light:text-ink; }
+  ::selection { @apply bg-brand-400/40 text-cream light:text-ink; }
   * { scrollbar-width: thin; scrollbar-color: var(--color-line-strong) transparent; }
 }
 
 /* Lớp nền dùng lại được bằng @apply (Tailwind 4 yêu cầu khai báo bằng @utility). */
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
-      transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  @apply relative isolate inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold
+      transition duration-200 ease-out select-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.97]
+      disabled:opacity-50 disabled:pointer-events-none;
 }
-@utility badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+/* Nút đặc bóng: lớp sáng mặt trên + viền tối mép dưới + hắt sáng cùng màu; rê chuột thì nổi lên và có vệt sáng lướt qua */
+@utility btn-solid {
+  @apply btn text-cream hover:-translate-y-px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 1px 2px rgb(0 0 0 / 0.25);
+  &:hover { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 6px 14px -6px color-mix(in srgb, var(--btn-glow) 55%, black); }
+  &::after {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.14) 50%, transparent 65%);
+    transform: translateX(-120%); transition: transform 0.7s ease;
+  }
+  &:hover::after { transform: translateX(120%); }
+}
+@utility badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-current/20 ring-inset; }
 /* Nhãn brand (Plan): như badge + chấm màu phía trước */
 @utility badge-brand { @apply badge gap-1.5 before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']; }
 @utility alert { @apply rounded-lg border px-4 py-3 text-sm; }
+/* Kính mờ: dùng cho thẻ, bảng, menu… (màu đặt ở biến --glass-* phía trên) */
+@utility glass {
+  background-color: var(--glass-bg);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 10px 30px -12px var(--glass-shadow);
+}
+@utility glass-strong {
+  background-color: var(--glass-bg-strong);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(22px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 24px 50px -16px var(--glass-shadow);
+}
 
 /* Bộ UI dùng chung. Ưu tiên dùng các class này thay vì lặp lại chuỗi class dài trong view. */
 @layer components {
   .container-page { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
 
-  .btn-primary { @apply btn bg-brand-500 text-cream shadow-sm shadow-black/30 hover:bg-brand-600 focus-visible:outline-brand-400; }
-  .btn-secondary { @apply btn border border-line-strong bg-raised text-ink hover:border-pine-400 hover:bg-pine-700 focus-visible:outline-pine-400; }
-  .btn-danger { @apply btn bg-brand-600 text-cream hover:bg-brand-700 focus-visible:outline-brand-400; }
-  .btn-ghost { @apply btn text-ink-soft hover:bg-raised hover:text-ink focus-visible:outline-pine-400; }
-  .btn-sm { @apply px-3 py-1.5 text-xs; }
-  /* Nút vuông chỉ có biểu tượng (Mở/Sửa/Xoá) — luôn kèm title + aria-label */
-  .btn-icon { @apply h-8 w-8 p-0; }
+  /* Nút chính: tím mận bóng · Nút "Xong": xanh rêu bóng · Nút xoá: cam đất */
+  .btn-primary { @apply btn-solid bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-400; --btn-glow: var(--color-brand-500); }
+  .btn-success { @apply btn-solid bg-pine-500 hover:bg-pine-600 focus-visible:outline-pine-400; --btn-glow: var(--color-pine-500); }
+  .btn-danger { @apply btn-solid bg-bad-500 hover:bg-bad-600 focus-visible:outline-bad-400; --btn-glow: var(--color-bad-500); }
+  /* Nút phụ: kính mờ, rê chuột thì viền xanh rêu sáng lên và có quầng sáng nhẹ */
+  .btn-secondary {
+    @apply btn glass border text-ink hover:-translate-y-px hover:border-pine-400/60 hover:text-ink focus-visible:outline-pine-400;
+    &:hover { box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 3px color-mix(in srgb, var(--color-pine-400) 12%, transparent), 0 6px 14px -8px var(--glass-shadow); }
+  }
+  /* Nút chữ: rê chuột hiện nền viên thuốc màu tím nhạt */
+  .btn-ghost { @apply btn font-medium text-ink-soft hover:bg-white/6 hover:text-ink focus-visible:outline-pine-400 light:hover:bg-brand-500/8; }
+  .btn-sm { @apply rounded-lg px-3 py-1.5 text-xs; }
+  /* Nút tròn chỉ có biểu tượng (Mở/Sửa/Xoá) — luôn kèm title + aria-label */
+  .btn-icon { @apply h-8 w-8 rounded-full p-0; }
 
-  .link { @apply font-medium text-bloom-300 hover:underline; }
+  .link { @apply font-medium text-pine-300 underline decoration-pine-300/30 underline-offset-4 transition hover:decoration-pine-300; }
 
-  /* Hơi trong để thấy ảnh nền phía sau */
-  .card { @apply rounded-xl border border-line bg-surface/80 shadow-sm shadow-black/20 backdrop-blur-sm; }
+  /* Kính mờ để thấy nền loang phía sau */
+  .card { @apply glass rounded-2xl border; }
   .card-body { @apply p-5 sm:p-6; }
 
   .field { @apply space-y-1.5; }
   .label { @apply block text-sm font-medium text-ink-soft; }
   .input {
-    @apply block w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink transition
+    @apply block w-full rounded-lg border border-line bg-canvas/60 px-3 py-2 text-sm text-ink transition
       placeholder:text-ink-faint hover:border-line-strong focus:border-pine-400 focus:ring-2 focus:ring-pine-500/50 focus:outline-none;
   }
-  .input-error { @apply border-brand-400 hover:border-brand-400 focus:border-brand-400 focus:ring-brand-500/30; }
+  .input-error { @apply border-bad-400 hover:border-bad-400 focus:border-bad-400 focus:ring-bad-500/30; }
   .hint { @apply text-xs text-ink-faint; }
-  .field-error { @apply text-xs font-medium text-brand-300; }
-  .required-mark { @apply text-brand-400; }
+  .field-error { @apply text-xs font-medium text-bad-300; }
+  .required-mark { @apply text-bad-400; }
 
   /* Nhóm trường trong form dài: tiêu đề nhỏ + nội dung */
   .form-section { @apply space-y-4; }
   .form-section + .form-section { @apply border-t border-line pt-6; }
   .form-section-title { @apply text-xs font-semibold tracking-wider text-ink-faint uppercase; }
 
-  .table-wrap { @apply overflow-x-auto rounded-xl border border-line bg-surface; }
+  .table-wrap { @apply glass overflow-x-auto rounded-2xl border; }
   .table { @apply min-w-full divide-y divide-line text-sm; }
-  .table th { @apply bg-raised px-4 py-3 text-left text-xs font-semibold tracking-wide text-ink-faint uppercase; }
+  .table th { @apply bg-pine-500/10 px-4 py-3 text-left text-xs font-semibold tracking-wide text-ink-faint uppercase; }
   .table td { @apply px-4 py-3 align-middle text-ink-soft; }
-  .table tbody tr { @apply hover:bg-raised/60; }
+  .table tbody tr { @apply transition hover:bg-pine-500/8; }
 
   .badge-gray { @apply badge bg-raised text-ink-soft ring-1 ring-line-strong; }
-  .badge-green { @apply badge bg-pine-500/40 text-pine-200; }
+  .badge-green { @apply badge bg-ok-400/15 text-ok-300; }
   .badge-yellow { @apply badge bg-sun-400/15 text-sun-300; }
-  .badge-red { @apply badge bg-brand-500/20 text-brand-300; }
+  .badge-red { @apply badge bg-bad-500/15 text-bad-300; }
   .badge-pink { @apply badge bg-bloom-400/15 text-bloom-300; }
-  .badge-blue { @apply badge bg-sky-400/15 text-sky-300 light:bg-sky-500/15 light:text-sky-700; }
+  .badge-blue { @apply badge bg-pine-400/15 text-pine-300; }
+  .badge-purple { @apply badge bg-brand-400/15 text-brand-300; }
   .badge-orange { @apply badge bg-orange-400/15 text-orange-300 light:bg-orange-500/15 light:text-orange-700; }
   /* Màu riêng từng brand (Plan): tông đất dịu hợp giao diện, có chấm màu phía trước.
      Vũ Gia = vàng đồng (đồ thờ), Klayy = hồng đất (gốm lifestyle), GSXD = xanh xám (ngói, công trình). */
@@ -194,33 +266,39 @@
   .badge-brand-kl { @apply badge-brand bg-[#d49aa4]/15 text-[#ecb7c0] light:bg-[#c26d7d]/15 light:text-[#8c3a4b]; }
   .badge-brand-gs { @apply badge-brand bg-[#86aebd]/15 text-[#b3d1dc] light:bg-[#4f7f91]/15 light:text-[#2c5566]; }
 
-  .alert-success { @apply alert border-pine-400/40 bg-pine-500/25 text-pine-200; }
-  .alert-error { @apply alert border-brand-400/40 bg-brand-500/15 text-brand-300; }
-  .alert-info { @apply alert border-bloom-400/30 bg-bloom-400/10 text-bloom-300; }
+  .alert-success { @apply alert border-ok-400/40 bg-ok-400/12 text-ok-300 backdrop-blur; }
+  .alert-error { @apply alert border-bad-400/40 bg-bad-500/12 text-bad-300 backdrop-blur; }
+  .alert-info { @apply alert border-pine-400/35 bg-pine-400/10 text-pine-300 backdrop-blur; }
 
-  .nav-link { @apply rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-raised hover:text-ink; }
+  .nav-link { @apply relative rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-white/8 hover:text-ink light:hover:bg-white/15; }
   /* Thanh menu nổi bo góc, cách mép trang một chút (cả sáng lẫn tối) */
-  .app-header { @apply top-2 mx-3 mt-2 rounded-2xl border shadow-lg shadow-black/30; }
+  .app-header { @apply glass top-2 mx-3 mt-2 rounded-2xl border; }
   .app-header .nav-link { @apply rounded-xl; }
-  .nav-link-active { @apply bg-pine-500/50 text-cream hover:bg-pine-500/50 hover:text-cream light:bg-pine-500 light:hover:bg-pine-500; }
+  /* Viền focus trong thanh menu: trắng mờ thay vì xanh rêu */
+  .app-header .btn { @apply focus-visible:outline-white/50; }
+  /* Mục đang mở: viên kính trung tính */
+  .nav-link-active {
+    @apply bg-white/8 text-ink ring-1 ring-white/10 ring-inset hover:bg-white/8 hover:text-ink
+      light:bg-white/20 light:ring-white/35 light:hover:bg-white/20;
+  }
 
   /* Nút đổi sáng/tối: nền tối hiện mặt trời, nền sáng hiện mặt trăng */
-  .theme-toggle { @apply shrink-0 px-2; }
+  .theme-toggle { @apply shrink-0 rounded-full px-2; }
   .theme-toggle .icon-moon { @apply hidden light:block; }
   .theme-toggle .icon-sun { @apply block light:hidden; }
 
   /* Nút chọn một trong vài lựa chọn (thay cho dropdown khi chỉ có 2–4 lựa chọn) */
-  .segmented { @apply flex flex-wrap gap-1 rounded-xl border border-line bg-canvas p-1; }
+  .segmented { @apply flex flex-wrap gap-1 rounded-xl border border-line bg-canvas/50 p-1 backdrop-blur; }
   .segmented-item { @apply relative flex-1 cursor-pointer; }
   .segmented-item input { @apply sr-only; }
   .segmented-item span {
     @apply block rounded-lg px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-raised hover:text-ink;
   }
-  .segmented-item input:checked + span { @apply bg-pine-500 text-cream shadow-sm shadow-black/30 hover:bg-pine-500; }
-  .segmented-item input:focus-visible + span { @apply outline-2 outline-offset-1 outline-sun-400; }
+  .segmented-item input:checked + span { @apply bg-surface text-ink shadow-sm shadow-black/30 ring-1 ring-white/8 ring-inset hover:bg-surface hover:text-ink light:bg-white light:shadow-brand-700/10 light:ring-brand-500/10; }
+  .segmented-item input:focus-visible + span { @apply outline-2 outline-offset-1 outline-pine-400; }
 
   /* Chọn thứ lặp lại: hàng nút tròn T2 … CN */
-  .repeat-box { @apply rounded-2xl border border-line bg-canvas px-4 py-3; }
+  .repeat-box { @apply rounded-2xl border border-line bg-canvas/50 px-4 py-3 backdrop-blur; }
   .repeat-box-head { @apply flex items-center justify-between gap-3 border-b border-line pb-3 text-sm; }
   .repeat-box-head legend { @apply float-left; }
   .repeat-days { @apply flex justify-between gap-1.5 pt-3; }
@@ -229,8 +307,8 @@
   .repeat-day span {
     @apply flex size-10 items-center justify-center rounded-full bg-raised text-sm font-semibold text-ink-soft transition hover:text-ink;
   }
-  .repeat-day input:checked + span { @apply bg-brand-500 text-cream shadow-sm shadow-black/30; }
-  .repeat-day input:focus-visible + span { @apply outline-2 outline-offset-1 outline-sun-400; }
+  .repeat-day input:checked + span { @apply bg-brand-500 text-cream; }
+  .repeat-day input:focus-visible + span { @apply outline-2 outline-offset-1 outline-pine-400; }
 
   /* Ô chọn ngày / giờ / danh sách tự vẽ (public/js/pickers.js) */
   .picker { @apply relative; }
@@ -243,8 +321,8 @@
   .picker-select.is-open .picker-trigger .picker-icon { @apply rotate-180; }
 
   .picker-panel {
-    @apply invisible absolute top-full left-0 z-30 mt-2 min-w-full origin-top -translate-y-1 scale-[0.98] rounded-xl border border-line-strong
-      bg-raised p-2 opacity-0 shadow-2xl shadow-black/60 transition-[opacity,transform,visibility] duration-150 ease-out;
+    @apply glass-strong invisible absolute top-full left-0 z-30 mt-2 min-w-full origin-top -translate-y-1 scale-[0.98] rounded-xl border
+      p-2 opacity-0 transition-[opacity,transform,visibility] duration-150 ease-out;
   }
   /* Khi mở: hiện ngay (để đặt được con trỏ vào bảng), chỉ mờ/trượt dần; khi đóng: ẩn sau hiệu ứng. */
   .picker.is-open .picker-panel { @apply visible translate-y-0 scale-100 opacity-100 transition-[opacity,transform]; }
@@ -255,13 +333,13 @@
   .picker-panel-time { @apply w-56; }
 
   .picker-search {
-    @apply mb-2 block w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-pine-400 focus:outline-none;
+    @apply mb-2 block w-full rounded-lg border border-line bg-canvas/60 px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-pine-400 focus:outline-none;
   }
   .picker-list { @apply max-h-64 overflow-y-auto overscroll-contain; }
   .picker-option { @apply flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-ink-soft; }
-  .picker-option.is-active { @apply bg-pine-500/40 text-ink; }
+  .picker-option.is-active { @apply bg-white/6 text-ink light:bg-brand-500/8; }
   .picker-option.is-selected { @apply font-medium text-ink; }
-  .picker-option .picker-icon { @apply text-sun-400 opacity-0; }
+  .picker-option .picker-icon { @apply text-brand-400 opacity-0; }
   .picker-option.is-selected .picker-icon { @apply opacity-100; }
   .picker-empty { @apply px-3 py-2 text-sm text-ink-faint; }
 
@@ -271,10 +349,10 @@
   .picker-weekdays, .picker-days { @apply grid grid-cols-7 gap-0.5 text-center; }
   .picker-weekdays span { @apply py-1 text-[11px] font-semibold text-ink-faint; }
   .picker-day {
-    @apply h-9 rounded-lg text-sm text-ink tabular-nums transition hover:bg-pine-500/40 focus-visible:outline-2 focus-visible:outline-sun-400;
+    @apply h-9 rounded-lg text-sm text-ink tabular-nums transition hover:bg-pine-500/40 focus-visible:outline-2 focus-visible:outline-pine-400;
   }
   .picker-day.is-outside { @apply text-ink-faint/70; }
-  .picker-day.is-today { @apply font-semibold text-sun-300 ring-1 ring-sun-400/50 ring-inset; }
+  .picker-day.is-today { @apply font-semibold text-brand-300 ring-1 ring-brand-400/50 ring-inset; }
   .picker-day.is-selected { @apply bg-brand-500 text-cream ring-0 hover:bg-brand-500; }
   .picker-day:disabled { @apply cursor-not-allowed text-ink-faint/30 hover:bg-transparent; }
 
@@ -283,13 +361,13 @@
   .picker-col { @apply relative flex max-h-56 flex-col gap-0.5 overflow-y-auto overscroll-contain scroll-smooth; }
   .picker-cell {
     @apply shrink-0 rounded-lg py-1.5 text-sm text-ink-soft tabular-nums transition hover:bg-pine-500/40 hover:text-ink
-      focus-visible:outline-2 focus-visible:outline-sun-400;
+      focus-visible:outline-2 focus-visible:outline-pine-400;
   }
   .picker-cell.is-selected { @apply bg-brand-500 font-semibold text-cream hover:bg-brand-500; }
 
   .picker-foot { @apply mt-2 flex flex-wrap items-center gap-1.5 border-t border-line pt-2; }
   .picker-chip {
-    @apply rounded-full bg-canvas px-3 py-1 text-xs font-medium text-ink-soft ring-1 ring-line transition hover:bg-pine-500/40 hover:text-ink
+    @apply rounded-full bg-canvas/60 px-3 py-1 text-xs font-medium text-ink-soft ring-1 ring-line transition hover:bg-pine-500/40 hover:text-ink
       disabled:pointer-events-none disabled:opacity-40;
   }
   .picker-chip-end { @apply ml-auto; }
@@ -380,34 +458,39 @@
 
   /* Trang Tài liệu: cột thư mục (máy tính) / hàng nút trượt ngang (điện thoại) */
   .links-layout { @apply grid gap-5 lg:grid-cols-[15rem_1fr] lg:items-start; }
-  .links-folders { @apply -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:rounded-xl lg:border lg:border-line lg:bg-surface/80 lg:p-2 lg:backdrop-blur-sm; }
+  .links-folders { @apply -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:glass lg:rounded-2xl lg:border lg:p-2; }
   .folder-item {
-    @apply flex shrink-0 items-center justify-between gap-3 rounded-lg border border-line bg-surface/80 px-3 py-2 text-sm font-medium text-ink-soft transition
-      hover:bg-raised hover:text-ink lg:border-transparent lg:bg-transparent;
+    @apply flex shrink-0 items-center justify-between gap-3 rounded-lg border border-line bg-surface/50 px-3 py-2 text-sm font-medium text-ink-soft transition
+      hover:bg-white/6 hover:text-ink lg:border-transparent lg:bg-transparent light:hover:bg-white/50;
   }
-  .folder-item-active { @apply border-pine-400/40 bg-pine-500/50 text-cream hover:bg-pine-500/50 hover:text-cream light:bg-pine-500 lg:border-transparent lg:bg-pine-500/50 light:lg:bg-pine-500; }
-  .folder-count { @apply rounded-full bg-black/15 px-2 text-xs font-semibold; }
+  /* Thư mục đang chọn: viên nổi nhẹ giống tab đang chọn (tối: nền thẻ, sáng: trắng) */
+  .folder-item-active {
+    @apply border-transparent bg-surface font-semibold text-ink shadow-sm shadow-black/30 ring-1 ring-white/8 ring-inset
+      hover:bg-surface hover:text-ink lg:border-transparent lg:bg-surface
+      light:bg-white light:shadow-brand-700/10 light:ring-brand-500/10 light:hover:bg-white light:lg:bg-white;
+  }
+  .folder-count { @apply rounded-full bg-ink/10 px-2 text-xs font-semibold text-ink-soft; }
   .link-row { @apply flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center; }
 
   /* Tab Plan: hai tab con (Idea bank / Lịch quay-đăng) dùng khung .segmented */
   .plan-tab {
     @apply block flex-1 rounded-lg px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap text-ink-soft transition hover:bg-raised hover:text-ink;
   }
-  .plan-tab-active { @apply bg-pine-500 text-cream shadow-sm shadow-black/30 hover:bg-pine-500 hover:text-cream; }
+  .plan-tab-active { @apply bg-surface text-ink shadow-sm shadow-black/30 ring-1 ring-white/8 ring-inset hover:bg-surface hover:text-ink light:bg-white light:shadow-brand-700/10 light:ring-brand-500/10 font-semibold; }
   .plan-desc { @apply line-clamp-3 whitespace-pre-line; }
   /* Idea bank dạng cột theo bước: kéo ngang khi không đủ chỗ */
   .plan-board { @apply -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0; }
-  .plan-col { @apply w-64 shrink-0 snap-start rounded-xl border border-line bg-canvas/40 p-2.5 xl:w-auto xl:min-w-0 xl:flex-1; }
+  .plan-col { @apply glass w-64 shrink-0 snap-start rounded-2xl border p-2.5 xl:w-auto xl:min-w-0 xl:flex-1; }
   .plan-col-head { @apply mb-2.5 flex items-center justify-between px-0.5; }
-  .plan-card { @apply rounded-lg border border-line bg-surface p-2.5 transition hover:border-line-strong; }
+  .plan-card { @apply rounded-lg border border-line bg-surface/70 p-2.5 transition hover:border-pine-400/50 hover:shadow-md hover:shadow-pine-500/10; }
   .plan-card-title { @apply line-clamp-3 text-sm font-medium text-ink; }
 
   /* Lịch tuần: mỗi brand một hàng 7 cột trên máy tính; điện thoại xếp dọc, ẩn ngày trống */
   .plan-week-head { @apply hidden gap-2 px-3 text-center text-xs text-ink-faint lg:grid lg:grid-cols-7; }
-  .plan-lane { @apply rounded-2xl border border-line bg-canvas/40 p-3; }
+  .plan-lane { @apply glass rounded-2xl border p-3; }
   .plan-lane-head { @apply mb-2 flex items-center gap-2 text-sm font-semibold; }
   .plan-week { @apply grid gap-2 lg:grid-cols-7; }
-  .plan-day { @apply min-w-0 rounded-xl border border-line bg-surface p-2 lg:min-h-28; }
+  .plan-day { @apply min-w-0 rounded-xl border border-line bg-surface/60 p-2 lg:min-h-28; }
   .plan-day-empty { @apply hidden lg:block; }
   .plan-day-today { @apply border-brand-400/60 ring-1 ring-brand-400/40; }
   .plan-day-past { @apply opacity-75; }
@@ -420,7 +503,7 @@
   .plan-dot { @apply inline-block h-2 w-2 shrink-0 rounded-full; }
   /* Cảnh báo trên thẻ lịch: chữ nhỏ có nền, thay cho icon */
   .plan-flag { @apply rounded bg-orange-500/15 px-1 py-px text-[10px] font-semibold text-orange-300 light:text-orange-700; }
-  .plan-flag-red { @apply rounded bg-rose-500/15 px-1 py-px text-[10px] font-semibold text-rose-300 light:text-rose-700; }
+  .plan-flag-red { @apply rounded bg-bad-500/15 px-1 py-px text-[10px] font-semibold text-bad-300; }
   .plan-chip { @apply flex items-center gap-1 truncate rounded border border-l-4 border-line bg-raised px-1.5 py-0.5 text-xs text-ink; }
 
   /* Form Plan: các phần gập lại */
@@ -436,17 +519,17 @@
   }
 
   /* Khung xem trước tài liệu (Google Drive/Docs, YouTube) */
-  .preview-dialog { @apply m-auto h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-5xl bg-transparent p-0 text-ink backdrop:bg-black/60 backdrop:backdrop-blur-sm; }
-  .preview-box { @apply flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface; }
+  .preview-dialog { @apply m-auto h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-5xl bg-transparent p-0 text-ink backdrop:bg-black/50 backdrop:backdrop-blur-md; }
+  .preview-box { @apply glass-strong flex h-full flex-col overflow-hidden rounded-2xl border; }
   .preview-bar { @apply flex items-center gap-2 border-b border-line px-3 py-2; }
   .preview-frame { @apply w-full flex-1 bg-white; }
   .preview-tip { @apply border-t border-line px-3 py-1.5 text-xs text-ink-faint; }
 
   /* Popup + thẻ chi tiết khách hàng (customers/show.hbs). Thẻ luôn nền giấy trắng để ảnh/PDF tải về dễ đọc. */
-  .customer-dialog { @apply m-auto w-[calc(100%-2rem)] max-w-2xl bg-transparent p-0 text-ink backdrop:bg-black/60 backdrop:backdrop-blur-sm; }
-  .customer-dialog-loading { @apply rounded-xl bg-surface p-6 text-center text-sm text-ink-soft; }
+  .customer-dialog { @apply m-auto w-[calc(100%-2rem)] max-w-2xl bg-transparent p-0 text-ink backdrop:bg-black/50 backdrop:backdrop-blur-md; }
+  .customer-dialog-loading { @apply glass-strong rounded-xl border p-6 text-center text-sm text-ink-soft; }
   .customer-sheet { @apply mx-auto max-w-2xl space-y-3; }
-  .customer-sheet-bar { @apply flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-2; }
+  .customer-sheet-bar { @apply glass flex flex-wrap items-center gap-2 rounded-xl border p-2; }
 
   .cust-card {
     @apply space-y-5 rounded-xl p-6 sm:p-8;

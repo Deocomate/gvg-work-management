@@ -52,7 +52,7 @@
   {{#if (or (eq @root.currentUser.role 'admin') (eq plan.created_by @root.currentUser.id))}}
     <form method="post" action="/plan/{{plan.id}}/delete" class="mt-4 max-w-3xl text-right" data-confirm="Xoá nội dung này? Việc quay/đăng trên lịch làm việc cũng bị xoá.">
       {{> form/csrf}}
-      <button type="submit" class="btn-ghost btn-sm text-brand-300">Xoá nội dung này</button>
+      <button type="submit" class="btn-ghost btn-sm text-bad-300">Xoá nội dung này</button>
     </form>
   {{/if}}
 {{/if}}

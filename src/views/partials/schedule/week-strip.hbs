@@ -12,7 +12,7 @@
           <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-sm font-semibold tabular-nums{{#if isToday}} bg-brand-500 text-cream{{else if isPast}} text-ink-faint{{else}} text-ink{{/if}}">{{dayLabel}}</span>
         </div>
         {{#if tasks.length}}
-          <span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-brand-300{{else if unfinished}}text-sun-300{{else}}text-pine-300{{/if}}">{{tasks.length}} việc</span>
+          <span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-bad-300{{else if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{tasks.length}} việc</span>
           <ul class="mt-1 hidden min-w-0 space-y-1.5 md:block">
             {{#each tasks}}
               <li class="text-sm leading-snug break-words{{#if (eq status 'done')}} text-ink-faint line-through{{else if (eq status 'doing')}} text-sun-300{{else}} text-ink{{/if}}"

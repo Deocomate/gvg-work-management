@@ -5,7 +5,7 @@ import { emptyToUndefined } from '#lib/validate.js';
 export const TASK_STATUSES = [
   { value: 'todo', label: 'Chưa làm', badge: 'badge-gray', bar: 'border-line-strong', chip: 'bg-raised text-ink-soft' },
   { value: 'doing', label: 'Đang làm', badge: 'badge-yellow', bar: 'border-sun-400', chip: 'bg-sun-400/15 text-sun-300' },
-  { value: 'done', label: 'Đã xong', badge: 'badge-green', bar: 'border-pine-400', chip: 'bg-pine-500/40 text-pine-200 line-through' },
+  { value: 'done', label: 'Đã xong', badge: 'badge-green', bar: 'border-ok-400', chip: 'bg-ok-400/15 text-ok-300 line-through' },
 ];
 
 export const TASK_PRIORITIES = [

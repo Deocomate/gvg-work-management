@@ -23,10 +23,10 @@
            aria-label="{{formatWeekday date}}: {{total}} việc">
           <div class="flex items-center justify-between gap-1">
             <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium{{#if isToday}} bg-brand-500 text-cream{{/if}}">{{day}}</span>
-            {{#if hasLate}}<span class="h-2 w-2 rounded-full bg-brand-400" title="{{unfinished}} việc chưa xong"></span>{{/if}}
+            {{#if hasLate}}<span class="h-2 w-2 rounded-full bg-bad-400" title="{{unfinished}} việc chưa xong"></span>{{/if}}
           </div>
           {{#if total}}
-            <p class="mt-1 text-center text-[11px] font-medium sm:hidden {{#if unfinished}}text-sun-300{{else}}text-pine-300{{/if}}">{{total}} việc</p>
+            <p class="mt-1 text-center text-[11px] font-medium sm:hidden {{#if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{total}} việc</p>
             <ul class="mt-1 hidden space-y-1 sm:block">
               {{#each tasks}}
                 <li class="truncate rounded px-1.5 py-0.5 text-xs {{statusInfo.chip}}" title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="tabular-nums">{{start_time}}</span> {{/if}}{{title}}</li>
@@ -41,7 +41,7 @@
 </div>
 
 <p class="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
-  <span class="inline-flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-brand-400"></span> Ngày đã qua còn việc chưa xong</span>
+  <span class="inline-flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-bad-400"></span> Ngày đã qua còn việc chưa xong</span>
   <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-sun-400/15 ring-1 ring-sun-400/40"></span> Đang làm</span>
-  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-pine-500/40 ring-1 ring-pine-400/50"></span> Đã xong</span>
+  <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-ok-400/25 ring-1 ring-ok-400/50"></span> Đã xong</span>
 </p>

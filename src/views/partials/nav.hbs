@@ -1,4 +1,4 @@
-<header class="app-header sticky z-40 border-line bg-surface/85 backdrop-blur">
+<header class="app-header sticky z-40">
   {{#if holiday}}
     {{!-- Đồ trang trí treo lủng lẳng dưới thanh menu trong dịp lễ --}}
     <span class="holiday-hang holiday-hang-left" aria-hidden="true">{{holiday.icons.[0]}}</span>
@@ -8,14 +8,14 @@
     {{!-- Logo và cụm bên phải cùng giãn đều (sm:flex-1) để menu nằm chính giữa header --}}
     <div class="flex shrink-0 sm:flex-1">
       <a href="/" class="flex items-center gap-2 font-semibold text-ink" aria-label="{{appName}}">
-        <img src="/img/logo.svg" alt="" class="h-8 w-8">
-        {{!-- Trên điện thoại ẩn tên app để menu đủ chỗ --}}
-        <span class="hidden sm:inline">{{appName}}</span>
+        <img src="/img/logo.svg" alt="" class="h-8 w-8 max-w-none shrink-0">
+        {{!-- Màn nhỏ/vừa ẩn tên app để menu đủ chỗ --}}
+        <span class="hidden whitespace-nowrap xl:inline">{{appName}}</span>
       </a>
     </div>
 
     {{!-- min-w-0 + sm:flex-initial: màn vừa (tablet) menu tự co lại và cuộn ngang, không đẩy tràn cả trang --}}
-    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto sm:flex-initial" aria-label="Điều hướng chính">
+    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:flex-initial [&::-webkit-scrollbar]:hidden max-xl:[mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)] max-xl:pr-6" aria-label="Điều hướng chính">
       {{#if currentUser}}
         {{> nav-link href="/today" label="Hôm nay" count=todayUnfinished}}
         {{> nav-link href="/calendar" label="Tháng"}}

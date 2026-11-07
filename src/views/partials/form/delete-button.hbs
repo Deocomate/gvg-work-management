@@ -3,10 +3,10 @@
 <form method="post" action="{{action}}" class="inline" data-confirm="{{default confirm 'Bạn chắc chắn muốn xoá?'}}">
   {{> form/csrf}}
   {{#if icon}}
-    <button type="submit" class="btn-ghost btn-icon text-brand-300 hover:text-brand-300" title="Xoá" aria-label="{{default label 'Xoá'}}">
+    <button type="submit" class="btn-ghost btn-icon text-bad-300 hover:text-bad-300" title="Xoá" aria-label="{{default label 'Xoá'}}">
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12"/><path d="M9 7V4h6v3"/></svg>
     </button>
   {{else}}
-    <button type="submit" class="{{default buttonClass 'btn-ghost btn-sm text-brand-300 hover:text-brand-300'}}">{{default label 'Xoá'}}</button>
+    <button type="submit" class="{{default buttonClass 'btn-ghost btn-sm text-bad-300 hover:text-bad-300'}}">{{default label 'Xoá'}}</button>
   {{/if}}
 </form>
