@@ -11,11 +11,11 @@ export const PLATFORMS = [
 ];
 
 // Danh mục lấy từ tab "Danh mục" của Google Sheet cũ.
-// short = chữ viết tắt trên lịch tháng; badge = màu nhãn brand.
+// short = chữ viết tắt trên lịch tháng; badge = màu nhãn brand — mỗi brand một màu riêng, không trùng màu các bước.
 export const BRANDS = [
-  { value: 'Vũ Gia', label: 'Vũ Gia', short: 'VG', badge: 'badge-pink' },
-  { value: 'Klayy', label: 'Klayy', short: 'KL', badge: 'badge-blue' },
-  { value: 'GSXD', label: 'GSXD', short: 'GS', badge: 'badge-orange' },
+  { value: 'Vũ Gia', label: 'Vũ Gia', short: 'VG', badge: 'badge-brand-vg' },
+  { value: 'Klayy', label: 'Klayy', short: 'KL', badge: 'badge-brand-kl' },
+  { value: 'GSXD', label: 'GSXD', short: 'GS', badge: 'badge-brand-gs' },
 ];
 
 export const VIDEO_TYPES = [

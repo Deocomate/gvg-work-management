@@ -37,6 +37,7 @@ const NEXT_STEP = {
 export const decorate = (plan, user) => ({
   ...plan,
   statusInfo: STATUS[plan.status],
+  brandInfo: BRAND[plan.brand] ?? null,
   platformInfo: PLATFORM[plan.platform],
   nextStep: NEXT_STEP[plan.status] ?? null,
   canEdit: canEdit(user, plan),

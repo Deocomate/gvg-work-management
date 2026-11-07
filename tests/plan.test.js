@@ -389,3 +389,13 @@ test('giao diện Plan không dùng emoji; link tham khảo có icon mắt xích
   }
   assert.match((await cardOf(mai, 'Ý tưởng có tham khảo')).html, /<\/svg>Tham khảo/);
 });
+
+test('mỗi brand một màu riêng trên Idea bank và lịch', async () => {
+  await add(mai, { title: 'Thẻ Vũ Gia', brand: 'Vũ Gia' });
+  await add(mai, { title: 'Thẻ Klayy', brand: 'Klayy' });
+  await add(mai, { title: 'Thẻ GSXD', brand: 'GSXD' });
+  assert.match((await cardOf(mai, 'Thẻ Vũ Gia')).html, /badge-brand-vg/);
+  assert.match((await cardOf(mai, 'Thẻ Klayy')).html, /badge-brand-kl/);
+  assert.match((await cardOf(mai, 'Thẻ GSXD')).html, /badge-brand-gs/);
+  assert.match((await mai.get('/plan/weeks?kind=shoot&week=2026-12-01')).text, /badge-brand-gs">GSXD/);
+});

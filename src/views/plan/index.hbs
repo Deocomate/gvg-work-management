@@ -40,7 +40,7 @@
                 <p class="plan-card-title" title="{{title}}">{{title}}</p>
               {{/if}}
               <p class="mt-1.5 flex flex-wrap gap-1 text-[11px]">
-                {{#if brand}}<span class="badge-pink">{{brand}}</span>{{/if}}
+                {{#if brandInfo}}<span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>{{/if}}
               </p>
               <p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
                 {{#if shoot_date}}<span>Quay {{formatDay shoot_date}}</span>{{/if}}

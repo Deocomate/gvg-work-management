@@ -186,6 +186,10 @@
   .badge-pink { @apply badge bg-bloom-400/15 text-bloom-300; }
   .badge-blue { @apply badge bg-sky-400/15 text-sky-300 light:bg-sky-500/15 light:text-sky-700; }
   .badge-orange { @apply badge bg-orange-400/15 text-orange-300 light:bg-orange-500/15 light:text-orange-700; }
+  /* Màu riêng từng brand (Plan): nền đậm chữ trắng (đỏ đô = Vũ Gia, xanh ngọc = Klayy, xanh dương đậm = GSXD) để khác hẳn nhãn nhạt của các bước */
+  .badge-brand-vg { @apply badge bg-red-700 text-white; }
+  .badge-brand-kl { @apply badge bg-teal-600 text-white; }
+  .badge-brand-gs { @apply badge bg-blue-700 text-white; }
 
   .alert-success { @apply alert border-pine-400/40 bg-pine-500/25 text-pine-200; }
   .alert-error { @apply alert border-brand-400/40 bg-brand-500/15 text-brand-300; }
