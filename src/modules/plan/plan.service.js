@@ -97,59 +97,69 @@ export async function listTopics() {
   return [...new Set([...CONTENT_LINES, ...used])];
 }
 
+// ---- Lịch đăng và lịch quay (2 lịch riêng), chia theo brand ----
+
+// kind: 'post' = lịch đăng (theo ngày + giờ đăng), 'shoot' = lịch quay (theo ngày quay, khung giờ, địa điểm).
+export const calendarKind = (kind) => (kind === 'shoot' ? 'shoot' : 'post');
+export const brandFilter = (brand) => (BRAND[brand] ? brand : '');
+// Nội dung chưa chọn brand gom vào một nhóm riêng để không bị sót.
+const NO_BRAND = { value: '', label: 'Chưa chọn brand', short: '?', badge: 'badge-gray' };
+const brandOf = (plan) => BRAND[plan.brand] ?? NO_BRAND;
+const dateKeyOf = (kind) => (kind === 'shoot' ? 'shoot_date' : 'post_date');
+
 const CHIPS_PER_DAY = 4;
 
-/** Lịch tháng: mỗi ngày liệt kê nội dung cần quay (🎬) và cần đăng (📤). */
-export async function getMonth(month, user) {
+/** Lịch tháng của một loại (đăng hoặc quay), lọc được theo brand. Mỗi nội dung có nhãn brand viết tắt. */
+export async function getMonth(month, { kind, brand } = {}, user) {
+  const type = calendarKind(kind);
+  const key = dateKeyOf(type);
   const weeks = monthGrid(month);
   const today = todayISO();
-  const plans = await repo.listForRange({ from: weeks[0][0], to: weeks.at(-1)[6] });
+  const plans = (await repo.listForRange({ from: weeks[0][0], to: weeks.at(-1)[6] })).filter(
+    (p) => p[key] && (!brandFilter(brand) || p.brand === brand),
+  );
 
   const byDate = new Map();
-  const add = (date, entry) => byDate.set(date, [...(byDate.get(date) ?? []), entry]);
   for (const plan of plans) {
-    const item = decorate(plan, user);
-    if (plan.shoot_date) add(plan.shoot_date, { ...item, kind: 'shoot' });
-    if (plan.post_date) add(plan.post_date, { ...item, kind: 'post' });
+    const item = { ...decorate(plan, user), brandInfo: brandOf(plan), kind: type };
+    byDate.set(plan[key], [...(byDate.get(plan[key]) ?? []), item]);
   }
+  const timeOf = (p) => (type === 'post' ? p.post_time : parseTimeRange(p.shoot_time).start) ?? '~';
+  for (const list of byDate.values()) list.sort((a, b) => timeOf(a).localeCompare(timeOf(b)));
 
-  const toCell = (date) => {
-    // Đăng bài trước (có giờ), quay sau.
-    const list = (byDate.get(date) ?? []).sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'post' ? -1 : 1));
-    return {
-      date,
-      day: Number(date.slice(8)),
-      inMonth: date.startsWith(month),
-      isToday: date === today,
-      total: list.length,
-      shoots: list.filter((e) => e.kind === 'shoot').length,
-      posts: list.filter((e) => e.kind === 'post').length,
-      entries: list.slice(0, CHIPS_PER_DAY),
-      more: Math.max(0, list.length - CHIPS_PER_DAY),
-    };
-  };
-
-  const inMonth = plans.filter((p) => p.shoot_date?.startsWith(month) || p.post_date?.startsWith(month));
-  // Danh sách theo ngày dưới lịch (điện thoại chỉ thấy số trong ô lịch).
-  const agenda = [...byDate.keys()]
-    .filter((date) => date.startsWith(month))
-    .sort()
-    .map((date) => ({ date, isToday: date === today, isPast: date < today, entries: byDate.get(date) }));
+  const inMonth = plans.filter((p) => p[key].startsWith(month));
   return {
-    agenda,
-    weeks: weeks.map((week) => week.map(toCell)),
+    weeks: weeks.map((week) =>
+      week.map((date) => {
+        const list = byDate.get(date) ?? [];
+        return {
+          date,
+          day: Number(date.slice(8)),
+          inMonth: date.startsWith(month),
+          isToday: date === today,
+          total: list.length,
+          entries: list.slice(0, CHIPS_PER_DAY),
+          more: Math.max(0, list.length - CHIPS_PER_DAY),
+        };
+      }),
+    ),
+    // Danh sách theo ngày dưới lịch (điện thoại chỉ thấy số trong ô lịch).
+    agenda: [...byDate.keys()]
+      .filter((date) => date.startsWith(month))
+      .sort()
+      .map((date) => ({ date, isToday: date === today, isPast: date < today, entries: byDate.get(date) })),
+    summary: {
+      total: inMonth.length,
+      done: inMonth.filter((p) => (type === 'post' ? p.status === 'posted' : DONE_SHOOTING.has(p.status))).length,
+      byBrand: [...BRANDS, NO_BRAND]
+        .map((b) => ({ ...b, total: inMonth.filter((p) => brandOf(p) === b).length }))
+        .filter((b) => b.total),
+    },
     prev: addMonths(month, -1),
     next: addMonths(month, 1),
     thisMonth: today.slice(0, 7),
-    summary: {
-      shoots: inMonth.filter((p) => p.shoot_date?.startsWith(month)).length,
-      posts: inMonth.filter((p) => p.post_date?.startsWith(month)).length,
-      posted: inMonth.filter((p) => p.post_date?.startsWith(month) && p.status === 'posted').length,
-    },
   };
 }
-
-// ---- Lịch tuần (thay tab Plan + Lịch quay của Google Sheet cũ) ----
 
 const WEEKDAY_SHORT = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const dayMonth = (iso) => `${iso.slice(8)}/${iso.slice(5, 7)}`;
@@ -178,7 +188,7 @@ function withChecks(plan, today) {
   };
 }
 
-/** Đánh dấu 1 người bị xếp quay cùng ngày, cùng khung giờ ở 2 địa điểm khác nhau. */
+/** Đánh dấu 1 người bị xếp quay cùng ngày, cùng khung giờ ở 2 địa điểm khác nhau (xét mọi brand). */
 function markConflicts(rows) {
   const keyOf = (p) => (p.owner_id && p.shoot_date && p.shoot_time ? `${p.owner_id}|${p.shoot_date}|${foldText(p.shoot_time)}` : null);
   const places = new Map();
@@ -190,49 +200,65 @@ function markConflicts(rows) {
 }
 
 /**
- * Lịch tuần: 7 ngày, mỗi ngày liệt kê buổi quay 🎬 (khung giờ, địa điểm) và bài đăng 📤 (giờ đăng), xếp theo giờ.
- * Kèm cảnh báo và danh sách bài sắp đăng chưa chốt ngày quay.
+ * Lịch tuần của một loại (đăng hoặc quay): mỗi brand một hàng riêng, mỗi hàng 7 ngày, trong ngày xếp theo giờ.
+ * Lịch quay kèm danh sách bài sắp đăng chưa chốt ngày quay.
  */
-export async function getWeek(date, user) {
+export async function getWeek(date, { kind, brand } = {}, user) {
+  const type = calendarKind(kind);
+  const key = dateKeyOf(type);
+  const only = brandFilter(brand);
   const today = todayISO();
   const days = weekDays(isISODate(date) ? date : today);
   const inWeek = (d) => Boolean(d) && d >= days[0] && d <= days[6];
-  const plans = markConflicts((await repo.listForRange({ from: days[0], to: days[6] })).map((p) => decorate(withChecks(p, today), user)));
+  const all = markConflicts((await repo.listForRange({ from: days[0], to: days[6] })).map((p) => decorate(withChecks(p, today), user)));
 
-  const entries = [];
-  for (const p of plans) {
-    if (inWeek(p.shoot_date)) {
+  const entries = all
+    .filter((p) => inWeek(p[key]) && (!only || p.brand === only))
+    .map((p) => {
+      if (type === 'post') return { ...p, kind: type, day: p.post_date, time: p.post_time, sortTime: p.post_time };
       const { start, end } = parseTimeRange(p.shoot_time);
-      entries.push({ ...p, kind: 'shoot', day: p.shoot_date, time: start ? `${start}${end ? `–${end}` : ''}` : p.shoot_time, sortTime: start });
-    }
-    if (inWeek(p.post_date)) entries.push({ ...p, kind: 'post', day: p.post_date, time: p.post_time, sortTime: p.post_time });
-  }
-  entries.sort((a, b) => (a.sortTime ?? '~').localeCompare(b.sortTime ?? '~') || (a.kind === 'shoot' ? -1 : 1));
+      return { ...p, kind: type, day: p.shoot_date, time: start ? `${start}${end ? `–${end}` : ''}` : p.shoot_time, sortTime: start };
+    })
+    .sort((a, b) => (a.sortTime ?? '~').localeCompare(b.sortTime ?? '~'));
 
-  const from = days[0] > today ? days[0] : today;
-  const unshot = (await repo.listUpcomingWithoutShoot(from))
-    .filter((p) => p.post_date <= addDays(days[6], 14))
-    .map((p) => decorate(p, user));
-  const posts = plans.filter((p) => inWeek(p.post_date));
+  const groups = [...BRANDS, NO_BRAND]
+    .filter((b) => (only ? b.value === only : b !== NO_BRAND || entries.some((e) => brandOf(e) === NO_BRAND)))
+    .map((b) => {
+      const mine = entries.filter((e) => brandOf(e) === b);
+      return {
+        ...b,
+        total: mine.length,
+        days: days.map((d, i) => ({
+          date: d,
+          weekday: WEEKDAY_SHORT[i],
+          dayMonth: dayMonth(d),
+          isToday: d === today,
+          isPast: d < today,
+          entries: mine.filter((e) => e.day === d),
+        })),
+      };
+    });
+
+  let unshot = [];
+  if (type === 'shoot') {
+    const from = days[0] > today ? days[0] : today;
+    unshot = (await repo.listUpcomingWithoutShoot(from))
+      .filter((p) => p.post_date <= addDays(days[6], 14) && (!only || p.brand === only))
+      .map((p) => ({ ...decorate(p, user), brandInfo: brandOf(p) }));
+  }
 
   return {
     ...weekLabel(days),
-    days: days.map((d, i) => ({
-      date: d,
-      weekday: WEEKDAY_SHORT[i],
-      dayMonth: dayMonth(d),
-      isToday: d === today,
-      isPast: d < today,
-      entries: entries.filter((e) => e.day === d),
-    })),
+    weekdays: days.map((d, i) => ({ weekday: WEEKDAY_SHORT[i], dayMonth: dayMonth(d), isToday: d === today })),
+    groups,
     unshot,
     summary: {
-      shoots: plans.filter((p) => inWeek(p.shoot_date)).length,
-      posts: posts.length,
-      posted: posts.filter((p) => p.status === 'posted').length,
-      missingShoot: posts.filter((p) => p.missingShoot).length,
-      overdue: posts.filter((p) => p.overdue).length,
-      conflicts: entries.filter((e) => e.kind === 'shoot' && e.conflict).length,
+      total: entries.length,
+      done: entries.filter((e) => (type === 'post' ? e.status === 'posted' : DONE_SHOOTING.has(e.status))).length,
+      missingShoot: entries.filter((e) => e.missingShoot).length,
+      overdue: entries.filter((e) => e.overdue).length,
+      conflicts: entries.filter((e) => e.conflict).length,
+      tight: entries.filter((e) => e.shootTight).length,
     },
     week: days[0],
     prev: addDays(days[0], -7),

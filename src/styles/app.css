@@ -395,9 +395,13 @@
   .plan-card { @apply rounded-lg border border-line bg-surface p-2.5 transition hover:border-line-strong; }
   .plan-card-title { @apply line-clamp-3 text-sm font-medium text-ink; }
 
-  /* Lịch tuần: 7 cột trên máy tính, xếp dọc trên điện thoại */
+  /* Lịch tuần: mỗi brand một hàng 7 cột trên máy tính; điện thoại xếp dọc, ẩn ngày trống */
+  .plan-week-head { @apply hidden gap-2 px-3 text-center text-xs text-ink-faint lg:grid lg:grid-cols-7; }
+  .plan-lane { @apply rounded-2xl border border-line bg-canvas/40 p-3; }
+  .plan-lane-head { @apply mb-2 flex items-center gap-2 text-sm font-semibold; }
   .plan-week { @apply grid gap-2 lg:grid-cols-7; }
-  .plan-day { @apply min-w-0 rounded-xl border border-line bg-surface p-2 lg:min-h-48; }
+  .plan-day { @apply min-w-0 rounded-xl border border-line bg-surface p-2 lg:min-h-28; }
+  .plan-day-empty { @apply hidden lg:block; }
   .plan-day-today { @apply border-brand-400/60 ring-1 ring-brand-400/40; }
   .plan-day-past { @apply opacity-75; }
   .plan-day-head { @apply mb-2 flex items-center justify-between px-1 text-sm text-ink; }

@@ -1,13 +1,20 @@
-{{!-- Hai tab con của Plan. Dùng: {{> plan/tabs}} (biến tab = 'ideas' | 'calendar'; view = 'week' | 'month' ở tab Lịch) --}}
-<div class="mb-5 flex flex-wrap items-center gap-3">
-  <div class="segmented w-full max-w-md" role="tablist" aria-label="Plan nội dung">
-    <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>💡 Idea bank</a>
-    <a href="/plan/weeks" role="tab" class="plan-tab {{#if (eq @root.tab 'calendar')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'calendar')}} aria-selected="true"{{/if}}>📅 Lịch quay / đăng</a>
-  </div>
-  {{#if (eq @root.tab 'calendar')}}
-    <div class="segmented" aria-label="Xem theo">
-      <a href="/plan/weeks" class="plan-tab {{#if (eq @root.view 'week')}}plan-tab-active{{/if}}">Tuần</a>
-      <a href="/plan/calendar" class="plan-tab {{#if (eq @root.view 'month')}}plan-tab-active{{/if}}">Tháng</a>
-    </div>
-  {{/if}}
+{{!-- Ba tab con của Plan: Idea bank, Lịch đăng, Lịch quay. Dùng: {{> plan/tabs}}
+     Biến: tab = 'ideas' | 'post' | 'shoot'. Ở 2 tab lịch thêm: view ('week'|'month'), weekHref, monthHref, brandLinks. --}}
+<div class="segmented mb-4 w-full max-w-xl" role="tablist" aria-label="Plan nội dung">
+  <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>💡 Idea bank</a>
+  <a href="/plan/weeks?kind=post" role="tab" class="plan-tab {{#if (eq @root.tab 'post')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'post')}} aria-selected="true"{{/if}}>📤 Lịch đăng</a>
+  <a href="/plan/weeks?kind=shoot" role="tab" class="plan-tab {{#if (eq @root.tab 'shoot')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'shoot')}} aria-selected="true"{{/if}}>🎬 Lịch quay</a>
 </div>
+{{#if @root.brandLinks}}
+  <div class="mb-5 flex flex-wrap items-center gap-2">
+    <div class="segmented" aria-label="Xem theo">
+      <a href="{{@root.weekHref}}" class="plan-tab {{#if (eq @root.view 'week')}}plan-tab-active{{/if}}">Tuần</a>
+      <a href="{{@root.monthHref}}" class="plan-tab {{#if (eq @root.view 'month')}}plan-tab-active{{/if}}">Tháng</a>
+    </div>
+    <nav class="flex flex-wrap gap-1.5" aria-label="Brand">
+      {{#each @root.brandLinks}}
+        <a href="{{href}}" class="btn-sm {{#if active}}btn-secondary{{else}}btn-ghost{{/if}}"{{#if active}} aria-current="true"{{/if}}>{{label}}</a>
+      {{/each}}
+    </nav>
+  </div>
+{{/if}}

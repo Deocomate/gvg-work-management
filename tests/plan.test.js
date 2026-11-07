@@ -30,13 +30,14 @@ const cardOf = async (agent, title, query = '') => {
 const idOf = async (title) => (await cardOf(admin, title)).id;
 const today = todayISO();
 
-test('menu có tab Plan; Idea bank trống thì có hướng dẫn; còn 2 tab', async () => {
+test('menu có tab Plan; Idea bank trống thì có hướng dẫn; 3 tab: Idea bank, Lịch đăng, Lịch quay', async () => {
   const page = await mai.get('/plan');
   assert.equal(page.status, 200);
   assert.match(page.text, /href="\/plan"/);
   assert.match(page.text, /Kho ý tưởng đang trống/);
   assert.match(page.text, /💡 Idea bank/);
-  assert.match(page.text, /📅 Lịch quay \/ đăng/);
+  assert.match(page.text, /📤 Lịch đăng/);
+  assert.match(page.text, /🎬 Lịch quay/);
 });
 
 test('chưa đăng nhập -> về trang đăng nhập', async () => {
@@ -99,35 +100,59 @@ test('nút bước tiếp theo: Mới → Đã chọn → Đã viết kịch b�
 
   const edit = await postForm(mai, `/plan/${id}`, { title: 'Hậu trường nung gốm', status: 'scripted', post_date: today }, { from: `/plan/${id}/edit` });
   assert.equal(edit.status, 302);
-  assert.equal(edit.headers.location, `/plan/weeks?week=${today}`);
+  assert.equal(edit.headers.location, `/plan/weeks?kind=post&week=${today}`);
   assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'scheduled');
 
   const bad = await postForm(mai, `/plan/${id}/status`, { status: 'hack' }, { from: '/plan' });
   assert.equal(bad.status, 302);
 });
 
-test('lịch tuần: 7 ngày, đặt tên tuần như Sheet, hiện buổi quay + bài đăng theo giờ và cảnh báo', async () => {
+test('Lịch đăng và Lịch quay tách riêng, mỗi brand một hàng; đặt tên tuần như Sheet; cảnh báo', async () => {
   // Tuần thuộc tháng chứa ngày Thứ 5
   assert.match((await mai.get('/plan/weeks?week=2026-11-04')).text, /Tuần 1 \(tháng 11\)[\s\S]*02\/11 – 08\/11\/2026/);
   assert.match((await mai.get('/plan/weeks?week=2026-10-28')).text, /Tuần 5 \(tháng 10\)[\s\S]*26\/10 – 01\/11\/2026/);
-  assert.equal((await mai.get('/plan/weeks?week=abc')).status, 200);
+  assert.equal((await mai.get('/plan/weeks?week=abc&kind=xyz&brand=zzz')).status, 200);
 
   const namId = await userId('Trần Nam');
-  const base = { owner_id: namId, shoot_time: '15h00 - 15h30', brand: 'GSXD' };
-  await add(admin, { ...base, title: 'Quay ở xưởng', shoot_date: '2026-12-01', post_date: '2026-12-02', location: 'Xưởng' });
-  await add(admin, { ...base, title: 'Quay ở số 18', shoot_date: '2026-12-01', post_date: '2026-12-10', location: '18' });
-  await add(admin, { title: 'Chưa quay gì', post_date: '2026-12-03', post_time: '19:00' });
+  const base = { owner_id: namId, shoot_time: '15h00 - 15h30' };
+  await add(admin, { ...base, title: 'Quay ở xưởng', brand: 'GSXD', shoot_date: '2026-12-01', post_date: '2026-12-02', location: 'Xưởng' });
+  await add(admin, { ...base, title: 'Quay ở số 18', brand: 'Klayy', shoot_date: '2026-12-01', post_date: '2026-12-10', location: '18' });
+  await add(admin, { title: 'Chưa quay gì', brand: 'Vũ Gia', post_date: '2026-12-03', post_time: '19:00' });
 
-  const week = (await mai.get('/plan/weeks?week=2026-12-01')).text;
-  const tuesday = week.split('data-plan-day="2026-12-01"')[1].split('data-plan-day=')[0];
-  assert.match(tuesday, /Quay 15:00–15:30/);
-  assert.match(tuesday, /📍 Xưởng/);
-  assert.match(tuesday, /⚠/); // Nam bị xếp 2 nơi cùng giờ
-  assert.match(week, /trùng giờ quay/);
-  assert.match(week, /chưa có ngày quay/);
-  assert.match(week.split('data-plan-day="2026-12-03"')[1], /Đăng 19:00[\s\S]*Chưa quay gì/);
-  assert.match(week.split('data-plan-unshot')[1] ?? '', /Chưa quay gì/); // danh sách cần chốt ngày quay
-  assert.match((await mai.get('/plan/calendar?month=2026-12')).text, /Quay ở xưởng/); // xem theo tháng vẫn có
+  // Lịch đăng: chỉ bài đăng, theo hàng brand
+  const posts = (await mai.get('/plan/weeks?kind=post&week=2026-12-01')).text;
+  const lane = (html, brand) => html.split(`data-plan-brand="${brand}"`)[1].split('data-plan-brand=')[0];
+  assert.match(lane(posts, 'Vũ Gia').split('data-plan-day="2026-12-03"')[1], /19:00[\s\S]*Chưa quay gì/);
+  assert.match(lane(posts, 'GSXD'), /Quay ở xưởng/);
+  assert.doesNotMatch(lane(posts, 'GSXD'), /Chưa quay gì/);
+  assert.doesNotMatch(posts, /Quay 15:00/); // không lẫn buổi quay
+  assert.match(posts, /chưa có ngày quay/);
+  assert.doesNotMatch(posts, /Quay ở số 18/); // đăng 10/12, tuần sau
+
+  // Lịch quay: chỉ buổi quay, có giờ + địa điểm, cảnh báo trùng giờ, danh sách cần chốt ngày quay
+  const shoots = (await mai.get('/plan/weeks?kind=shoot&week=2026-12-01')).text;
+  assert.match(lane(shoots, 'GSXD'), /15:00–15:30[\s\S]*Quay ở xưởng[\s\S]*📍 Xưởng/);
+  assert.match(lane(shoots, 'Klayy'), /Quay ở số 18/);
+  assert.match(shoots, /⚠/); // Nam bị xếp 2 nơi cùng giờ
+  assert.match(shoots, /trùng giờ quay/);
+  assert.doesNotMatch(shoots.split('data-plan-unshot')[0], /Chưa quay gì/);
+  assert.match(shoots.split('data-plan-unshot')[1], /Chưa quay gì/);
+
+  // Lọc 1 brand
+  const onlyKlayy = (await mai.get('/plan/weeks?kind=shoot&brand=Klayy&week=2026-12-01')).text;
+  assert.match(onlyKlayy, /Quay ở số 18/);
+  assert.doesNotMatch(onlyKlayy, /Quay ở xưởng/);
+  // + ở hàng brand -> form chọn sẵn brand và ngày quay
+  assert.match(onlyKlayy, /\/plan\/new\?shoot_date=2026-12-01&amp;brand=Klayy|\/plan\/new\?shoot_date=2026-12-01&brand=Klayy/);
+  const prefilled = (await mai.get('/plan/new?shoot_date=2026-12-01&brand=Klayy')).text;
+  assert.match(prefilled, /<option value="Klayy" selected>/);
+
+  // Tháng: cũng tách đăng / quay và lọc brand
+  const monthPosts = (await mai.get('/plan/calendar?kind=post&month=2026-12')).text;
+  assert.match(monthPosts, /Chưa quay gì/);
+  assert.match(monthPosts.split('data-plan-day="2026-12-01"')[1].split('data-plan-day=')[0], /^((?!Quay ở xưởng)[\s\S])*$/);
+  assert.match((await mai.get('/plan/calendar?kind=shoot&month=2026-12')).text, /Quay ở xưởng/);
+  assert.doesNotMatch((await mai.get('/plan/calendar?kind=shoot&month=2026-12&brand=Klayy')).text, /Quay ở xưởng/);
 });
 
 test('đồng bộ sang lịch làm việc: người phụ trách có việc Quay + Đăng; đổi ở Plan thì lịch đổi theo', async () => {
@@ -268,4 +293,11 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
 test('lịch tuần mặc định là tuần này', async () => {
   const page = (await mai.get('/plan/weeks')).text;
   assert.match(page, new RegExp(`data-plan-day="${weekDays(today)[0]}"`));
+});
+
+test('form thêm ý tưởng có sẵn ô Link tham khảo ở phần chính (không phải mở thêm)', async () => {
+  const page = (await mai.get('/plan/new')).text;
+  const main = page.split('<details')[0];
+  assert.match(main, /name="reference_url"/);
+  assert.match(main, /Link tham khảo/);
 });

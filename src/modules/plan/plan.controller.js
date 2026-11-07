@@ -11,15 +11,41 @@ import { importFromSheet } from './plan.import.js';
 const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const str = (v) => (typeof v === 'string' ? v.slice(0, 100) : '');
 
-/** Sau khi lưu: có ngày đăng/quay thì về đúng tuần trên lịch, không thì về Idea bank. */
+/** Sau khi lưu: có ngày đăng thì về tuần đó trên Lịch đăng, chỉ có ngày quay thì Lịch quay, không thì Idea bank. */
 const afterSave = (plan) => {
-  const date = plan.post_date || plan.shoot_date;
-  return date ? `/plan/weeks?week=${date}` : '/plan';
+  if (plan.post_date) return `/plan/weeks?kind=post&week=${plan.post_date}`;
+  if (plan.shoot_date) return `/plan/weeks?kind=shoot&week=${plan.shoot_date}`;
+  return '/plan';
 };
+
+const KIND_TEXT = {
+  post: { title: 'Lịch đăng', subtitle: 'Bài cần đăng theo ngày + giờ, chia theo brand', icon: '📤', verb: 'Đăng', dateParam: 'post_date', unit: 'bài cần đăng', done: 'đã đăng' },
+  shoot: { title: 'Lịch quay', subtitle: 'Buổi quay theo ngày, khung giờ, địa điểm, chia theo brand', icon: '🎬', verb: 'Quay', dateParam: 'shoot_date', unit: 'buổi quay', done: 'đã quay' },
+};
+
+/** Dữ liệu chung cho thanh chuyển Tuần/Tháng + brand trên 2 lịch. */
+function calendarNav({ kind, brand, view, week, month }) {
+  const q = (extra) => new URLSearchParams({ kind, ...(brand ? { brand } : {}), ...extra }).toString();
+  const here = view === 'week' ? (b) => `/plan/weeks?${q({ week, ...(b ? { brand: b } : {}) })}` : (b) => `/plan/calendar?${q({ month, ...(b ? { brand: b } : {}) })}`;
+  const all = view === 'week' ? `/plan/weeks?kind=${kind}&week=${week}` : `/plan/calendar?kind=${kind}&month=${month}`;
+  return {
+    tab: kind,
+    view,
+    kind,
+    brand,
+    text: KIND_TEXT[kind],
+    weekHref: `/plan/weeks?${q({ week: week ?? `${month}-01` })}`,
+    monthHref: `/plan/calendar?${q({ month: month ?? week.slice(0, 7) })}`,
+    brandLinks: [
+      { label: 'Tất cả brand', href: all, active: !brand },
+      ...BRANDS.map((b) => ({ label: b.label, href: here(b.value), active: brand === b.value })),
+    ],
+  };
+}
 
 // Form gọn: mỗi nhóm ô là một mục gập lại, tự mở khi đã có dữ liệu hoặc có lỗi.
 const SECTION_FIELDS = {
-  idea: ['description', 'reference_url', 'proposer_id', 'note'],
+  idea: ['description', 'proposer_id', 'note'],
   script: ['writer_id', 'script'],
   shoot: ['shoot_date', 'shoot_time', 'location', 'props'],
   post: ['post_date', 'post_time', 'source_url', 'post_url'],
@@ -64,25 +90,27 @@ export async function index(req, res) {
 }
 
 export async function weeks(req, res) {
-  const data = await service.getWeek(str(req.query.week), req.user);
+  const kind = service.calendarKind(req.query.kind);
+  const brand = service.brandFilter(req.query.brand);
+  const data = await service.getWeek(str(req.query.week), { kind, brand }, req.user);
   res.render('plan/weeks', {
-    title: 'Lịch quay / đăng',
-    tab: 'calendar',
-    view: 'week',
+    title: KIND_TEXT[kind].title,
     ...data,
+    ...calendarNav({ kind, brand, view: 'week', week: data.week }),
     back: req.originalUrl,
   });
 }
 
 export async function calendar(req, res) {
   const month = parseMonth(req.query.month);
-  const data = await service.getMonth(month, req.user);
+  const kind = service.calendarKind(req.query.kind);
+  const brand = service.brandFilter(req.query.brand);
+  const data = await service.getMonth(month, { kind, brand }, req.user);
   const [year, monthNumber] = month.split('-');
   res.render('plan/calendar', {
-    title: 'Lịch quay / đăng',
-    tab: 'calendar',
-    view: 'month',
+    title: KIND_TEXT[kind].title,
     ...data,
+    ...calendarNav({ kind, brand, view: 'month', month }),
     month,
     monthLabel: `Tháng ${Number(monthNumber)}/${year}`,
     weekdayLabels: WEEKDAY_LABELS,
@@ -103,6 +131,8 @@ export function newForm(req, res) {
   // Bấm "+" ở một ngày trên lịch -> điền sẵn ngày đăng / ngày quay
   if (isISODate(req.query.post_date)) values.post_date = req.query.post_date;
   if (isISODate(req.query.shoot_date)) values.shoot_date = req.query.shoot_date;
+  // Bấm + ở hàng của một brand -> chọn sẵn brand đó
+  if (service.brandFilter(req.query.brand)) values.brand = req.query.brand;
   return renderForm(req, res, { values });
 }
 
