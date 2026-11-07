@@ -31,13 +31,28 @@
           <span class="{{badge}}">{{label}}</span>
           <span class="text-xs text-ink-faint">{{total}}</span>
         </h2>
-        <ul class="space-y-2">
-          {{#each items}}
-            {{> plan/card}}
-          {{else}}
-            <li class="rounded-lg border border-dashed border-line px-3 py-4 text-center text-xs text-ink-faint">Trống</li>
+        {{#if groups.length}}
+          {{!-- Đã chọn: chia theo tuần đăng --}}
+          {{#each groups}}
+            <div class="plan-group{{#if isPast}} opacity-70{{/if}}" data-plan-week>
+              <h3 class="plan-group-head">
+                <span class="{{#if isThisWeek}}text-ink{{/if}}">{{label}}{{#if isThisWeek}} · tuần này{{/if}}</span>
+                <span class="tabular-nums">{{#if range}}{{range}} · {{/if}}{{items.length}}</span>
+              </h3>
+              <ul class="space-y-2">
+                {{#each items}}{{> plan/card}}{{/each}}
+              </ul>
+            </div>
           {{/each}}
-        </ul>
+        {{else}}
+          <ul class="space-y-2">
+            {{#each items}}
+              {{> plan/card}}
+            {{else}}
+              <li class="rounded-lg border border-dashed border-line px-3 py-4 text-center text-xs text-ink-faint">Trống</li>
+            {{/each}}
+          </ul>
+        {{/if}}
       </section>
     {{/each}}
   </div>

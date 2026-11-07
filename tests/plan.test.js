@@ -22,7 +22,7 @@ const cardOf = async (agent, title, query = '') => {
   const page = (await agent.get(`/plan?dropped=1${query}`)).text + (await agent.get(`/plan/archive?${query.slice(1)}`)).text;
   const cols = page.split('data-plan-col="').slice(1);
   for (const col of cols) {
-    const card = col.split('data-plan-row').slice(1).find((c) => c.includes(title));
+    const card = col.split('data-plan-row').slice(1).map((c) => c.split('</li>')[0]).find((c) => c.includes(title));
     if (card) return { column: col.slice(0, col.indexOf('"')), html: card, id: card.match(/\/plan\/(\d+)\//)?.[1] };
   }
   return null;
@@ -107,6 +107,16 @@ test('chỉ 3 bước Mới → Đã chọn → Đã xong; ý tưởng Mới g�
   await add(mai, { title: 'Chọn rồi chưa có ngày', status: 'selected' });
   assert.match((await cardOf(mai, 'Chọn rồi chưa có ngày')).html, /Chưa có ngày đăng/);
   assert.doesNotMatch((await cardOf(mai, 'Hậu trường nung gốm')).html, /Chưa có ngày đăng/);
+  // Cột Đã chọn chia theo tuần đăng: tuần sớm trước, nhóm "Chưa có ngày đăng" cuối cùng
+  await add(mai, { title: 'Đăng tuần sau nữa', post_date: '2026-11-25' });
+  await add(mai, { title: 'Đăng tuần 2 tháng 11', post_date: '2026-11-12' });
+  const selectedCol = (await mai.get('/plan')).text.split('data-plan-col="selected"')[1].split('data-plan-col=')[0];
+  const weeks = selectedCol.split('data-plan-week').slice(1);
+  const weekOf = (title) => weeks.find((w) => w.includes(title));
+  assert.match(weekOf('Đăng tuần 2 tháng 11'), /Tuần 2 \(tháng 11\)[\s\S]*09\/11 – 15\/11\/2026/);
+  assert.match(weekOf('Đăng tuần sau nữa'), /Tuần 4 \(tháng 11\)/);
+  assert.ok(weeks.indexOf(weekOf('Đăng tuần 2 tháng 11')) < weeks.indexOf(weekOf('Đăng tuần sau nữa')));
+  assert.match(weeks.at(-1), /Chưa có ngày đăng[\s\S]*Chọn rồi chưa có ngày/);
 
   // Xong -> rời bảng Idea bank, vào Lưu trữ (có nút Mở lại)
   await postForm(mai, `/plan/${id}/status`, { status: 'posted', back: '/plan' }, { from: '/plan' });

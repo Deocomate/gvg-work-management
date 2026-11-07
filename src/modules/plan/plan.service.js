@@ -62,18 +62,35 @@ async function filteredPlans({ brand, owner, q }) {
 // "Đã xong" không nằm trên bảng mà chuyển vào Lưu trữ (getArchive).
 const ARCHIVED = 'posted';
 
+/** Nhóm thẻ (đã xếp theo ngày đăng) theo tuần T2–CN, tên tuần như Sheet: "Tuần 1 (tháng 11)". */
+function groupByPostWeek(items, today) {
+  const thisWeek = weekDays(today)[0];
+  const groups = [];
+  for (const item of items) {
+    const start = item.post_date ? weekDays(item.post_date)[0] : null;
+    let group = groups.at(-1);
+    if (!group || group.start !== start) {
+      const info = start ? weekLabel(weekDays(start)) : { label: 'Chưa có ngày đăng', range: '' };
+      group = { ...info, start, isThisWeek: start === thisWeek, isPast: Boolean(start) && start < thisWeek, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+  return groups;
+}
+
 /** Idea bank dạng bảng cột theo bước: Mới → Đã chọn (cột "Bỏ" chỉ hiện khi bật). */
 export async function getBoard({ brand, owner, q, dropped } = {}, user) {
   const { shown: all, filters } = await filteredPlans({ brand, owner, q });
   const shown = all.filter((p) => p.status !== ARCHIVED);
+  const today = todayISO();
 
   const columns = PLAN_STATUSES.filter((s) => s.value !== ARCHIVED && (dropped || s.value !== 'dropped')).map((s) => {
-    const items = shown.filter((p) => p.status === s.value);
-    // Đã chọn: bài có ngày (đăng, không thì quay) lên trước, gần nhất trước.
-    if (s.value === 'selected') {
-      items.sort((a, b) => (a.post_date ?? a.shoot_date ?? '~').localeCompare(b.post_date ?? b.shoot_date ?? '~'));
-    }
-    return { ...s, total: items.length, items: items.map((p) => decorate(p, user)) };
+    const items = shown.filter((p) => p.status === s.value).map((p) => decorate(p, user));
+    if (s.value !== 'selected') return { ...s, total: items.length, items };
+    // Đã chọn: chia theo tuần của ngày đăng (sớm trước), chưa có ngày đăng gom xuống cuối.
+    items.sort((a, b) => (!a.post_date - !b.post_date) || (a.post_date ?? '').localeCompare(b.post_date ?? ''));
+    return { ...s, total: items.length, items, groups: groupByPostWeek(items, today) };
   });
 
   return {
