@@ -36,7 +36,7 @@
                 <li>
                   <a href="{{#if canEdit}}/plan/{{id}}/edit?back={{urlEncode @root.back}}{{else}}/plan?q={{urlEncode title}}{{/if}}"
                      class="flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-xs {{statusInfo.chip}}"
-                     title="{{@root.text.verb}}: {{title}} — {{brandInfo.label}} · {{statusInfo.label}}{{#if owner_name}} · {{owner_name}}{{/if}}">
+                     title="{{@root.text.verb}}: {{title}} — {{brandInfo.label}} · {{statusInfo.label}}{{#if description}} — {{description}}{{/if}}">
                     <span class="{{brandInfo.badge}} shrink-0 px-1 py-0 text-[10px]">{{brandInfo.short}}</span>
                     <span class="truncate">{{title}}</span>
                   </a>
@@ -73,7 +73,8 @@
               {{/if}}
               <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
               {{#if (and (eq kind 'shoot') location)}}<span class="text-xs text-ink-faint">📍 {{location}}</span>{{/if}}
-              {{#if owner_name}}<span class="text-xs text-ink-faint">👤 {{owner_name}}</span>{{/if}}
+              {{#if description}}<span class="w-full text-xs whitespace-pre-line text-ink-faint">{{description}}</span>{{/if}}
+              {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link text-xs font-normal">📄 Kịch bản</a>{{/if}}{{/if}}
             </li>
           {{/each}}
         </ul>

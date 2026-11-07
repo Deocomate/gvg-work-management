@@ -45,7 +45,7 @@ function calendarNav({ kind, brand, view, week, month }) {
 
 // Form gọn: mỗi nhóm ô là một mục gập lại, tự mở khi đã có dữ liệu hoặc có lỗi.
 const SECTION_FIELDS = {
-  idea: ['description', 'proposer_id', 'note'],
+  idea: ['proposer_id', 'note'],
   script: ['writer_id', 'script'],
   shoot: ['shoot_date', 'shoot_time', 'location', 'props'],
   post: ['post_date', 'source_url', 'post_url'],

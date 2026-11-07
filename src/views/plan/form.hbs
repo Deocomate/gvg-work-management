@@ -19,6 +19,7 @@
       {{#if errors.topic}}<p class="field-error">{{errors.topic}}</p>{{/if}}
     </div>
   </div>
+  {{> form/textarea name="description" label="Mô tả kịch bản" value=values.description error=errors.description rows=3 placeholder="Tóm tắt kịch bản: hook, các cảnh chính, lời thoại…" hint="Hiện ngay trên Lịch đăng / Lịch quay để cả nhóm biết video quay gì."}}
   {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/… — video mẫu, bài viết gợi ý (hoặc ghi tên video)"}}
   <div class="grid gap-4 sm:grid-cols-2">
     {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao" hint="Việc quay / đăng tự lên lịch làm việc của người này."}}
@@ -28,9 +29,8 @@
   {{!-- Các phần chi tiết: gập lại, tự mở khi đã có dữ liệu --}}
   <div class="mt-2 space-y-3">
     <details class="plan-fold"{{#if open.idea}} open{{/if}}>
-      <summary>💡 Chi tiết ý tưởng <span>mô tả, người góp, ghi chú</span></summary>
+      <summary>💡 Chi tiết ý tưởng <span>người góp, ghi chú</span></summary>
       <div class="plan-fold-body">
-        {{> form/textarea name="description" label="Mô tả" value=values.description error=errors.description rows=3 placeholder="Ý chính, các tập của series…"}}
         {{> form/select name="proposer_id" label="Người góp ý tưởng" options=ownerOptions value=values.proposer_id error=errors.proposer_id placeholder="Mình (người nhập)"}}
         {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=3 placeholder="Hook, lưu ý khi quay…"}}
       </div>

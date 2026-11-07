@@ -1,0 +1,9 @@
+{{!-- Mô tả kịch bản trên thẻ lịch (3 dòng, rê chuột xem đủ) + link/tên kịch bản. Dùng trong vòng lặp nội dung: {{> plan/script-summary}} --}}
+{{#if description}}<p class="plan-entry-desc" title="{{description}}">{{description}}</p>{{/if}}
+{{#if script}}
+  {{#if (isUrl script)}}
+    <a href="{{script}}" target="_blank" rel="noopener noreferrer" class="mt-1 inline-block text-[11px] font-medium underline">📄 Mở kịch bản</a>
+  {{else}}
+    <p class="mt-1 truncate text-[11px] opacity-80" title="{{script}}">📄 {{script}}</p>
+  {{/if}}
+{{/if}}

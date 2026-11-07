@@ -330,3 +330,22 @@ test('form không còn ô giờ đăng và chọn nền tảng; thẻ Idea bank 
   await add(mai, { title: 'Ý tưởng không nền tảng' });
   assert.doesNotMatch((await cardOf(mai, 'Ý tưởng không nền tảng')).html, /TikTok/);
 });
+
+test('lịch đăng / lịch quay: không ghi người phụ trách, có mô tả kịch bản; form có ô Mô tả kịch bản ở phần chính', async () => {
+  assert.match((await mai.get('/plan/new')).text.split('<details')[0], /Mô tả kịch bản/);
+  const namId = await userId('Trần Nam');
+  await add(admin, {
+    title: 'Series mở kiện', brand: 'GSXD', owner_id: namId, shoot_date: '2027-01-05', post_date: '2027-01-07',
+    description: 'Hook: mở ngẫu hứng 5 thùng ngói', script: 'https://docs.google.com/document/d/xyz',
+  });
+  for (const kind of ['post', 'shoot']) {
+    const page = (await mai.get(`/plan/weeks?kind=${kind}&week=2027-01-05`)).text;
+    const lane = page.split('data-plan-brand="GSXD"')[1];
+    assert.match(lane, /Hook: mở ngẫu hứng 5 thùng ngói/);
+    assert.match(lane, /href="https:\/\/docs.google.com\/document\/d\/xyz"/);
+    assert.doesNotMatch(lane, /Trần Nam|Chưa giao/);
+  }
+  const month = (await mai.get('/plan/calendar?kind=post&month=2027-01')).text.split('data-plan-agenda')[1];
+  assert.match(month, /Hook: mở ngẫu hứng/);
+  assert.doesNotMatch(month, /Trần Nam/);
+});

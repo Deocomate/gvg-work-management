@@ -407,6 +407,7 @@
   .plan-day-head { @apply mb-2 flex items-center justify-between px-1 text-sm text-ink; }
   .plan-entry { @apply rounded-lg px-2 py-1.5; }
   .plan-entry-title { @apply line-clamp-2 text-xs font-medium; }
+  .plan-entry-desc { @apply mt-1 line-clamp-3 text-[11px] whitespace-pre-line opacity-85; }
 
   /* Form Plan: các phần gập lại */
   .plan-fold { @apply rounded-xl border border-line bg-canvas/30; }

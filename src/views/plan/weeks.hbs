@@ -60,9 +60,8 @@
                   {{else}}
                     <span class="plan-entry-title" title="{{title}}">{{title}}</span>
                   {{/if}}
-                  <p class="mt-0.5 truncate text-[11px] opacity-80">
-                    {{#if (eq kind 'shoot')}}{{#if location}}📍 {{location}} · {{/if}}{{/if}}{{#if owner_name}}{{owner_name}}{{else}}Chưa giao{{/if}}
-                  </p>
+                  {{#if (and (eq kind 'shoot') location)}}<p class="mt-0.5 truncate text-[11px] opacity-80">📍 {{location}}</p>{{/if}}
+                  {{> plan/script-summary}}
                 </li>
               {{/each}}
             </ul>
@@ -89,7 +88,6 @@
         <span class="w-28 shrink-0 tabular-nums text-ink-soft">📤 {{formatDay post_date}}</span>
         <span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>
         <span class="min-w-0 flex-1 truncate font-medium text-ink" title="{{title}}">{{title}}</span>
-        {{#if owner_name}}<span class="text-xs text-ink-faint">👤 {{owner_name}}</span>{{/if}}
         {{#if canEdit}}<a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="btn-ghost btn-sm">🎬 Chốt ngày quay</a>{{/if}}
       </li>
     {{/each}}
