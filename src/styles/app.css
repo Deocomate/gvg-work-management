@@ -405,9 +405,13 @@
   .plan-day-today { @apply border-brand-400/60 ring-1 ring-brand-400/40; }
   .plan-day-past { @apply opacity-75; }
   .plan-day-head { @apply mb-2 flex items-center justify-between px-1 text-sm text-ink; }
-  .plan-entry { @apply rounded-lg px-2 py-1.5; }
-  .plan-entry-title { @apply line-clamp-2 text-xs font-medium; }
-  .plan-entry-desc { @apply mt-1 line-clamp-3 text-[11px] whitespace-pre-line opacity-85; }
+  /* Thẻ trên lịch: nền trung tính, chữ màu chữ chuẩn (dễ đọc 2 giao diện), vạch màu trái = bước hiện tại */
+  .plan-entry { @apply rounded-lg border border-l-4 border-line bg-raised px-2 py-1.5 text-ink; }
+  .plan-entry-title { @apply line-clamp-2 text-xs font-semibold text-ink; }
+  .plan-entry-desc { @apply mt-1 line-clamp-3 text-[11px] whitespace-pre-line text-ink-soft; }
+  .plan-entry-status { @apply mt-1 flex items-center gap-1 text-[10px] text-ink-faint; }
+  .plan-dot { @apply inline-block h-2 w-2 shrink-0 rounded-full; }
+  .plan-chip { @apply flex items-center gap-1 truncate rounded border border-l-4 border-line bg-raised px-1.5 py-0.5 text-xs text-ink; }
 
   /* Form Plan: các phần gập lại */
   .plan-fold { @apply rounded-xl border border-line bg-canvas/30; }

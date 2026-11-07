@@ -35,7 +35,7 @@
               {{#each entries}}
                 <li>
                   <a href="{{#if canEdit}}/plan/{{id}}/edit?back={{urlEncode @root.back}}{{else}}/plan?q={{urlEncode title}}{{/if}}"
-                     class="flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-xs {{statusInfo.chip}}"
+                     class="plan-chip {{statusInfo.bar}}"
                      title="{{@root.text.verb}}: {{title}} — {{brandInfo.label}} · {{statusInfo.label}}{{#if description}} — {{description}}{{/if}}">
                     <span class="{{brandInfo.badge}} shrink-0 px-1 py-0 text-[10px]">{{brandInfo.short}}</span>
                     <span class="truncate">{{title}}</span>
@@ -52,7 +52,8 @@
 </div>
 
 <p class="mt-3 flex flex-wrap gap-3 text-xs text-ink-faint">
-  <span>Nhãn màu = brand (VG = Vũ Gia, KL = Klayy, GS = GSXD). Màu thẻ = bước hiện tại.</span>
+  <span>Nhãn màu = brand (VG = Vũ Gia, KL = Klayy, GS = GSXD).</span>
+  {{> plan/status-legend}}
 </p>
 
 {{#if agenda.length}}

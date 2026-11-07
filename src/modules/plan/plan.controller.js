@@ -34,6 +34,7 @@ function calendarNav({ kind, brand, view, week, month }) {
     kind,
     brand,
     text: KIND_TEXT[kind],
+    statusLegend: PLAN_STATUSES.filter((s) => s.value !== 'dropped'),
     weekHref: `/plan/weeks?${q({ week: week ?? `${month}-01` })}`,
     monthHref: `/plan/calendar?${q({ month: month ?? week.slice(0, 7) })}`,
     brandLinks: [

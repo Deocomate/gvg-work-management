@@ -1,0 +1,5 @@
+{{!-- Chú thích màu vạch theo bước. Cần biến statusLegend (PLAN_STATUSES) ở @root. --}}
+<span class="flex flex-wrap items-center gap-x-3 gap-y-1">
+  Vạch màu = bước:
+  {{#each @root.statusLegend}}<span class="inline-flex items-center gap-1"><span class="plan-dot {{dot}}"></span>{{label}}</span>{{/each}}
+</span>

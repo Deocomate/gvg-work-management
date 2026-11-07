@@ -82,6 +82,7 @@
 
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-07 — Plan: thẻ trên Lịch đăng / Lịch quay đổi sang nền trung tính + chữ đậm (dễ đọc cả sáng/tối), bước hiện tại = vạch màu trái + chấm màu, có chú thích màu (PLAN_STATUSES.bar/dot thay chip).
 - 2026-11-07 — Plan: thẻ trên Lịch đăng / Lịch quay không ghi người phụ trách, thay bằng mô tả kịch bản (3 dòng) + link kịch bản; ô "Mô tả kịch bản" (cột description) đưa ra phần chính của form.
 - 2026-11-07 — Plan: bỏ giờ đăng và chọn nền tảng (form, lịch, thẻ, việc "Đăng" trên lịch làm việc thành cả ngày). Cột post_time/platform vẫn giữ trong DB, không dùng.
 - 2026-11-07 — Plan: bỏ cảnh báo quá ngày đăng; lịch tuần ẩn hàng brand không có nội dung.

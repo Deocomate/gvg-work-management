@@ -2,8 +2,8 @@
 {{#if description}}<p class="plan-entry-desc" title="{{description}}">{{description}}</p>{{/if}}
 {{#if script}}
   {{#if (isUrl script)}}
-    <a href="{{script}}" target="_blank" rel="noopener noreferrer" class="mt-1 inline-block text-[11px] font-medium underline">📄 Mở kịch bản</a>
+    <a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link mt-1 inline-block text-[11px]">📄 Mở kịch bản</a>
   {{else}}
-    <p class="mt-1 truncate text-[11px] opacity-80" title="{{script}}">📄 {{script}}</p>
+    <p class="mt-1 truncate text-[11px] text-ink-soft" title="{{script}}">📄 {{script}}</p>
   {{/if}}
 {{/if}}

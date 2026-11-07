@@ -45,15 +45,17 @@ export const CONTENT_LINES = [
   'GSXD – Đại lý, giao hàng',
 ];
 
-// chip = màu ô trên lịch tháng. Thứ tự = thứ tự các bước.
+// Thẻ trên lịch: nền trung tính + chữ đậm cho dễ đọc ở cả giao diện sáng/tối; bước hiện tại thể hiện bằng
+// vạch màu bên trái (bar) và chấm màu (dot). Màu cố định (không theo theme) để 2 giao diện giống nhau.
+// Thứ tự = thứ tự các bước.
 export const PLAN_STATUSES = [
-  { value: 'idea', label: 'Mới', badge: 'badge-gray', chip: 'bg-raised text-ink-soft' },
-  { value: 'selected', label: 'Đã chọn', badge: 'badge-pink', chip: 'bg-bloom-400/15 text-bloom-300' },
-  { value: 'scripted', label: 'Đã viết kịch bản', badge: 'badge-orange', chip: 'bg-orange-400/15 text-orange-300 light:text-orange-700' },
-  { value: 'scheduled', label: 'Đã lên lịch', badge: 'badge-blue', chip: 'bg-sky-400/15 text-sky-300 light:text-sky-700' },
-  { value: 'filmed', label: 'Đã quay', badge: 'badge-yellow', chip: 'bg-sun-400/15 text-sun-300' },
-  { value: 'posted', label: 'Đã đăng', badge: 'badge-green', chip: 'bg-pine-500/40 text-pine-200' },
-  { value: 'dropped', label: 'Bỏ', badge: 'badge-red', chip: 'bg-brand-500/15 text-brand-300 line-through' },
+  { value: 'idea', label: 'Mới', badge: 'badge-gray', bar: 'border-l-slate-400', dot: 'bg-slate-400' },
+  { value: 'selected', label: 'Đã chọn', badge: 'badge-pink', bar: 'border-l-fuchsia-500', dot: 'bg-fuchsia-500' },
+  { value: 'scripted', label: 'Đã viết kịch bản', badge: 'badge-orange', bar: 'border-l-orange-500', dot: 'bg-orange-500' },
+  { value: 'scheduled', label: 'Đã lên lịch', badge: 'badge-blue', bar: 'border-l-sky-500', dot: 'bg-sky-500' },
+  { value: 'filmed', label: 'Đã quay', badge: 'badge-yellow', bar: 'border-l-amber-500', dot: 'bg-amber-500' },
+  { value: 'posted', label: 'Đã đăng', badge: 'badge-green', bar: 'border-l-emerald-500', dot: 'bg-emerald-500' },
+  { value: 'dropped', label: 'Bỏ', badge: 'badge-red', bar: 'border-l-rose-500 line-through', dot: 'bg-rose-500' },
 ];
 
 const values = (list) => list.map((o) => o.value);
