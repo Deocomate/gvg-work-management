@@ -42,15 +42,11 @@ export const decorate = (plan, user) => ({
 const searchText = (p) =>
   [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.location, p.owner_name, p.proposer_name, p.writer_name].join(' ');
 
-// Cột "Đã xong" chỉ hiện bài mới nhất để bảng không dài mãi.
-const POSTED_SHOWN = 12;
-
 /**
- * Idea bank dạng bảng cột theo bước: Mới → Đã chọn → Đã xong
- * (cột "Bỏ" chỉ hiện khi bật). Lọc brand, người phụ trách và tìm không dấu.
+ * Lọc brand, người (phụ trách hoặc viết kịch bản) và tìm không dấu.
  * Số ý tưởng nhỏ (vài trăm) nên lọc trong JS để bỏ dấu tiếng Việt (SQLite LIKE không làm được).
  */
-export async function getBoard({ brand, owner, q, dropped } = {}, user) {
+async function filteredPlans({ brand, owner, q }) {
   const plans = await repo.listAll();
   const words = foldText(q).split(/\s+/).filter(Boolean);
   const ownerId = Number(owner) || null;
@@ -60,28 +56,43 @@ export async function getBoard({ brand, owner, q, dropped } = {}, user) {
       (!ownerId || p.owner_id === ownerId || p.writer_id === ownerId) &&
       (!words.length || words.every((w) => foldText(searchText(p)).includes(w))),
   );
+  return { shown, filters: { brand: BRAND[brand] ? brand : '', owner: ownerId ? String(ownerId) : '', query: q?.trim() ?? '' } };
+}
 
-  const columns = PLAN_STATUSES.filter((s) => dropped || s.value !== 'dropped').map((s) => {
-    let items = shown.filter((p) => p.status === s.value);
-    if (s.value === 'posted') items.sort((a, b) => (b.post_date ?? '').localeCompare(a.post_date ?? ''));
+// "Đã xong" không nằm trên bảng mà chuyển vào Lưu trữ (getArchive).
+const ARCHIVED = 'posted';
+
+/** Idea bank dạng bảng cột theo bước: Mới → Đã chọn (cột "Bỏ" chỉ hiện khi bật). */
+export async function getBoard({ brand, owner, q, dropped } = {}, user) {
+  const { shown: all, filters } = await filteredPlans({ brand, owner, q });
+  const shown = all.filter((p) => p.status !== ARCHIVED);
+
+  const columns = PLAN_STATUSES.filter((s) => s.value !== ARCHIVED && (dropped || s.value !== 'dropped')).map((s) => {
+    const items = shown.filter((p) => p.status === s.value);
     // Đã chọn: bài có ngày (đăng, không thì quay) lên trước, gần nhất trước.
     if (s.value === 'selected') {
       items.sort((a, b) => (a.post_date ?? a.shoot_date ?? '~').localeCompare(b.post_date ?? b.shoot_date ?? '~'));
     }
-    const total = items.length;
-    if (s.value === 'posted') items = items.slice(0, POSTED_SHOWN);
-    return { ...s, total, more: total - items.length, items: items.map((p) => decorate(p, user)) };
+    return { ...s, total: items.length, items: items.map((p) => decorate(p, user)) };
   });
 
   return {
     columns,
     total: shown.length,
-    brand: BRAND[brand] ? brand : '',
-    owner: ownerId ? String(ownerId) : '',
-    query: q?.trim() ?? '',
+    ...filters,
     dropped: Boolean(dropped),
     droppedTotal: shown.filter((p) => p.status === 'dropped').length,
   };
+}
+
+/** Lưu trữ: nội dung đã xong, ngày đăng mới nhất ở trên (chưa có ngày đăng thì xuống cuối). */
+export async function getArchive({ brand, owner, q } = {}, user) {
+  const { shown, filters } = await filteredPlans({ brand, owner, q });
+  const items = shown
+    .filter((p) => p.status === ARCHIVED)
+    .sort((a, b) => (b.post_date ?? '').localeCompare(a.post_date ?? ''))
+    .map((p) => decorate(p, user));
+  return { items, total: items.length, ...filters };
 }
 
 // ---- Lịch đăng và lịch quay (2 lịch riêng), chia theo brand ----

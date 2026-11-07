@@ -17,9 +17,9 @@ await loginAs(nam, { email: 'nam@test.local', password: 'mat-khau-123' });
 
 const add = (agent, data) => postForm(agent, '/plan', data, { from: '/plan/new' });
 const userId = async (name) => (await admin.get('/plan/new')).text.match(new RegExp(`<option value="(\\d+)"[^>]*>${name}<`))[1];
-/** Thẻ của một nội dung trên bảng Idea bank (cột nào, có link sửa không). */
+/** Thẻ của một nội dung trên bảng Idea bank hoặc Lưu trữ (cột nào — Lưu trữ là "posted", có link sửa không). */
 const cardOf = async (agent, title, query = '') => {
-  const page = (await agent.get(`/plan?dropped=1${query}`)).text;
+  const page = (await agent.get(`/plan?dropped=1${query}`)).text + (await agent.get(`/plan/archive?${query.slice(1)}`)).text;
   const cols = page.split('data-plan-col="').slice(1);
   for (const col of cols) {
     const card = col.split('data-plan-row').slice(1).find((c) => c.includes(title));
@@ -38,6 +38,10 @@ test('menu có tab Plan; Idea bank trống thì có hướng dẫn; 3 tab: Idea 
   assert.match(page.text, />Idea bank</);
   assert.match(page.text, />Lịch đăng</);
   assert.match(page.text, />Lịch quay</);
+  assert.match(page.text, /href="\/plan\/archive"[^>]*aria-label="Lưu trữ"/);
+  const archive = await mai.get('/plan/archive');
+  assert.equal(archive.status, 200);
+  assert.match(archive.text, /Lưu trữ đang trống/);
 });
 
 test('chưa đăng nhập -> về trang đăng nhập', async () => {
@@ -99,6 +103,16 @@ test('chỉ 3 bước Mới → Đã chọn → Đã xong; ý tưởng Mới g�
   assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
   assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, />\s*Xong\s*</);
 
+  // Xong -> rời bảng Idea bank, vào Lưu trữ (có nút Mở lại)
+  await postForm(mai, `/plan/${id}/status`, { status: 'posted', back: '/plan' }, { from: '/plan' });
+  assert.match((await mai.get('/plan')).text, /chuyển vào Lưu trữ/);
+  assert.doesNotMatch((await mai.get('/plan?dropped=1')).text, /Hậu trường nung gốm/);
+  assert.doesNotMatch((await mai.get('/plan')).text, /data-plan-col="posted"/);
+  const archived = await mai.get('/plan/archive?q=hau truong');
+  assert.match(archived.text, /Hậu trường nung gốm[\s\S]*Mở lại/);
+  assert.doesNotMatch((await mai.get('/plan/archive?q=khong-co-gi')).text, /Hậu trường nung gốm/);
+  await postForm(mai, `/plan/${id}/status`, { status: 'selected', back: '/plan/archive' }, { from: '/plan/archive' });
+  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
   await postForm(mai, `/plan/${id}/status`, { status: 'posted', back: '/plan' }, { from: '/plan' });
   assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'posted');
   // Bước cũ không còn nhận

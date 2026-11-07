@@ -1,0 +1,32 @@
+{{#> page-header title="Plan nội dung" subtitle="Lưu trữ: nội dung đã xong, mới nhất ở trên"}}
+  <a href="/plan/new?back={{urlEncode back}}" class="btn-primary">+ Thêm ý tưởng</a>
+{{/page-header}}
+
+{{> plan/tabs}}
+
+<form method="get" action="/plan/archive" class="mb-4 flex flex-wrap items-end gap-2" role="search">
+  <input name="q" type="search" value="{{query}}" class="input w-full sm:w-64" placeholder="Tìm (gõ không dấu cũng được)" aria-label="Tìm trong lưu trữ">
+  <select name="brand" class="input w-auto" aria-label="Brand" data-autosubmit>
+    <option value="">Mọi brand</option>
+    {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
+  </select>
+  <select name="owner" class="input w-auto" aria-label="Người làm" data-autosubmit>
+    <option value="">Mọi người</option>
+    {{#each ownerOptions}}<option value="{{value}}" {{selected value @root.owner}}>{{label}}</option>{{/each}}
+  </select>
+  <button type="submit" class="btn-secondary">Tìm</button>
+  {{#if filtered}}<a href="/plan/archive" class="btn-ghost">Xoá lọc</a>{{/if}}
+  <span class="text-sm text-ink-faint sm:ml-auto">{{total}} nội dung</span>
+</form>
+
+{{#if items.length}}
+  <section data-plan-col="posted" aria-label="Lưu trữ">
+    <ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {{#each items}}{{> plan/card restore=true}}{{/each}}
+    </ul>
+  </section>
+{{else if filtered}}
+  {{> empty-state title="Không có nội dung nào khớp" text="Thử bỏ bớt bộ lọc hoặc gõ từ khác ngắn hơn."}}
+{{else}}
+  {{> empty-state title="Lưu trữ đang trống" text="Bấm “Xong” trên thẻ ở cột Đã chọn, nội dung sẽ được chuyển vào đây."}}
+{{/if}}

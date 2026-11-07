@@ -1,4 +1,4 @@
-// Tab Plan: Idea bank dạng cột theo bước (/plan) và Lịch quay/đăng — tuần (/plan/weeks) hoặc tháng (/plan/calendar).
+// Tab Plan: Idea bank dạng cột theo bước (/plan), Lưu trữ nội dung đã xong (/plan/archive) và Lịch quay/đăng — tuần (/plan/weeks) hoặc tháng (/plan/calendar).
 import { safeBack } from '#lib/redirect.js';
 import { isISODate } from '#lib/dates.js';
 import { parseMonth } from '#modules/schedule/schedule.service.js';
@@ -86,6 +86,23 @@ export async function index(req, res) {
   });
 }
 
+export async function archive(req, res) {
+  const { brand, owner, q } = req.query;
+  const [data, owners] = await Promise.all([
+    service.getArchive({ brand: str(brand), owner: str(owner), q: str(q) }, req.user),
+    staffOptions(),
+  ]);
+  res.render('plan/archive', {
+    title: 'Lưu trữ',
+    tab: 'archive',
+    ...data,
+    brandOptions: BRANDS,
+    ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
+    filtered: Boolean(data.brand || data.owner || data.query),
+    back: req.originalUrl,
+  });
+}
+
 export async function weeks(req, res) {
   const kind = service.calendarKind(req.query.kind);
   const brand = service.brandFilter(req.query.brand);
@@ -165,7 +182,8 @@ export async function update(req, res) {
 
 export async function setStatus(req, res) {
   const result = await service.changeStatus(req.params.id, req.body.status, req.user);
-  if (result.ok) req.flash('success', `"${result.data.title}" → ${result.data.statusInfo.label}.`);
+  if (result.ok && result.data.status === 'posted') req.flash('success', `"${result.data.title}" đã xong, chuyển vào Lưu trữ.`);
+  else if (result.ok) req.flash('success', `"${result.data.title}" → ${result.data.statusInfo.label}.`);
   else req.flash('error', result.errors.status);
   res.redirect(safeBack(req.body.back, '/plan'));
 }

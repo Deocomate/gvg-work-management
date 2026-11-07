@@ -8,6 +8,7 @@ const router = Router();
 router.param('id', numericId);
 
 router.get('/', controller.index);
+router.get('/archive', controller.archive);
 router.get('/weeks', controller.weeks);
 router.get('/calendar', controller.calendar);
 router.post('/import-sheet', controller.importSheet);
