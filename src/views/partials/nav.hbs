@@ -14,7 +14,8 @@
       </a>
     </div>
 
-    <nav class="flex flex-1 items-center gap-1 overflow-x-auto sm:flex-none" aria-label="Điều hướng chính">
+    {{!-- min-w-0 + sm:flex-initial: màn vừa (tablet) menu tự co lại và cuộn ngang, không đẩy tràn cả trang --}}
+    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto sm:flex-initial" aria-label="Điều hướng chính">
       {{#if currentUser}}
         {{> nav-link href="/today" label="Hôm nay" count=todayUnfinished}}
         {{> nav-link href="/calendar" label="Tháng"}}

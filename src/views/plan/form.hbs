@@ -9,34 +9,60 @@
 
   <div class="form-section">
     <h2 class="form-section-title">Ý tưởng</h2>
-    {{> form/field name="title" label="Tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Quy trình làm một chiếc bình từ đất sét"}}
-    {{> form/textarea name="description" label="Nội dung / kịch bản ngắn" value=values.description error=errors.description rows=4 hint="Không bắt buộc. Hook, ý chính, cảnh cần quay…"}}
-    {{> form/segmented name="platform" label="Kênh đăng" options=platformOptions value=values.platform error=errors.platform}}
+    {{> form/field name="title" label="Nội dung / tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Mở lò vẽ vàng"}}
+    {{> form/textarea name="description" label="Mô tả chi tiết" value=values.description error=errors.description rows=3 hint="Không bắt buộc. Ý chính, các tập của series…"}}
+    <div class="grid gap-4 sm:grid-cols-3">
+      {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
+      {{> form/select name="video_type" label="Loại video" options=videoTypeOptions value=values.video_type error=errors.video_type placeholder="Chưa chọn"}}
+      {{> form/select name="proposer_id" label="Người góp ý tưởng" options=ownerOptions value=values.proposer_id error=errors.proposer_id placeholder="Mình (người nhập)"}}
+    </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div class="field">
-        <label for="f-topic" class="label">Nhóm / chủ đề</label>
-        <input id="f-topic" name="topic" type="text" value="{{values.topic}}" list="plan-topics" class="input{{#if errors.topic}} input-error{{/if}}" placeholder="VD: Hậu trường, Review sản phẩm">
-        <datalist id="plan-topics">{{#each topics}}<option value="{{topic}}"></option>{{/each}}</datalist>
-        <p class="hint">Gõ mới hoặc chọn nhóm đã có, để lọc ở Idea bank.</p>
+        <label for="f-topic" class="label">Tuyến nội dung</label>
+        <input id="f-topic" name="topic" type="text" value="{{values.topic}}" list="plan-topics" class="input{{#if errors.topic}} input-error{{/if}}" placeholder="VD: VG – Xưởng & nghệ nhân">
+        <datalist id="plan-topics">{{#each topics}}<option value="{{this}}"></option>{{/each}}</datalist>
+        <p class="hint">Chọn tuyến có sẵn hoặc gõ tuyến mới.</p>
         {{#if errors.topic}}<p class="field-error">{{errors.topic}}</p>{{/if}}
       </div>
-      {{> form/field name="reference_url" label="Link tham khảo" type="url" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/..." hint="Video mẫu, bài viết gợi ý… (không bắt buộc)"}}
+      {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/... hoặc tên video mẫu"}}
+    </div>
+    {{> form/segmented name="platform" label="Kênh đăng" options=platformOptions value=values.platform error=errors.platform}}
+  </div>
+
+  <div class="form-section">
+    <h2 class="form-section-title">Kịch bản</h2>
+    <div class="grid gap-4 sm:grid-cols-[1fr_2fr]">
+      {{> form/select name="writer_id" label="Người viết kịch bản" options=ownerOptions value=values.writer_id error=errors.writer_id placeholder="Chưa giao"}}
+      {{> form/field name="script" label="Kịch bản" value=values.script error=errors.script placeholder="Link Google Docs, tên file, hoặc “Không cần”"}}
     </div>
   </div>
 
   <div class="form-section">
-    <h2 class="form-section-title">Lịch quay / đăng</h2>
-    <p class="hint -mt-2">Để trống nếu chưa chốt — ý tưởng nằm trong Idea bank. Có ngày thì hiện trên lịch.</p>
+    <h2 class="form-section-title">Lịch quay</h2>
+    <p class="hint -mt-2">Để trống nếu chưa chốt — ý tưởng nằm trong Idea bank. Có ngày thì hiện trên Plan tuần và lịch.</p>
     <div class="grid gap-4 sm:grid-cols-3">
       {{> form/field name="shoot_date" label="Ngày quay" type="date" value=values.shoot_date error=errors.shoot_date clearLabel="Chưa chốt"}}
+      {{> form/field name="shoot_time" label="Khung giờ quay" value=values.shoot_time error=errors.shoot_time placeholder="VD: 15h00 - 15h30"}}
+      {{> form/field name="location" label="Địa điểm" value=values.location error=errors.location placeholder="VD: Xưởng, 18"}}
+    </div>
+    {{> form/field name="props" label="CSVC cần chuẩn bị" value=values.props error=errors.props placeholder="VD: Ban thần tài, đèn, chân máy"}}
+  </div>
+
+  <div class="form-section">
+    <h2 class="form-section-title">Đăng bài</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
       {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
       {{> form/field name="post_time" label="Giờ đăng" type="time" value=values.post_time error=errors.post_time clearLabel="Chưa chốt"}}
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao"}}
-      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì “Ý tưởng” tự thành “Đã lên lịch”."}}
+      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì “Mới” tự thành “Đã lên lịch”."}}
     </div>
-    {{> form/field name="post_url" label="Link bài đã đăng" type="url" value=values.post_url error=errors.post_url placeholder="https://..." hint="Dán sau khi đăng để cả nhóm xem lại."}}
+    <div class="grid gap-4 sm:grid-cols-2">
+      {{> form/field name="source_url" label="Link source (file quay)" type="url" value=values.source_url error=errors.source_url placeholder="https://drive.google.com/..."}}
+      {{> form/field name="post_url" label="Link bài đã đăng" type="url" value=values.post_url error=errors.post_url placeholder="https://..." hint="Dán sau khi đăng để cả nhóm xem lại."}}
+    </div>
+    {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=3 placeholder="Hook, lưu ý khi quay…"}}
   </div>
 
   <div class="flex flex-wrap items-center gap-2 border-t border-line pt-5">

@@ -13,11 +13,18 @@
   {{/each}}
 </div>
 
-<form method="get" action="/plan" class="card card-body mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto] lg:items-end" role="search">
+<form method="get" action="/plan" class="card card-body mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end" role="search">
   <input type="hidden" name="status" value="{{status}}">
   <div class="field">
     <label for="f-q" class="label">Tìm ý tưởng</label>
-    <input id="f-q" name="q" type="search" value="{{query}}" class="input" placeholder="Tên, mô tả, nhóm, người phụ trách… (gõ không dấu cũng được)">
+    <input id="f-q" name="q" type="search" value="{{query}}" class="input" placeholder="Nội dung, ghi chú, tuyến, người góp… (gõ không dấu cũng được)">
+  </div>
+  <div class="field">
+    <label for="f-brand" class="label">Brand</label>
+    <select id="f-brand" name="brand" class="input" data-autosubmit>
+      <option value="">Tất cả</option>
+      {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
+    </select>
   </div>
   <div class="field">
     <label for="f-platform" class="label">Kênh</label>
@@ -27,7 +34,7 @@
     </select>
   </div>
   <div class="field">
-    <label for="f-topic" class="label">Nhóm / chủ đề</label>
+    <label for="f-topic" class="label">Tuyến nội dung</label>
     <select id="f-topic" name="topic" class="input" data-autosubmit>
       <option value="">Tất cả</option>
       {{#each topics}}<option value="{{topic}}" {{selected topic @root.topic}}>{{topic}} ({{total}})</option>{{/each}}
@@ -48,7 +55,9 @@
             <p class="font-medium text-ink">{{title}}</p>
             <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
               <span class="{{platformInfo.badge}}">{{platformInfo.label}}</span>
+              {{#if brand}}<span class="badge-pink">{{brand}}</span>{{/if}}
               <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
+              {{#if video_type}}<span class="badge-gray">{{video_type}}</span>{{/if}}
               {{#if topic}}<span class="badge-gray">{{topic}}</span>{{/if}}
             </p>
           </div>
@@ -71,21 +80,31 @@
         </div>
 
         {{#if description}}<p class="plan-desc text-sm text-ink-soft">{{description}}</p>{{/if}}
+        {{#if note}}<p class="plan-desc text-xs text-ink-faint">📝 {{note}}</p>{{/if}}
 
         <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-faint">
           {{#if shoot_date}}<span>🎬 Quay {{formatDay shoot_date}}</span>{{/if}}
           {{#if post_date}}<span>📤 Đăng {{formatDay post_date}}{{#if post_time}} {{post_time}}{{/if}}</span>{{/if}}
+          {{#if proposer_name}}<span>💡 {{proposer_name}}</span>{{/if}}
+          {{#if writer_name}}<span>✍ {{writer_name}}</span>{{/if}}
           {{#if owner_name}}<span>👤 {{owner_name}}</span>{{/if}}
-          {{#if reference_url}}<a href="{{reference_url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">🔗 Tham khảo</a>{{/if}}
+          {{#if reference_url}}{{#if (isUrl reference_url)}}<a href="{{reference_url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">🔗 Tham khảo</a>{{else}}<span>🔗 {{reference_url}}</span>{{/if}}{{/if}}
+          {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link font-normal">📄 Kịch bản</a>{{else}}<span>📄 {{script}}</span>{{/if}}{{/if}}
           {{#if post_url}}<a href="{{post_url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">▶ Xem bài đã đăng</a>{{/if}}
         </div>
 
         {{#if canEdit}}
           <div class="flex flex-wrap gap-2 border-t border-line pt-3">
             {{#if (eq status 'idea')}}
-              <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="btn-secondary btn-sm">📅 Lên lịch</a>
+              {{> plan/status-button id=id status="selected" label="👍 Chọn"}}
             {{/if}}
-            {{#if (or (eq status 'idea') (eq status 'scheduled'))}}
+            {{#if (or (eq status 'idea') (eq status 'selected'))}}
+              {{> plan/status-button id=id status="scripted" label="✍ Đã viết kịch bản"}}
+            {{/if}}
+            {{#unless (or shoot_date post_date)}}
+              <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="btn-secondary btn-sm">📅 Lên lịch</a>
+            {{/unless}}
+            {{#if (or (eq status 'scripted') (eq status 'scheduled'))}}
               {{> plan/status-button id=id status="filmed" label="🎬 Đã quay"}}
             {{/if}}
             {{#unless (or (eq status 'posted') (eq status 'dropped'))}}
@@ -102,5 +121,5 @@
 {{else if (or filtered (ne status 'unscheduled'))}}
   {{> empty-state title="Không có ý tưởng nào khớp" text="Thử bỏ bớt bộ lọc hoặc gõ từ khác ngắn hơn."}}
 {{else}}
-  {{> empty-state title="Kho ý tưởng đang trống" text="Ghi lại mọi ý tưởng video, bài đăng ở đây. Khi chọn được ngày quay/đăng, ý tưởng sẽ hiện trên lịch." actionHref="/plan/new" actionLabel="+ Thêm ý tưởng"}}
+  {{> empty-state title="Kho ý tưởng đang trống" text="Ghi lại mọi ý tưởng video, bài đăng ở đây. Khi chọn được ngày quay/đăng, ý tưởng sẽ hiện ở Plan tuần và lịch." actionHref="/plan/new" actionLabel="+ Thêm ý tưởng"}}
 {{/if}}

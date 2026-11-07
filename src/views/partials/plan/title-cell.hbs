@@ -1,0 +1,6 @@
+{{!-- Tên nội dung: bấm để sửa nếu có quyền. Dùng trong vòng lặp nội dung Plan: {{> plan/title-cell}} --}}
+{{#if canEdit}}
+  <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="plan-cell-title font-medium text-ink hover:underline" title="{{title}}">{{title}}</a>
+{{else}}
+  <span class="plan-cell-title font-medium text-ink" title="{{title}}">{{title}}</span>
+{{/if}}

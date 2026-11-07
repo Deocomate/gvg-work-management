@@ -57,6 +57,8 @@ export const helpers = {
   concat: (...args) => args.slice(0, -1).join(''),
   // Đặt giá trị vào tham số URL an toàn: href="/x?back={{urlEncode back}}"
   urlEncode: (value) => encodeURIComponent(value ?? ''),
+  // Ô cho gõ "link hoặc chữ": chỉ biến thành <a> khi là link http(s) (chặn "javascript:").
+  isUrl: (value) => typeof value === 'string' && /^https?:\/\/\S+$/i.test(value.trim()),
   // Dùng trong <option>/<input type=checkbox>: {{selected status 'done'}}
   selected: (a, b) => (a == b ? 'selected' : ''),
   checked: (value) => (value ? 'checked' : ''),

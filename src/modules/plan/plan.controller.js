@@ -1,10 +1,12 @@
-// Tab Plan: Idea bank (/plan) và Lịch quay/đăng (/plan/calendar).
+// Tab Plan: Idea bank (/plan), Plan tuần (/plan/weeks) và Lịch tháng (/plan/calendar).
 import { safeBack } from '#lib/redirect.js';
 import { isISODate } from '#lib/dates.js';
 import { parseMonth } from '#modules/schedule/schedule.service.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
-import { PLATFORMS, PLAN_STATUSES } from './plan.schema.js';
+import { isManager } from '#modules/tasks/tasks.service.js';
+import { BRANDS, PLATFORMS, PLAN_STATUSES, VIDEO_TYPES } from './plan.schema.js';
 import * as service from './plan.service.js';
+import { importFromSheet } from './plan.import.js';
 
 const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const str = (v) => (typeof v === 'string' ? v.slice(0, 100) : '');
@@ -26,19 +28,25 @@ async function renderForm(req, res, { plan = null, values = {}, errors = {}, sta
     platformOptions: PLATFORMS,
     statusOptions: PLAN_STATUSES,
     ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
+    brandOptions: BRANDS,
+    videoTypeOptions: VIDEO_TYPES,
     topics,
   });
 }
 
 export async function index(req, res) {
-  const { status, platform, topic, q } = req.query;
-  const data = await service.browseIdeas({ status: str(status), platform: str(platform), topic: str(topic), q: str(q) }, req.user);
+  const { status, platform, topic, brand, q } = req.query;
+  const data = await service.browseIdeas(
+    { status: str(status), platform: str(platform), topic: str(topic), brand: str(brand), q: str(q) },
+    req.user,
+  );
   res.render('plan/index', {
     title: 'Idea bank',
     tab: 'ideas',
     ...data,
     platformOptions: PLATFORMS,
-    filtered: Boolean(data.platform || data.topic || data.query),
+    brandOptions: BRANDS,
+    filtered: Boolean(data.platform || data.topic || data.brand || data.query),
     back: req.originalUrl,
   });
 }
@@ -56,6 +64,29 @@ export async function calendar(req, res) {
     weekdayLabels: WEEKDAY_LABELS,
     back: req.originalUrl,
   });
+}
+
+export async function weeks(req, res) {
+  const month = parseMonth(req.query.month);
+  const data = await service.getWeeks(month, str(req.query.by), req.user);
+  const [year, monthNumber] = month.split('-');
+  res.render('plan/weeks', {
+    title: 'Plan tuần',
+    tab: 'weeks',
+    ...data,
+    month,
+    monthLabel: `Tháng ${Number(monthNumber)}/${year}`,
+    canImport: isManager(req.user),
+    back: req.originalUrl,
+  });
+}
+
+export async function importSheet(req, res) {
+  const { added, skipped, unknown } = await importFromSheet(req.user);
+  let message = `Đã nhập ${added} nội dung từ Google Sheet${skipped ? ` (bỏ qua ${skipped} dòng đã có)` : ''}.`;
+  if (unknown.length) message += ` Chưa có tài khoản: ${unknown.join(', ')} — tên được ghi vào Ghi chú.`;
+  req.flash('success', message);
+  res.redirect('/plan/weeks');
 }
 
 export function newForm(req, res) {
@@ -76,7 +107,11 @@ export async function editForm(req, res) {
   const plan = await service.getEditablePlan(req.params.id, req.user);
   return renderForm(req, res, {
     plan,
-    values: { ...plan, owner_id: plan.owner_id ? String(plan.owner_id) : '', back: req.query.back },
+    values: {
+      ...plan,
+      ...Object.fromEntries(['owner_id', 'proposer_id', 'writer_id'].map((f) => [f, plan[f] ? String(plan[f]) : ''])),
+      back: req.query.back,
+    },
   });
 }
 

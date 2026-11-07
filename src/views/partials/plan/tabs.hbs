@@ -1,5 +1,6 @@
-{{!-- Hai tab con của Plan. Dùng: {{> plan/tabs}} (biến tab = 'ideas' | 'calendar') --}}
-<div class="segmented mb-5 max-w-md" role="tablist" aria-label="Plan nội dung">
+{{!-- Ba tab con của Plan. Dùng: {{> plan/tabs}} (biến tab = 'ideas' | 'weeks' | 'calendar') --}}
+<div class="segmented mb-5 max-w-xl overflow-x-auto" role="tablist" aria-label="Plan nội dung">
   <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>💡 Idea bank</a>
-  <a href="/plan/calendar" role="tab" class="plan-tab {{#if (eq @root.tab 'calendar')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'calendar')}} aria-selected="true"{{/if}}>📅 Lịch quay / đăng</a>
+  <a href="/plan/weeks" role="tab" class="plan-tab {{#if (eq @root.tab 'weeks')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'weeks')}} aria-selected="true"{{/if}}>📋 Plan tuần</a>
+  <a href="/plan/calendar" role="tab" class="plan-tab {{#if (eq @root.tab 'calendar')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'calendar')}} aria-selected="true"{{/if}}>📅 Lịch tháng</a>
 </div>

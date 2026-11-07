@@ -34,10 +34,11 @@
 - [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
 - [x] Trang trí ngày lễ: tự bật 7 ngày trước lễ (thẻ tròn đếm ngược treo góc phải menu, đồ treo dưới menu, emoji rơi nhẹ phía sau nội dung, menu hắt màu lễ), hết lễ tự trở lại bình thường. Lễ: Năm mới, Tết (tới mùng 4), Valentine, 8/3, 30/4–1/5, 2/9, Trung thu, 20/10, Halloween, 20/11, Giáng sinh
 - [x] Data khách hàng (`/customers`, menu "Data khách hàng"): quản lý + nhân viên vai trò **Sale** (VD: chị Trang) xem/thêm/sửa/xoá. Bấm tên khách mở thẻ chi tiết, tải PNG/PDF. Trường: loại khách (cá nhân/doanh nghiệp), tên, ngày sinh, công ty + MST (khi là doanh nghiệp), SĐT, email, Zalo, Facebook, TikTok, kênh khác (mỗi kênh một ô), địa chỉ, nguồn khách, trạng thái chăm sóc (Mới → Đang tư vấn → Đã mua → Khách quen / Ngừng), người phụ trách, mặt hàng quan tâm, ghi chú, người nhập. Hoá đơn: mỗi lần mua thêm một hoá đơn (ngày, giá trị, file PDF/ảnh ≤10MB, ghi chú hoá đơn) ngay trong form khách; trang sửa khách liệt kê hoá đơn (mở file, xoá), danh sách khách hiện tổng giá trị + số hoá đơn. Tìm theo tên/SĐT/công ty/email/mặt hàng, lọc trạng thái/nguồn/phụ trách, đếm theo trạng thái. Chặn trùng số điện thoại
-- [x] Plan nội dung (`/plan`, menu "Plan", mọi người dùng): 2 tab con
-  - **Idea bank**: ghi ý tưởng (tên, nội dung/kịch bản ngắn, kênh TikTok/Facebook/Instagram/YouTube/Khác, nhóm/chủ đề gõ tự do có gợi ý, link tham khảo). Lọc nhanh Chưa lên lịch (mặc định) / Đang làm / từng trạng thái / Tất cả, lọc kênh, nhóm, tìm không dấu. Nút nhanh Lên lịch · Đã quay · Đã đăng · Đưa về ý tưởng
-  - **Lịch quay / đăng** (`/plan/calendar`): lịch tháng hiện 🎬 ngày quay và 📤 ngày đăng (kèm giờ), màu theo trạng thái, đếm buổi quay/bài cần đăng/đã đăng; nút + ở mỗi ngày để thêm nội dung đăng ngày đó; danh sách chi tiết theo ngày bên dưới (điện thoại xem ở đây)
-  - Trạng thái: Ý tưởng → Đã lên lịch → Đã quay → Đã đăng (hoặc Bỏ); gắn ngày quay/đăng thì Ý tưởng tự thành Đã lên lịch. Có người phụ trách, link bài đã đăng
+- [x] Plan nội dung (`/plan`, menu "Plan", mọi người dùng) — thay cho Google Sheet "Idea bank - Gốm Vũ Gia, Klayy & GSXD": 3 tab con
+  - **Idea bank**: các cột như Sheet — nội dung, mô tả, brand (Vũ Gia/Klayy/GSXD), loại video (A/B/C/Clip live/Ghép source), tuyến nội dung (gợi ý sẵn 15 tuyến, gõ thêm được), link tham khảo (link hoặc chữ), người góp (mặc định người nhập), người viết kịch bản, kịch bản (link hoặc tên file), ghi chú; kênh TikTok/Facebook/…. Lọc nhanh Chưa lên lịch (mặc định) / Đang làm / từng trạng thái / Tất cả, lọc brand, kênh, tuyến, tìm không dấu (cả ghi chú, người góp). Nút nhanh Chọn · Đã viết kịch bản · Lên lịch · Đã quay · Đã đăng · Đưa về ý tưởng
+  - **Plan tuần** (`/plan/weeks`): bảng theo tuần như tab Plan của Sheet (Thứ, ngày + giờ đăng, nội dung, brand, tham khảo, kịch bản, phụ trách, ngày quay, khung giờ quay, địa điểm, CSVC, trạng thái, ghi chú). Đánh số tuần như Sheet (tuần thuộc tháng chứa Thứ 5). Nút "🎬 Lịch quay" xếp theo ngày quay → khung giờ → địa điểm (như tab Lịch quay) + danh sách video sắp đăng chưa có ngày quay. Cảnh báo: chưa có ngày quay, quay cách ngày đăng < 2 ngày, quá ngày đăng chưa đánh dấu Đã đăng, 1 người bị xếp 2 nơi cùng khung giờ. Quản lý có nút "Nhập từ Sheet" (dữ liệu chép sẵn ở `src/modules/plan/sheet-import.json`, bấm lại không trùng; tên chưa có tài khoản ghi vào Ghi chú)
+  - **Lịch tháng** (`/plan/calendar`): lịch tháng hiện 🎬 ngày quay và 📤 ngày đăng (kèm giờ), màu theo trạng thái, đếm buổi quay/bài cần đăng/đã đăng; nút + ở mỗi ngày để thêm nội dung đăng ngày đó; danh sách chi tiết theo ngày bên dưới (điện thoại xem ở đây)
+  - Trạng thái: Mới → Đã chọn → Đã viết kịch bản → Đã lên lịch → Đã quay → Đã đăng (hoặc Bỏ); gắn ngày quay/đăng thì Mới tự thành Đã lên lịch. Có người phụ trách, link bài đã đăng
   - Quyền: ai cũng xem/thêm; sửa + đổi trạng thái: quản lý, người tạo, người phụ trách; xoá: quản lý hoặc người tạo
 - [ ] Nhắc việc qua email/Zalo/Telegram (cần dịch vụ ngoài)
 - [ ] Bình luận / đính kèm file cho từng việc
@@ -53,7 +54,7 @@
 | link_folders | thư mục tài liệu: tên, name_key (tên viết thường, unique — chặn trùng kể cả chữ có dấu) |
 | customers | khách hàng: liên hệ, loại khách, công ty/MST, nguồn, trạng thái, nhu cầu, ghi chú, người phụ trách (owner_id), người nhập (created_by); phone_digits = SĐT chỉ còn chữ số (unique) để chặn trùng |
 | customer_invoices | hoá đơn của khách: ngày, giá trị (đồng), ghi chú, file (tên, loại, cỡ, nội dung BLOB); xoá khách thì xoá theo |
-| content_plans | Plan nội dung: tên, mô tả, link tham khảo, kênh (platform), nhóm (topic), trạng thái idea/scheduled/filmed/posted/dropped, ngày quay, ngày + giờ đăng, link bài đã đăng, người phụ trách (owner_id), người tạo (created_by) |
+| content_plans | Plan nội dung: tên, mô tả, link tham khảo (link hoặc chữ), kênh (platform), tuyến nội dung (topic), brand, loại video (video_type), người góp (proposer_id), người viết kịch bản (writer_id), kịch bản (script, link hoặc chữ), khung giờ quay (shoot_time, chữ tự do), địa điểm (location), CSVC (props), link source (source_url), ghi chú (note), trạng thái idea/selected/scripted/scheduled/filmed/posted/dropped, ngày quay, ngày + giờ đăng, link bài đã đăng, người phụ trách (owner_id), người tạo (created_by) |
 <!-- [vibe:tables] -->
 
 ## Quyết định quan trọng
@@ -80,6 +81,7 @@
 
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-07 — Plan thay Google Sheet: thêm các cột của Sheet + trạng thái Đã chọn / Đã viết kịch bản (migration 013 dựng lại bảng content_plans), tab Plan tuần (theo ngày đăng / lịch quay, cảnh báo), nút quản lý nhập dữ liệu từ Sheet cũ. Menu chính co lại + cuộn ngang ở màn vừa, không còn tràn trang.
 - 2026-11-06 — Tài liệu: chia thư mục (migration 011), ô tìm kiếm không dấu, nút Xem trước cho link Google Drive/Docs/Sheets/Slides/Forms/YouTube.
 - 2026-11-04 — Thêm vai trò Sale (như nhân viên + được dùng Data khách hàng), thay cho ô tick "Được xem & nhập Data khách hàng". Migration 010 dựng lại bảng users: nhân viên đang được tick thành Sale, bỏ cột can_customers.
 - 2026-11-04 — Data khách hàng: bấm tên khách mở thẻ chi tiết (tên, SĐT, địa chỉ, trạng thái, từng hoá đơn + tổng tiền), tải về PNG hoặc PDF. Chụp ảnh bằng thư viện `html-to-image` (phục vụ ở `/vendor/html-to-image.js`), PDF tự ghép trong `public/js/customer-card.js`.
