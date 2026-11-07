@@ -82,7 +82,7 @@
 
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
-- 2026-11-07 — Plan: mỗi brand một màu riêng (nhãn nền đậm chữ trắng: Vũ Gia đỏ đô, Klayy xanh ngọc, GSXD xanh dương đậm — `.badge-brand-*`), dùng thống nhất ở Idea bank, lịch tuần, lịch tháng.
+- 2026-11-07 — Plan: mỗi brand một màu riêng (tông đất dịu có chấm màu: Vũ Gia vàng đồng, Klayy hồng đất, GSXD xanh xám — `.badge-brand-*`), dùng thống nhất ở Idea bank, lịch tuần, lịch tháng.
 - 2026-11-07 — Plan: bỏ toàn bộ emoji trên giao diện Plan (tab, thẻ, nút, cảnh báo, form). Link tham khảo / kịch bản / bài đăng dùng icon mắt xích SVG tối giản (`partials/plan/link-icon`); cảnh báo trên thẻ lịch thành nhãn chữ nhỏ (Chưa có ngày quay, Trùng giờ, Sát ngày đăng). Tên việc trên lịch làm việc ("🎬 Quay: …", "📤 Đăng: …") giữ nguyên.
 - 2026-11-07 — Plan: form bỏ phần "Chi tiết ý tưởng" (người góp, ghi chú) và phần "Đăng bài" (link source, link bài đã đăng); Ngày đăng chuyển lên phần chính. Giá trị cũ của các ô đã bỏ vẫn giữ khi sửa.
 - 2026-11-07 — Plan: bỏ Loại video và Tuyến nội dung khỏi form, thẻ Idea bank và bộ lọc. Cột video_type/topic vẫn giữ trong DB (dữ liệu nhập từ Sheet), sửa nội dung không xoá giá trị cũ; vẫn tìm được theo tuyến.

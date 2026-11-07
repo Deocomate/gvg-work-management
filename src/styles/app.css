@@ -137,6 +137,8 @@
       transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none;
 }
 @utility badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+/* Nhãn brand (Plan): như badge + chấm màu phía trước */
+@utility badge-brand { @apply badge gap-1.5 before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']; }
 @utility alert { @apply rounded-lg border px-4 py-3 text-sm; }
 
 /* Bộ UI dùng chung. Ưu tiên dùng các class này thay vì lặp lại chuỗi class dài trong view. */
@@ -186,10 +188,11 @@
   .badge-pink { @apply badge bg-bloom-400/15 text-bloom-300; }
   .badge-blue { @apply badge bg-sky-400/15 text-sky-300 light:bg-sky-500/15 light:text-sky-700; }
   .badge-orange { @apply badge bg-orange-400/15 text-orange-300 light:bg-orange-500/15 light:text-orange-700; }
-  /* Màu riêng từng brand (Plan): nền đậm chữ trắng (đỏ đô = Vũ Gia, xanh ngọc = Klayy, xanh dương đậm = GSXD) để khác hẳn nhãn nhạt của các bước */
-  .badge-brand-vg { @apply badge bg-red-700 text-white; }
-  .badge-brand-kl { @apply badge bg-teal-600 text-white; }
-  .badge-brand-gs { @apply badge bg-blue-700 text-white; }
+  /* Màu riêng từng brand (Plan): tông đất dịu hợp giao diện, có chấm màu phía trước.
+     Vũ Gia = vàng đồng (đồ thờ), Klayy = hồng đất (gốm lifestyle), GSXD = xanh xám (ngói, công trình). */
+  .badge-brand-vg { @apply badge-brand bg-[#c9a24a]/15 text-[#e3c47e] light:bg-[#b8862b]/15 light:text-[#7a5512]; }
+  .badge-brand-kl { @apply badge-brand bg-[#d49aa4]/15 text-[#ecb7c0] light:bg-[#c26d7d]/15 light:text-[#8c3a4b]; }
+  .badge-brand-gs { @apply badge-brand bg-[#86aebd]/15 text-[#b3d1dc] light:bg-[#4f7f91]/15 light:text-[#2c5566]; }
 
   .alert-success { @apply alert border-pine-400/40 bg-pine-500/25 text-pine-200; }
   .alert-error { @apply alert border-brand-400/40 bg-brand-500/15 text-brand-300; }
