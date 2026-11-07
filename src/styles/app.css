@@ -411,6 +411,9 @@
   .plan-entry-desc { @apply mt-1 line-clamp-3 text-[11px] whitespace-pre-line text-ink-soft; }
   .plan-entry-status { @apply mt-1 flex items-center gap-1 text-[10px] text-ink-faint; }
   .plan-dot { @apply inline-block h-2 w-2 shrink-0 rounded-full; }
+  /* Cảnh báo trên thẻ lịch: chữ nhỏ có nền, thay cho icon */
+  .plan-flag { @apply rounded bg-orange-500/15 px-1 py-px text-[10px] font-semibold text-orange-300 light:text-orange-700; }
+  .plan-flag-red { @apply rounded bg-rose-500/15 px-1 py-px text-[10px] font-semibold text-rose-300 light:text-rose-700; }
   .plan-chip { @apply flex items-center gap-1 truncate rounded border border-l-4 border-line bg-raised px-1.5 py-0.5 text-xs text-ink; }
 
   /* Form Plan: các phần gập lại */

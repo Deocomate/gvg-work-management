@@ -1,4 +1,4 @@
-{{!-- Nút đổi nhanh trạng thái. Dùng: {{> plan/status-button id=id status="posted" label="✅ Đã đăng"}} (full=true: rộng hết thẻ) --}}
+{{!-- Nút đổi nhanh trạng thái. Dùng: {{> plan/status-button id=id status="posted" label="Đã đăng"}} (full=true: rộng hết thẻ) --}}
 <form method="post" action="/plan/{{id}}/status"{{#if full}} class="w-full"{{else}} class="inline"{{/if}}>
   {{> form/csrf}}
   <input type="hidden" name="status" value="{{status}}">

@@ -26,11 +26,11 @@ export const canDelete = (user, plan) => isManager(user) || plan.created_by === 
 
 // Nút "bước tiếp theo" trên thẻ ở Idea bank. edit = mở form để chọn ngày.
 const NEXT_STEP = {
-  idea: { status: 'selected', label: '👍 Chọn' },
-  selected: { status: 'scripted', label: '✍ Xong kịch bản' },
-  scripted: { edit: true, label: '📅 Lên lịch' },
-  scheduled: { status: 'filmed', label: '🎬 Đã quay' },
-  filmed: { status: 'posted', label: '✅ Đã đăng' },
+  idea: { status: 'selected', label: 'Chọn' },
+  selected: { status: 'scripted', label: 'Xong kịch bản' },
+  scripted: { edit: true, label: 'Lên lịch' },
+  scheduled: { status: 'filmed', label: 'Đã quay' },
+  filmed: { status: 'posted', label: 'Đã đăng' },
 };
 
 /** Thêm thông tin hiển thị (nhãn, màu, quyền, bước tiếp) cho view. */

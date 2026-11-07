@@ -19,8 +19,8 @@ const afterSave = (plan) => {
 };
 
 const KIND_TEXT = {
-  post: { title: 'Lịch đăng', subtitle: 'Bài cần đăng theo ngày, chia theo brand', icon: '📤', verb: 'Đăng', dateParam: 'post_date', unit: 'bài cần đăng', done: 'đã đăng' },
-  shoot: { title: 'Lịch quay', subtitle: 'Buổi quay theo ngày, khung giờ, địa điểm, chia theo brand', icon: '🎬', verb: 'Quay', dateParam: 'shoot_date', unit: 'buổi quay', done: 'đã quay' },
+  post: { title: 'Lịch đăng', subtitle: 'Bài cần đăng theo ngày, chia theo brand', verb: 'Đăng', dateParam: 'post_date', unit: 'bài cần đăng', done: 'đã đăng' },
+  shoot: { title: 'Lịch quay', subtitle: 'Buổi quay theo ngày, khung giờ, địa điểm, chia theo brand', verb: 'Quay', dateParam: 'shoot_date', unit: 'buổi quay', done: 'đã quay' },
 };
 
 /** Dữ liệu chung cho thanh chuyển Tuần/Tháng + brand trên 2 lịch. */

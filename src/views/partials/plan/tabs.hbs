@@ -1,9 +1,9 @@
 {{!-- Ba tab con của Plan: Idea bank, Lịch đăng, Lịch quay. Dùng: {{> plan/tabs}}
      Biến: tab = 'ideas' | 'post' | 'shoot'. Ở 2 tab lịch thêm: view ('week'|'month'), weekHref, monthHref, brandLinks. --}}
 <div class="segmented mb-4 w-full max-w-xl" role="tablist" aria-label="Plan nội dung">
-  <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>💡 Idea bank</a>
-  <a href="/plan/weeks?kind=post" role="tab" class="plan-tab {{#if (eq @root.tab 'post')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'post')}} aria-selected="true"{{/if}}>📤 Lịch đăng</a>
-  <a href="/plan/weeks?kind=shoot" role="tab" class="plan-tab {{#if (eq @root.tab 'shoot')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'shoot')}} aria-selected="true"{{/if}}>🎬 Lịch quay</a>
+  <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>Idea bank</a>
+  <a href="/plan/weeks?kind=post" role="tab" class="plan-tab {{#if (eq @root.tab 'post')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'post')}} aria-selected="true"{{/if}}>Lịch đăng</a>
+  <a href="/plan/weeks?kind=shoot" role="tab" class="plan-tab {{#if (eq @root.tab 'shoot')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'shoot')}} aria-selected="true"{{/if}}>Lịch quay</a>
 </div>
 {{#if @root.brandLinks}}
   <div class="mb-5 flex flex-wrap items-center gap-2">

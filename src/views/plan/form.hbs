@@ -21,7 +21,7 @@
   {{!-- Các phần chi tiết: gập lại, tự mở khi đã có dữ liệu --}}
   <div class="mt-2 space-y-3">
     <details class="plan-fold"{{#if open.script}} open{{/if}}>
-      <summary>✍ Kịch bản <span>người viết, link kịch bản</span></summary>
+      <summary>Kịch bản <span>người viết, link kịch bản</span></summary>
       <div class="plan-fold-body grid gap-4 sm:grid-cols-[1fr_2fr]">
         {{> form/select name="writer_id" label="Người viết kịch bản" options=ownerOptions value=values.writer_id error=errors.writer_id placeholder="Chưa giao"}}
         {{> form/field name="script" label="Kịch bản" value=values.script error=errors.script placeholder="Link Google Docs, tên file, hoặc “Không cần”"}}
@@ -29,7 +29,7 @@
     </details>
 
     <details class="plan-fold"{{#if open.shoot}} open{{/if}}>
-      <summary>🎬 Lịch quay <span>ngày, khung giờ, địa điểm, CSVC</span></summary>
+      <summary>Lịch quay <span>ngày, khung giờ, địa điểm, CSVC</span></summary>
       <div class="plan-fold-body">
         <div class="grid gap-4 sm:grid-cols-3">
           {{> form/field name="shoot_date" label="Ngày quay" type="date" value=values.shoot_date error=errors.shoot_date clearLabel="Chưa chốt"}}
@@ -52,7 +52,7 @@
   {{#if (or (eq @root.currentUser.role 'admin') (eq plan.created_by @root.currentUser.id))}}
     <form method="post" action="/plan/{{plan.id}}/delete" class="mt-4 max-w-3xl text-right" data-confirm="Xoá nội dung này? Việc quay/đăng trên lịch làm việc cũng bị xoá.">
       {{> form/csrf}}
-      <button type="submit" class="btn-ghost btn-sm text-brand-300">🗑 Xoá nội dung này</button>
+      <button type="submit" class="btn-ghost btn-sm text-brand-300">Xoá nội dung này</button>
     </form>
   {{/if}}
 {{/if}}

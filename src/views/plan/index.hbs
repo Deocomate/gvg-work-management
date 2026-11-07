@@ -6,7 +6,7 @@
 
 <form method="get" action="/plan" class="mb-4 flex flex-wrap items-end gap-2" role="search">
   {{#if dropped}}<input type="hidden" name="dropped" value="1">{{/if}}
-  <input name="q" type="search" value="{{query}}" class="input w-full sm:w-64" placeholder="🔍 Tìm (gõ không dấu cũng được)" aria-label="Tìm ý tưởng">
+  <input name="q" type="search" value="{{query}}" class="input w-full sm:w-64" placeholder="Tìm (gõ không dấu cũng được)" aria-label="Tìm ý tưởng">
   <select name="brand" class="input w-auto" aria-label="Brand" data-autosubmit>
     <option value="">Mọi brand</option>
     {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
@@ -43,14 +43,14 @@
                 {{#if brand}}<span class="badge-pink">{{brand}}</span>{{/if}}
               </p>
               <p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-                {{#if shoot_date}}<span>🎬 {{formatDay shoot_date}}</span>{{/if}}
-                {{#if post_date}}<span>📤 {{formatDay post_date}}</span>{{/if}}
-                {{#if owner_name}}<span>👤 {{owner_name}}</span>{{/if}}
-                {{#if writer_name}}<span>✍ {{writer_name}}</span>{{/if}}
-                {{#if (and (not owner_name) (not writer_name) proposer_name)}}<span>💡 {{proposer_name}}</span>{{/if}}
-                {{#if reference_url}}{{#if (isUrl reference_url)}}<a href="{{reference_url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">🔗 Tham khảo</a>{{/if}}{{/if}}
-                {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link font-normal">📄 Kịch bản</a>{{/if}}{{/if}}
-                {{#if post_url}}<a href="{{post_url}}" target="_blank" rel="noopener noreferrer" class="link font-normal">▶ Bài đăng</a>{{/if}}
+                {{#if shoot_date}}<span>Quay {{formatDay shoot_date}}</span>{{/if}}
+                {{#if post_date}}<span>Đăng {{formatDay post_date}}</span>{{/if}}
+                {{#if owner_name}}<span>{{owner_name}}</span>{{/if}}
+                {{#if writer_name}}<span>Kịch bản: {{writer_name}}</span>{{/if}}
+                {{#if (and (not owner_name) (not writer_name) proposer_name)}}<span>{{proposer_name}}</span>{{/if}}
+                {{#if reference_url}}{{#if (isUrl reference_url)}}<a href="{{reference_url}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Tham khảo</a>{{/if}}{{/if}}
+                {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Kịch bản</a>{{/if}}{{/if}}
+                {{#if post_url}}<a href="{{post_url}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Bài đăng</a>{{/if}}
               </p>
               {{#if (and canEdit nextStep)}}
                 <div class="mt-2 border-t border-line pt-2">
@@ -84,7 +84,7 @@
     </div>
     <form method="post" action="/plan/import-sheet" data-confirm="Nhập dữ liệu từ Google Sheet cũ vào Plan?">
       {{> form/csrf}}
-      <button type="submit" class="btn-secondary whitespace-nowrap">⬇ Nhập từ Sheet</button>
+      <button type="submit" class="btn-secondary whitespace-nowrap">Nhập từ Sheet</button>
     </form>
   </div>
 {{/if}}

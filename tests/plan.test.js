@@ -35,9 +35,9 @@ test('menu có tab Plan; Idea bank trống thì có hướng dẫn; 3 tab: Idea 
   assert.equal(page.status, 200);
   assert.match(page.text, /href="\/plan"/);
   assert.match(page.text, /Kho ý tưởng đang trống/);
-  assert.match(page.text, /💡 Idea bank/);
-  assert.match(page.text, /📤 Lịch đăng/);
-  assert.match(page.text, /🎬 Lịch quay/);
+  assert.match(page.text, />Idea bank</);
+  assert.match(page.text, />Lịch đăng</);
+  assert.match(page.text, />Lịch quay</);
 });
 
 test('chưa đăng nhập -> về trang đăng nhập', async () => {
@@ -91,9 +91,9 @@ test('nút bước tiếp theo: Mới → Đã chọn → Đã viết kịch b�
   const id = await idOf('Hậu trường nung gốm');
   await postForm(mai, `/plan/${id}/status`, { status: 'selected', back: '/plan' }, { from: '/plan' });
   assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
-  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /✍ Xong kịch bản/);
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /Xong kịch bản/);
   await postForm(mai, `/plan/${id}/status`, { status: 'scripted', back: '/plan' }, { from: '/plan' });
-  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /📅 Lên lịch/);
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /Lên lịch/);
 
   const edit = await postForm(mai, `/plan/${id}`, { title: 'Hậu trường nung gốm', status: 'scripted', post_date: today }, { from: `/plan/${id}/edit` });
   assert.equal(edit.status, 302);
@@ -121,7 +121,7 @@ test('Lịch đăng và Lịch quay tách riêng, mỗi brand một hàng; đặ
   const lane = (html, brand) => html.split(`data-plan-brand="${brand}"`)[1].split('data-plan-brand=')[0];
   const dec3 = lane(posts, 'Vũ Gia').split('data-plan-day="2026-12-03"')[1];
   assert.match(dec3, /Chưa quay gì/);
-  assert.match(dec3, /❗ Chưa có ngày quay/);
+  assert.match(dec3, /plan-flag">Chưa có ngày quay/);
   assert.doesNotMatch(posts, /Chưa có giờ|TikTok/); // lịch đăng không ghi giờ, không ghi nền tảng
   assert.match(lane(posts, 'GSXD'), /Quay ở xưởng/);
   assert.doesNotMatch(lane(posts, 'GSXD'), /Chưa quay gì/);
@@ -131,9 +131,9 @@ test('Lịch đăng và Lịch quay tách riêng, mỗi brand một hàng; đặ
 
   // Lịch quay: chỉ buổi quay, có giờ + địa điểm, cảnh báo trùng giờ, danh sách cần chốt ngày quay
   const shoots = (await mai.get('/plan/weeks?kind=shoot&week=2026-12-01')).text;
-  assert.match(lane(shoots, 'GSXD'), /15:00–15:30[\s\S]*Quay ở xưởng[\s\S]*📍 Xưởng/);
+  assert.match(lane(shoots, 'GSXD'), /15:00–15:30[\s\S]*Quay ở xưởng[\s\S]*Xưởng/);
   assert.match(lane(shoots, 'Klayy'), /Quay ở số 18/);
-  assert.match(shoots, /⚠/); // Nam bị xếp 2 nơi cùng giờ
+  assert.match(shoots, /plan-flag-red[^>]*>Trùng giờ/); // Nam bị xếp 2 nơi cùng giờ
   assert.match(shoots, /trùng giờ quay/);
   assert.doesNotMatch(shoots.split('data-plan-unshot')[0], /Chưa quay gì/);
   assert.match(shoots.split('data-plan-unshot')[1], /Chưa quay gì/);
@@ -283,7 +283,7 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
 
   assert.match((await admin.get(`/plan/weeks?week=2026-10-26`)).text, /Video men lam/);
   assert.equal((await cardOf(admin, 'Giới thiệu xưởng')).column, 'filmed');
-  assert.match((await cardOf(admin, 'Mở lò vẽ vàng', '&brand=Vũ%20Gia')).html, /✍ Lê Mai/);
+  assert.match((await cardOf(admin, 'Mở lò vẽ vàng', '&brand=Vũ%20Gia')).html, /Kịch bản: Lê Mai/);
   assert.match((await nhai.get('/today?date=2026-10-26')).text, /🎬 Quay: Video men lam[\s\S]*15:00/);
 
   const count = (await admin.get('/plan?dropped=1')).text.split('data-plan-row').length;
@@ -378,4 +378,14 @@ test('form không còn phần Đăng bài; Ngày đăng nằm ở phần chính;
   const id = (await cardOf(mai, 'Bài có link cũ')).id;
   await postForm(mai, `/plan/${id}`, { title: 'Bài có link cũ' }, { from: `/plan/${id}/edit` });
   assert.match((await cardOf(mai, 'Bài có link cũ')).html, /tiktok\.com\/@vugia\/video\/1/);
+});
+
+test('giao diện Plan không dùng emoji; link tham khảo có icon mắt xích tối giản', async () => {
+  await add(mai, { title: 'Ý tưởng có tham khảo', reference_url: 'https://www.tiktok.com/@mau/video/9' });
+  const emoji = /\p{Extended_Pictographic}/u;
+  const main = (html) => html.split('<main')[1].split('</main>')[0];
+  for (const url of ['/plan', '/plan/new', '/plan/weeks?kind=post&week=2026-12-01', '/plan/weeks?kind=shoot&week=2026-12-01', '/plan/calendar?kind=post&month=2026-12']) {
+    assert.doesNotMatch(main((await mai.get(url)).text), emoji, url);
+  }
+  assert.match((await cardOf(mai, 'Ý tưởng có tham khảo')).html, /<\/svg>Tham khảo/);
 });

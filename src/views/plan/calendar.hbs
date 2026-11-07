@@ -10,8 +10,8 @@
   <a href="/plan/calendar?kind={{kind}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}&month={{next}}" class="btn-secondary btn-sm">Tháng sau ›</a>
   {{#if (ne month thisMonth)}}<a href="/plan/calendar?kind={{kind}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}&month={{thisMonth}}" class="btn-ghost btn-sm">Tháng này</a>{{/if}}
   <p class="flex flex-wrap gap-2 text-xs sm:ml-auto">
-    <span class="{{#if (eq kind 'shoot')}}badge-yellow{{else}}badge-blue{{/if}}">{{text.icon}} {{summary.total}} {{text.unit}}</span>
-    <span class="badge-green">✅ {{summary.done}} {{text.done}}</span>
+    <span class="{{#if (eq kind 'shoot')}}badge-yellow{{else}}badge-blue{{/if}}">{{summary.total}} {{text.unit}}</span>
+    <span class="badge-green">{{summary.done}} {{text.done}}</span>
     {{#each summary.byBrand}}<span class="{{badge}}">{{label}}: {{total}}</span>{{/each}}
   </p>
 </div>
@@ -30,7 +30,7 @@
           </div>
           {{#if total}}
             {{!-- Điện thoại: chỉ hiện số; máy tính: hiện từng nội dung kèm brand viết tắt --}}
-            <p class="mt-1 text-center text-[11px] leading-tight sm:hidden">{{@root.text.icon}}{{total}}</p>
+            <p class="mt-1 text-center text-[11px] leading-tight sm:hidden">{{total}}</p>
             <ul class="mt-1 hidden space-y-1 sm:block">
               {{#each entries}}
                 <li>
@@ -73,9 +73,9 @@
                 <span class="min-w-0 truncate font-medium text-ink">{{title}}</span>
               {{/if}}
               <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
-              {{#if (and (eq kind 'shoot') location)}}<span class="text-xs text-ink-faint">📍 {{location}}</span>{{/if}}
+              {{#if (and (eq kind 'shoot') location)}}<span class="text-xs text-ink-faint">{{location}}</span>{{/if}}
               {{#if description}}<span class="w-full text-xs whitespace-pre-line text-ink-faint">{{description}}</span>{{/if}}
-              {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link text-xs font-normal">📄 Kịch bản</a>{{/if}}{{/if}}
+              {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 text-xs font-normal">{{> plan/link-icon}}Kịch bản</a>{{/if}}{{/if}}
             </li>
           {{/each}}
         </ul>
