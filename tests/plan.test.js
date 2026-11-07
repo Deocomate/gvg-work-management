@@ -47,7 +47,7 @@ test('chưa đăng nhập -> về trang đăng nhập', async () => {
   assert.match(res.headers.location, /\/login/);
 });
 
-test('thêm ý tưởng không ngày -> nằm ở cột "Mới"; tìm không dấu, lọc brand/tuyến', async () => {
+test('thêm ý tưởng không ngày -> nằm ở cột "Mới"; tìm không dấu, lọc brand', async () => {
   const res = await add(mai, { title: 'Hậu trường nung gốm', brand: 'Vũ Gia', topic: 'VG – Xưởng & nghệ nhân', description: 'Hook: lò 1200 độ' });
   assert.equal(res.status, 302);
   assert.equal(res.headers.location, '/plan');
@@ -57,7 +57,6 @@ test('thêm ý tưởng không ngày -> nằm ở cột "Mới"; tìm không d�
   assert.match(card.html, /Vũ Gia/);
   assert.match((await nam.get('/plan?q=hau+truong+nung')).text, /Hậu trường nung gốm/);
   assert.doesNotMatch((await nam.get('/plan?q=khong+co')).text, /Hậu trường nung gốm/);
-  assert.match((await nam.get('/plan?topic=VG%20–%20Xưởng%20%26%20nghệ%20nhân')).text, /Hậu trường nung gốm/);
   assert.doesNotMatch((await nam.get('/plan?brand=GSXD')).text, /Hậu trường nung gốm/);
 });
 
@@ -348,4 +347,16 @@ test('lịch đăng / lịch quay: không ghi người phụ trách, có mô t�
   const month = (await mai.get('/plan/calendar?kind=post&month=2027-01')).text.split('data-plan-agenda')[1];
   assert.match(month, /Hook: mở ngẫu hứng/);
   assert.doesNotMatch(month, /Trần Nam/);
+});
+
+test('form không còn Loại video / Tuyến nội dung; sửa nội dung cũ vẫn giữ giá trị đã có', async () => {
+  const form = (await mai.get('/plan/new')).text;
+  assert.doesNotMatch(form, /name="video_type"|name="topic"|Loại video|Tuyến nội dung/);
+  assert.doesNotMatch((await mai.get('/plan')).text, /Mọi tuyến nội dung/);
+
+  await add(mai, { title: 'Ý tưởng có tuyến cũ', topic: 'VG – Xưởng & nghệ nhân', video_type: 'A – Phức tạp' });
+  const id = (await cardOf(mai, 'Ý tưởng có tuyến cũ')).id;
+  await postForm(mai, `/plan/${id}`, { title: 'Ý tưởng có tuyến cũ (sửa)' }, { from: `/plan/${id}/edit` });
+  assert.match((await mai.get('/plan?q=xuong+nghe+nhan')).text, /Ý tưởng có tuyến cũ \(sửa\)/); // tuyến cũ vẫn còn (tìm được)
+  assert.doesNotMatch((await cardOf(mai, 'tuyến cũ (sửa)')).html, /A – Phức tạp|VG – Xưởng/); // nhưng không hiện trên thẻ
 });

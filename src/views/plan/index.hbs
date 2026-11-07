@@ -11,17 +11,13 @@
     <option value="">Mọi brand</option>
     {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
   </select>
-  <select name="topic" class="input w-auto max-w-56" aria-label="Tuyến nội dung" data-autosubmit>
-    <option value="">Mọi tuyến nội dung</option>
-    {{#each topics}}<option value="{{topic}}" {{selected topic @root.topic}}>{{topic}} ({{total}})</option>{{/each}}
-  </select>
   <select name="owner" class="input w-auto" aria-label="Người làm" data-autosubmit>
     <option value="">Mọi người</option>
     {{#each ownerOptions}}<option value="{{value}}" {{selected value @root.owner}}>{{label}}</option>{{/each}}
   </select>
   <button type="submit" class="btn-secondary">Tìm</button>
   {{#if filtered}}<a href="/plan{{#if dropped}}?dropped=1{{/if}}" class="btn-ghost">Xoá lọc</a>{{/if}}
-  <a href="/plan?{{#unless dropped}}dropped=1&{{/unless}}brand={{urlEncode brand}}&topic={{urlEncode topic}}&owner={{owner}}&q={{urlEncode query}}" class="btn-ghost btn-sm sm:ml-auto">
+  <a href="/plan?{{#unless dropped}}dropped=1&{{/unless}}brand={{urlEncode brand}}&owner={{owner}}&q={{urlEncode query}}" class="btn-ghost btn-sm sm:ml-auto">
     {{#if dropped}}Ẩn cột “Bỏ”{{else}}Hiện cột “Bỏ” ({{droppedTotal}}){{/if}}
   </a>
 </form>
@@ -45,9 +41,7 @@
               {{/if}}
               <p class="mt-1.5 flex flex-wrap gap-1 text-[11px]">
                 {{#if brand}}<span class="badge-pink">{{brand}}</span>{{/if}}
-                {{#if video_type}}<span class="badge-gray">{{video_type}}</span>{{/if}}
               </p>
-              {{#if topic}}<p class="mt-1 truncate text-xs text-ink-faint" title="{{topic}}">{{topic}}</p>{{/if}}
               <p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
                 {{#if shoot_date}}<span>🎬 {{formatDay shoot_date}}</span>{{/if}}
                 {{#if post_date}}<span>📤 {{formatDay post_date}}</span>{{/if}}

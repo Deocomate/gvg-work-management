@@ -4,7 +4,7 @@ import { isISODate } from '#lib/dates.js';
 import { parseMonth } from '#modules/schedule/schedule.service.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
-import { BRANDS, PLATFORMS, PLAN_STATUSES, VIDEO_TYPES } from './plan.schema.js';
+import { BRANDS, PLATFORMS, PLAN_STATUSES } from './plan.schema.js';
 import * as service from './plan.service.js';
 import { importFromSheet } from './plan.import.js';
 
@@ -55,7 +55,7 @@ const openSections = (values, errors) =>
   Object.fromEntries(Object.entries(SECTION_FIELDS).map(([name, fields]) => [name, fields.some((f) => values[f] || errors[f])]));
 
 async function renderForm(req, res, { plan = null, values = {}, errors = {}, status = 200 }) {
-  const [owners, topics] = await Promise.all([staffOptions(), service.listTopics()]);
+  const owners = await staffOptions();
   res.status(status).render('plan/form', {
     title: plan ? 'Sửa nội dung' : 'Thêm ý tưởng',
     plan,
@@ -67,15 +67,13 @@ async function renderForm(req, res, { plan = null, values = {}, errors = {}, sta
     statusOptions: PLAN_STATUSES,
     ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
     brandOptions: BRANDS,
-    videoTypeOptions: VIDEO_TYPES,
-    topics,
   });
 }
 
 export async function index(req, res) {
-  const { brand, topic, owner, q, dropped } = req.query;
+  const { brand, owner, q, dropped } = req.query;
   const [data, owners] = await Promise.all([
-    service.getBoard({ brand: str(brand), topic: str(topic), owner: str(owner), q: str(q), dropped: dropped === '1' }, req.user),
+    service.getBoard({ brand: str(brand), owner: str(owner), q: str(q), dropped: dropped === '1' }, req.user),
     staffOptions(),
   ]);
   res.render('plan/index', {
@@ -84,7 +82,7 @@ export async function index(req, res) {
     ...data,
     brandOptions: BRANDS,
     ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
-    filtered: Boolean(data.brand || data.topic || data.owner || data.query),
+    filtered: Boolean(data.brand || data.owner || data.query),
     canImport: isManager(req.user),
     back: req.originalUrl,
   });

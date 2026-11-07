@@ -9,19 +9,10 @@
 
   {{!-- Phần chính: đủ để ghi nhanh một ý tưởng --}}
   {{> form/field name="title" label="Nội dung / tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Mở lò vẽ vàng"}}
-  <div class="grid gap-4 sm:grid-cols-3">
-    {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
-    {{> form/select name="video_type" label="Loại video" options=videoTypeOptions value=values.video_type error=errors.video_type placeholder="Chưa chọn"}}
-    <div class="field">
-      <label for="f-topic" class="label">Tuyến nội dung</label>
-      <input id="f-topic" name="topic" type="text" value="{{values.topic}}" list="plan-topics" class="input{{#if errors.topic}} input-error{{/if}}" placeholder="Chọn hoặc gõ mới">
-      <datalist id="plan-topics">{{#each topics}}<option value="{{this}}"></option>{{/each}}</datalist>
-      {{#if errors.topic}}<p class="field-error">{{errors.topic}}</p>{{/if}}
-    </div>
-  </div>
   {{> form/textarea name="description" label="Mô tả kịch bản" value=values.description error=errors.description rows=3 placeholder="Tóm tắt kịch bản: hook, các cảnh chính, lời thoại…" hint="Hiện ngay trên Lịch đăng / Lịch quay để cả nhóm biết video quay gì."}}
   {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/… — video mẫu, bài viết gợi ý (hoặc ghi tên video)"}}
-  <div class="grid gap-4 sm:grid-cols-2">
+  <div class="grid gap-4 sm:grid-cols-3">
+    {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
     {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao" hint="Việc quay / đăng tự lên lịch làm việc của người này."}}
     {{> form/select name="status" label="Bước hiện tại" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì tự thành “Đã lên lịch”."}}
   </div>

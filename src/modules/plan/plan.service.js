@@ -7,7 +7,7 @@ import { validate } from '#lib/validate.js';
 import { foldText } from '#lib/text.js';
 import { monthGrid, todayISO, addDays, addMonths, daysBetween, isISODate, weekDays } from '#lib/dates.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
-import { BRANDS, CONTENT_LINES, PLAN_STATUSES, PLATFORMS, planSchema } from './plan.schema.js';
+import { BRANDS, PLAN_STATUSES, PLATFORMS, planSchema } from './plan.schema.js';
 import * as repo from './plan.repo.js';
 import { parseTimeRange, removePlanTasks, syncPlan } from './plan.sync.js';
 
@@ -51,17 +51,16 @@ const POSTED_SHOWN = 12;
 
 /**
  * Idea bank dạng bảng cột theo bước: Mới → Đã chọn → Đã viết kịch bản → Đã lên lịch → Đã quay → Đã đăng
- * (cột "Bỏ" chỉ hiện khi bật). Lọc brand, tuyến, người phụ trách và tìm không dấu.
+ * (cột "Bỏ" chỉ hiện khi bật). Lọc brand, người phụ trách và tìm không dấu.
  * Số ý tưởng nhỏ (vài trăm) nên lọc trong JS để bỏ dấu tiếng Việt (SQLite LIKE không làm được).
  */
-export async function getBoard({ brand, topic, owner, q, dropped } = {}, user) {
-  const [plans, topics] = await Promise.all([repo.listAll(), repo.listTopics()]);
+export async function getBoard({ brand, owner, q, dropped } = {}, user) {
+  const plans = await repo.listAll();
   const words = foldText(q).split(/\s+/).filter(Boolean);
   const ownerId = Number(owner) || null;
   const shown = plans.filter(
     (p) =>
       (!BRAND[brand] || p.brand === brand) &&
-      (!topic || p.topic === topic) &&
       (!ownerId || p.owner_id === ownerId || p.writer_id === ownerId) &&
       (!words.length || words.every((w) => foldText(searchText(p)).includes(w))),
   );
@@ -81,19 +80,11 @@ export async function getBoard({ brand, topic, owner, q, dropped } = {}, user) {
     columns,
     total: shown.length,
     brand: BRAND[brand] ? brand : '',
-    topic: topic ?? '',
-    topics,
     owner: ownerId ? String(ownerId) : '',
     query: q?.trim() ?? '',
     dropped: Boolean(dropped),
     droppedTotal: shown.filter((p) => p.status === 'dropped').length,
   };
-}
-
-/** Gợi ý "Tuyến nội dung": danh mục có sẵn + tuyến mọi người đã gõ thêm. */
-export async function listTopics() {
-  const used = (await repo.listTopics()).map((t) => t.topic);
-  return [...new Set([...CONTENT_LINES, ...used])];
 }
 
 // ---- Lịch đăng và lịch quay (2 lịch riêng), chia theo brand ----
@@ -298,10 +289,11 @@ export async function createPlan(input, user) {
 }
 
 export async function updatePlan(id, input, user) {
-  await getEditablePlan(id, user);
+  const existing = await getEditablePlan(id, user);
   const result = prepare(input);
   if (!result.ok) return result;
-  const plan = await repo.update(id, result.data);
+  // Form không còn ô Loại video / Tuyến nội dung: giữ nguyên giá trị cũ (VD nhập từ Sheet) khi lưu.
+  const plan = await repo.update(id, { ...result.data, topic: existing.topic, video_type: existing.video_type });
   if (!plan) throw notFound('Không tìm thấy nội dung này.');
   await syncPlan(id);
   return { ok: true, data: plan };

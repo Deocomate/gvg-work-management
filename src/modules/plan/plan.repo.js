@@ -75,8 +75,3 @@ export async function remove(id) {
 /** Đã có nội dung cùng tên + cùng ngày đăng chưa (để nhập từ Sheet không bị trùng khi bấm 2 lần). */
 export const exists = async ({ title, post_date }) =>
   Boolean(await get('SELECT 1 AS found FROM content_plans WHERE title = ? AND post_date IS ?', [title, post_date ?? null]));
-
-/** Các nhóm/chủ đề đã dùng — gợi ý khi nhập và làm bộ lọc. */
-export const listTopics = () =>
-  all(`SELECT topic, COUNT(*) AS total FROM content_plans WHERE topic IS NOT NULL AND topic <> ''
-       GROUP BY topic ORDER BY topic COLLATE NOCASE`);
