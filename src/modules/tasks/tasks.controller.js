@@ -65,6 +65,9 @@ export async function create(req, res) {
 }
 
 export async function editForm(req, res) {
+  // Việc quay/đăng lấy từ Plan: sửa ở Plan (lịch tự cập nhật theo)
+  const linked = await service.getTask(req.params.id);
+  if (linked.plan_id) return res.redirect(`/plan/${linked.plan_id}/edit`);
   const task = await service.getEditableTask(req.params.id, req.user);
   // Tick sẵn người làm việc này và những người làm cùng
   const assignees = (await service.groupOf(task)).map((t) => t.assignee_id);

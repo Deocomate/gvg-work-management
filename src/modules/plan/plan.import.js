@@ -6,6 +6,7 @@ import { foldText } from '#lib/text.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import * as repo from './plan.repo.js';
+import { syncPlans } from './plan.sync.js';
 
 const SHEET_STATUS = {
   'mới': 'idea',
@@ -45,7 +46,7 @@ export async function importFromSheet(user) {
   ];
 
   const unknown = new Set();
-  let added = 0;
+  const addedIds = [];
   for (const r of rows) {
     const data = Object.fromEntries(SHEET_FIELDS.map((f) => [f, clean(r[f])]));
     if (!data.title || (await repo.exists(data))) continue;
@@ -59,8 +60,9 @@ export async function importFromSheet(user) {
       .filter(([, name]) => clean(name) && !userOf(name))
       .map(([label, name]) => (unknown.add(name.trim()), `${label}: ${name.trim()}`));
     if (missing.length) data.note = [data.note, `(Từ Sheet — ${missing.join(', ')})`].filter(Boolean).join('\n');
-    await repo.create(data, user.id, r.date ? `${r.date} 00:00:00` : null);
-    added += 1;
+    const plan = await repo.create(data, user.id, r.date ? `${r.date} 00:00:00` : null);
+    addedIds.push(plan.id);
   }
-  return { added, skipped: rows.length - added, unknown: [...unknown] };
+  await syncPlans(addedIds); // đưa việc quay/đăng lên lịch làm việc của người phụ trách
+  return { added: addedIds.length, skipped: rows.length - addedIds.length, unknown: [...unknown] };
 }

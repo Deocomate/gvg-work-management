@@ -388,12 +388,30 @@
   }
   .plan-tab-active { @apply bg-pine-500 text-cream shadow-sm shadow-black/30 hover:bg-pine-500 hover:text-cream; }
   .plan-desc { @apply line-clamp-3 whitespace-pre-line; }
-  /* Bảng Plan tuần: nhiều cột như Sheet -> chữ dài cắt 2 dòng (rê chuột xem đủ), bảng cuộn ngang trên điện thoại */
-  .plan-table th { @apply px-3 whitespace-nowrap normal-case tracking-normal; }
-  .plan-table td { @apply px-3 py-2 align-top; }
-  .plan-cell-title { @apply line-clamp-2 block min-w-48 max-w-72; }
-  .plan-cell-text { @apply line-clamp-2 block max-w-56 min-w-24 whitespace-pre-line text-xs; }
-  .plan-row-overdue td:first-child { @apply border-l-2 border-brand-400; }
+  /* Idea bank dạng cột theo bước: kéo ngang khi không đủ chỗ */
+  .plan-board { @apply -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0; }
+  .plan-col { @apply w-64 shrink-0 snap-start rounded-xl border border-line bg-canvas/40 p-2.5 xl:w-auto xl:min-w-0 xl:flex-1; }
+  .plan-col-head { @apply mb-2.5 flex items-center justify-between px-0.5; }
+  .plan-card { @apply rounded-lg border border-line bg-surface p-2.5 transition hover:border-line-strong; }
+  .plan-card-title { @apply line-clamp-3 text-sm font-medium text-ink; }
+
+  /* Lịch tuần: 7 cột trên máy tính, xếp dọc trên điện thoại */
+  .plan-week { @apply grid gap-2 lg:grid-cols-7; }
+  .plan-day { @apply min-w-0 rounded-xl border border-line bg-surface p-2 lg:min-h-48; }
+  .plan-day-today { @apply border-brand-400/60 ring-1 ring-brand-400/40; }
+  .plan-day-past { @apply opacity-75; }
+  .plan-day-head { @apply mb-2 flex items-center justify-between px-1 text-sm text-ink; }
+  .plan-entry { @apply rounded-lg px-2 py-1.5; }
+  .plan-entry-title { @apply line-clamp-2 text-xs font-medium; }
+
+  /* Form Plan: các phần gập lại */
+  .plan-fold { @apply rounded-xl border border-line bg-canvas/30; }
+  .plan-fold > summary { @apply flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 px-4 py-3 text-sm font-semibold text-ink select-none; }
+  .plan-fold > summary::-webkit-details-marker { display: none; }
+  .plan-fold > summary::after { content: '▸'; @apply ml-auto text-ink-faint transition; }
+  .plan-fold[open] > summary::after { transform: rotate(90deg); }
+  .plan-fold > summary span { @apply text-xs font-normal text-ink-faint; }
+  .plan-fold-body { @apply space-y-4 border-t border-line px-4 py-4; }
   .plan-day-add {
     @apply flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-ink-faint opacity-60 transition hover:bg-pine-500/40 hover:text-ink hover:opacity-100;
   }

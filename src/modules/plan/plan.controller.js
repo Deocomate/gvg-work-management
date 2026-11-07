@@ -1,4 +1,4 @@
-// Tab Plan: Idea bank (/plan), Plan tuần (/plan/weeks) và Lịch tháng (/plan/calendar).
+// Tab Plan: Idea bank dạng cột theo bước (/plan) và Lịch quay/đăng — tuần (/plan/weeks) hoặc tháng (/plan/calendar).
 import { safeBack } from '#lib/redirect.js';
 import { isISODate } from '#lib/dates.js';
 import { parseMonth } from '#modules/schedule/schedule.service.js';
@@ -11,11 +11,21 @@ import { importFromSheet } from './plan.import.js';
 const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const str = (v) => (typeof v === 'string' ? v.slice(0, 100) : '');
 
-/** Sau khi lưu: có ngày đăng/quay thì về đúng tháng trên lịch, không thì về Idea bank. */
+/** Sau khi lưu: có ngày đăng/quay thì về đúng tuần trên lịch, không thì về Idea bank. */
 const afterSave = (plan) => {
   const date = plan.post_date || plan.shoot_date;
-  return date ? `/plan/calendar?month=${date.slice(0, 7)}` : '/plan';
+  return date ? `/plan/weeks?week=${date}` : '/plan';
 };
+
+// Form gọn: mỗi nhóm ô là một mục gập lại, tự mở khi đã có dữ liệu hoặc có lỗi.
+const SECTION_FIELDS = {
+  idea: ['description', 'reference_url', 'proposer_id', 'note'],
+  script: ['writer_id', 'script'],
+  shoot: ['shoot_date', 'shoot_time', 'location', 'props'],
+  post: ['post_date', 'post_time', 'source_url', 'post_url'],
+};
+const openSections = (values, errors) =>
+  Object.fromEntries(Object.entries(SECTION_FIELDS).map(([name, fields]) => [name, fields.some((f) => values[f] || errors[f])]));
 
 async function renderForm(req, res, { plan = null, values = {}, errors = {}, status = 200 }) {
   const [owners, topics] = await Promise.all([staffOptions(), service.listTopics()]);
@@ -24,6 +34,7 @@ async function renderForm(req, res, { plan = null, values = {}, errors = {}, sta
     plan,
     values,
     errors,
+    open: openSections(values, errors),
     back: safeBack(values.back, '/plan'),
     platformOptions: PLATFORMS,
     statusOptions: PLAN_STATUSES,
@@ -35,18 +46,30 @@ async function renderForm(req, res, { plan = null, values = {}, errors = {}, sta
 }
 
 export async function index(req, res) {
-  const { status, platform, topic, brand, q } = req.query;
-  const data = await service.browseIdeas(
-    { status: str(status), platform: str(platform), topic: str(topic), brand: str(brand), q: str(q) },
-    req.user,
-  );
+  const { brand, topic, owner, q, dropped } = req.query;
+  const [data, owners] = await Promise.all([
+    service.getBoard({ brand: str(brand), topic: str(topic), owner: str(owner), q: str(q), dropped: dropped === '1' }, req.user),
+    staffOptions(),
+  ]);
   res.render('plan/index', {
     title: 'Idea bank',
     tab: 'ideas',
     ...data,
-    platformOptions: PLATFORMS,
     brandOptions: BRANDS,
-    filtered: Boolean(data.platform || data.topic || data.brand || data.query),
+    ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
+    filtered: Boolean(data.brand || data.topic || data.owner || data.query),
+    canImport: isManager(req.user),
+    back: req.originalUrl,
+  });
+}
+
+export async function weeks(req, res) {
+  const data = await service.getWeek(str(req.query.week), req.user);
+  res.render('plan/weeks', {
+    title: 'Lịch quay / đăng',
+    tab: 'calendar',
+    view: 'week',
+    ...data,
     back: req.originalUrl,
   });
 }
@@ -58,25 +81,11 @@ export async function calendar(req, res) {
   res.render('plan/calendar', {
     title: 'Lịch quay / đăng',
     tab: 'calendar',
+    view: 'month',
     ...data,
     month,
     monthLabel: `Tháng ${Number(monthNumber)}/${year}`,
     weekdayLabels: WEEKDAY_LABELS,
-    back: req.originalUrl,
-  });
-}
-
-export async function weeks(req, res) {
-  const month = parseMonth(req.query.month);
-  const data = await service.getWeeks(month, str(req.query.by), req.user);
-  const [year, monthNumber] = month.split('-');
-  res.render('plan/weeks', {
-    title: 'Plan tuần',
-    tab: 'weeks',
-    ...data,
-    month,
-    monthLabel: `Tháng ${Number(monthNumber)}/${year}`,
-    canImport: isManager(req.user),
     back: req.originalUrl,
   });
 }
@@ -86,13 +95,14 @@ export async function importSheet(req, res) {
   let message = `Đã nhập ${added} nội dung từ Google Sheet${skipped ? ` (bỏ qua ${skipped} dòng đã có)` : ''}.`;
   if (unknown.length) message += ` Chưa có tài khoản: ${unknown.join(', ')} — tên được ghi vào Ghi chú.`;
   req.flash('success', message);
-  res.redirect('/plan/weeks');
+  res.redirect('/plan');
 }
 
 export function newForm(req, res) {
   const values = { platform: 'tiktok', status: 'idea', back: req.query.back };
-  // Bấm "+" ở một ngày trên lịch -> điền sẵn ngày đăng
+  // Bấm "+" ở một ngày trên lịch -> điền sẵn ngày đăng / ngày quay
   if (isISODate(req.query.post_date)) values.post_date = req.query.post_date;
+  if (isISODate(req.query.shoot_date)) values.shoot_date = req.query.shoot_date;
   return renderForm(req, res, { values });
 }
 

@@ -206,8 +206,8 @@ test('việc lặp lại Thứ 2–6 tạo đúng số ngày', async () => {
   assert.equal(res.status, 302);
   const cal = (await admin.get(`/calendar?month=2026-11&user=${minhId}`)).text;
   assert.equal(cal.match(/Báo cáo sáng/g).length >= 10, true);
-  // Thứ 7 không có việc (lịch tuần phía trên vẫn hiện các ngày Thứ 2–6)
-  assert.match((await admin.get(`/today?date=2026-11-07&user=${minhId}`)).text, /Không có việc nào trong ngày này/);
+  // Thứ 7 không có việc (lịch tuần phía trên vẫn hiện các ngày Thứ 2–6). Dùng 14/11: 07/11 trùng "hôm nay" của test khác
+  assert.match((await admin.get(`/today?date=2026-11-14&user=${minhId}`)).text, /Không có việc nào trong ngày này/);
 });
 
 test('form có mục Lặp lại: chọn sẵn thứ của ngày; lặp mà không chọn thứ -> báo lỗi', async () => {

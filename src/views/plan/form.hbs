@@ -7,66 +7,84 @@
   <input type="hidden" name="back" value="{{back}}">
   {{#if errors._form}}<div class="alert-error mb-5">{{errors._form}}</div>{{/if}}
 
-  <div class="form-section">
-    <h2 class="form-section-title">Ý tưởng</h2>
-    {{> form/field name="title" label="Nội dung / tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Mở lò vẽ vàng"}}
-    {{> form/textarea name="description" label="Mô tả chi tiết" value=values.description error=errors.description rows=3 hint="Không bắt buộc. Ý chính, các tập của series…"}}
-    <div class="grid gap-4 sm:grid-cols-3">
-      {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
-      {{> form/select name="video_type" label="Loại video" options=videoTypeOptions value=values.video_type error=errors.video_type placeholder="Chưa chọn"}}
-      {{> form/select name="proposer_id" label="Người góp ý tưởng" options=ownerOptions value=values.proposer_id error=errors.proposer_id placeholder="Mình (người nhập)"}}
+  {{!-- Phần chính: đủ để ghi nhanh một ý tưởng --}}
+  {{> form/field name="title" label="Nội dung / tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Mở lò vẽ vàng"}}
+  <div class="grid gap-4 sm:grid-cols-3">
+    {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
+    {{> form/select name="video_type" label="Loại video" options=videoTypeOptions value=values.video_type error=errors.video_type placeholder="Chưa chọn"}}
+    <div class="field">
+      <label for="f-topic" class="label">Tuyến nội dung</label>
+      <input id="f-topic" name="topic" type="text" value="{{values.topic}}" list="plan-topics" class="input{{#if errors.topic}} input-error{{/if}}" placeholder="Chọn hoặc gõ mới">
+      <datalist id="plan-topics">{{#each topics}}<option value="{{this}}"></option>{{/each}}</datalist>
+      {{#if errors.topic}}<p class="field-error">{{errors.topic}}</p>{{/if}}
     </div>
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div class="field">
-        <label for="f-topic" class="label">Tuyến nội dung</label>
-        <input id="f-topic" name="topic" type="text" value="{{values.topic}}" list="plan-topics" class="input{{#if errors.topic}} input-error{{/if}}" placeholder="VD: VG – Xưởng & nghệ nhân">
-        <datalist id="plan-topics">{{#each topics}}<option value="{{this}}"></option>{{/each}}</datalist>
-        <p class="hint">Chọn tuyến có sẵn hoặc gõ tuyến mới.</p>
-        {{#if errors.topic}}<p class="field-error">{{errors.topic}}</p>{{/if}}
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao" hint="Việc quay / đăng tự lên lịch làm việc của người này."}}
+    {{> form/select name="status" label="Bước hiện tại" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì tự thành “Đã lên lịch”."}}
+  </div>
+
+  {{!-- Các phần chi tiết: gập lại, tự mở khi đã có dữ liệu --}}
+  <div class="mt-2 space-y-3">
+    <details class="plan-fold"{{#if open.idea}} open{{/if}}>
+      <summary>💡 Chi tiết ý tưởng <span>mô tả, tham khảo, người góp, ghi chú</span></summary>
+      <div class="plan-fold-body">
+        {{> form/textarea name="description" label="Mô tả" value=values.description error=errors.description rows=3 placeholder="Ý chính, các tập của series…"}}
+        <div class="grid gap-4 sm:grid-cols-2">
+          {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://… hoặc tên video mẫu"}}
+          {{> form/select name="proposer_id" label="Người góp ý tưởng" options=ownerOptions value=values.proposer_id error=errors.proposer_id placeholder="Mình (người nhập)"}}
+        </div>
+        {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=3 placeholder="Hook, lưu ý khi quay…"}}
       </div>
-      {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/... hoặc tên video mẫu"}}
-    </div>
-    {{> form/segmented name="platform" label="Kênh đăng" options=platformOptions value=values.platform error=errors.platform}}
+    </details>
+
+    <details class="plan-fold"{{#if open.script}} open{{/if}}>
+      <summary>✍ Kịch bản <span>người viết, link kịch bản</span></summary>
+      <div class="plan-fold-body grid gap-4 sm:grid-cols-[1fr_2fr]">
+        {{> form/select name="writer_id" label="Người viết kịch bản" options=ownerOptions value=values.writer_id error=errors.writer_id placeholder="Chưa giao"}}
+        {{> form/field name="script" label="Kịch bản" value=values.script error=errors.script placeholder="Link Google Docs, tên file, hoặc “Không cần”"}}
+      </div>
+    </details>
+
+    <details class="plan-fold"{{#if open.shoot}} open{{/if}}>
+      <summary>🎬 Lịch quay <span>ngày, khung giờ, địa điểm, CSVC</span></summary>
+      <div class="plan-fold-body">
+        <div class="grid gap-4 sm:grid-cols-3">
+          {{> form/field name="shoot_date" label="Ngày quay" type="date" value=values.shoot_date error=errors.shoot_date clearLabel="Chưa chốt"}}
+          {{> form/field name="shoot_time" label="Khung giờ quay" value=values.shoot_time error=errors.shoot_time placeholder="VD: 15h00 - 15h30"}}
+          {{> form/field name="location" label="Địa điểm" value=values.location error=errors.location placeholder="VD: Xưởng, 18"}}
+        </div>
+        {{> form/field name="props" label="CSVC cần chuẩn bị" value=values.props error=errors.props placeholder="VD: Ban thần tài, đèn, chân máy"}}
+      </div>
+    </details>
+
+    <details class="plan-fold"{{#if open.post}} open{{/if}}>
+      <summary>📤 Đăng bài <span>ngày, giờ, kênh, link</span></summary>
+      <div class="plan-fold-body">
+        <div class="grid gap-4 sm:grid-cols-2">
+          {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
+          {{> form/field name="post_time" label="Giờ đăng" type="time" value=values.post_time error=errors.post_time clearLabel="Chưa chốt"}}
+        </div>
+        {{> form/segmented name="platform" label="Kênh đăng" options=platformOptions value=values.platform error=errors.platform}}
+        <div class="grid gap-4 sm:grid-cols-2">
+          {{> form/field name="source_url" label="Link source (file quay)" type="url" value=values.source_url error=errors.source_url placeholder="https://drive.google.com/..."}}
+          {{> form/field name="post_url" label="Link bài đã đăng" type="url" value=values.post_url error=errors.post_url placeholder="https://..."}}
+        </div>
+      </div>
+    </details>
   </div>
 
-  <div class="form-section">
-    <h2 class="form-section-title">Kịch bản</h2>
-    <div class="grid gap-4 sm:grid-cols-[1fr_2fr]">
-      {{> form/select name="writer_id" label="Người viết kịch bản" options=ownerOptions value=values.writer_id error=errors.writer_id placeholder="Chưa giao"}}
-      {{> form/field name="script" label="Kịch bản" value=values.script error=errors.script placeholder="Link Google Docs, tên file, hoặc “Không cần”"}}
-    </div>
-  </div>
-
-  <div class="form-section">
-    <h2 class="form-section-title">Lịch quay</h2>
-    <p class="hint -mt-2">Để trống nếu chưa chốt — ý tưởng nằm trong Idea bank. Có ngày thì hiện trên Plan tuần và lịch.</p>
-    <div class="grid gap-4 sm:grid-cols-3">
-      {{> form/field name="shoot_date" label="Ngày quay" type="date" value=values.shoot_date error=errors.shoot_date clearLabel="Chưa chốt"}}
-      {{> form/field name="shoot_time" label="Khung giờ quay" value=values.shoot_time error=errors.shoot_time placeholder="VD: 15h00 - 15h30"}}
-      {{> form/field name="location" label="Địa điểm" value=values.location error=errors.location placeholder="VD: Xưởng, 18"}}
-    </div>
-    {{> form/field name="props" label="CSVC cần chuẩn bị" value=values.props error=errors.props placeholder="VD: Ban thần tài, đèn, chân máy"}}
-  </div>
-
-  <div class="form-section">
-    <h2 class="form-section-title">Đăng bài</h2>
-    <div class="grid gap-4 sm:grid-cols-2">
-      {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
-      {{> form/field name="post_time" label="Giờ đăng" type="time" value=values.post_time error=errors.post_time clearLabel="Chưa chốt"}}
-    </div>
-    <div class="grid gap-4 sm:grid-cols-2">
-      {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao"}}
-      {{> form/select name="status" label="Trạng thái" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì “Mới” tự thành “Đã lên lịch”."}}
-    </div>
-    <div class="grid gap-4 sm:grid-cols-2">
-      {{> form/field name="source_url" label="Link source (file quay)" type="url" value=values.source_url error=errors.source_url placeholder="https://drive.google.com/..."}}
-      {{> form/field name="post_url" label="Link bài đã đăng" type="url" value=values.post_url error=errors.post_url placeholder="https://..." hint="Dán sau khi đăng để cả nhóm xem lại."}}
-    </div>
-    {{> form/textarea name="note" label="Ghi chú" value=values.note error=errors.note rows=3 placeholder="Hook, lưu ý khi quay…"}}
-  </div>
-
-  <div class="flex flex-wrap items-center gap-2 border-t border-line pt-5">
+  <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-line pt-5">
     <button type="submit" class="btn-primary">{{#if plan}}Lưu thay đổi{{else}}Thêm ý tưởng{{/if}}</button>
     <a href="{{back}}" class="btn-ghost">Huỷ</a>
   </div>
 </form>
+
+{{#if plan.id}}
+  {{#if (or (eq @root.currentUser.role 'admin') (eq plan.created_by @root.currentUser.id))}}
+    <form method="post" action="/plan/{{plan.id}}/delete" class="mt-4 max-w-3xl text-right" data-confirm="Xoá nội dung này? Việc quay/đăng trên lịch làm việc cũng bị xoá.">
+      {{> form/csrf}}
+      <button type="submit" class="btn-ghost btn-sm text-brand-300">🗑 Xoá nội dung này</button>
+    </form>
+  {{/if}}
+{{/if}}

@@ -10,6 +10,7 @@ import { validate } from '#lib/validate.js';
 import * as staffRepo from '#modules/staff/staff.repo.js';
 import { MAX_REPEAT_DAYS, parseAssigneeIds, repeatSchema, splitLinks, statusSchema, taskSchema } from './tasks.schema.js';
 import * as repo from './tasks.repo.js';
+import { applyTaskStatus } from '#modules/plan/plan.sync.js';
 
 export const isManager = (user) => user?.role === 'admin';
 
@@ -27,6 +28,7 @@ export async function getTask(id) {
 /** Lấy việc để sửa/xoá — 403 nếu không có quyền. */
 export async function getEditableTask(id, user) {
   const task = await getTask(id);
+  if (task.plan_id) throw forbidden('Việc này lấy từ Plan nội dung — hãy sửa ở tab Plan, lịch sẽ tự cập nhật.');
   if (!canEdit(user, task)) throw forbidden('Bạn chỉ sửa được việc do chính bạn tạo.');
   return task;
 }
@@ -143,6 +145,7 @@ export async function changeStatus(id, status, user, { wholeGroup = false } = {}
   if (!canChangeStatus(user, task)) throw forbidden('Đây không phải việc của bạn.');
   const ids = wholeGroup && isManager(user) ? (await groupOf(task)).map((t) => t.id) : [task.id];
   await Promise.all(ids.map((taskId) => repo.updateStatus(taskId, parsed.data)));
+  await applyTaskStatus(task, parsed.data); // việc quay/đăng từ Plan -> cập nhật trạng thái bên Plan
   return { ...task, status: parsed.data };
 }
 

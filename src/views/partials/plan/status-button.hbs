@@ -1,7 +1,7 @@
-{{!-- Nút đổi nhanh trạng thái. Dùng: {{> plan/status-button id=id status="posted" label="✅ Đã đăng"}} --}}
-<form method="post" action="/plan/{{id}}/status" class="inline">
+{{!-- Nút đổi nhanh trạng thái. Dùng: {{> plan/status-button id=id status="posted" label="✅ Đã đăng"}} (full=true: rộng hết thẻ) --}}
+<form method="post" action="/plan/{{id}}/status"{{#if full}} class="w-full"{{else}} class="inline"{{/if}}>
   {{> form/csrf}}
   <input type="hidden" name="status" value="{{status}}">
   <input type="hidden" name="back" value="{{@root.back}}">
-  <button type="submit" class="btn-ghost btn-sm">{{label}}</button>
+  <button type="submit" class="btn-ghost btn-sm{{#if full}} w-full justify-center{{/if}}">{{label}}</button>
 </form>

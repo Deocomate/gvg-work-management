@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, postForm } from './helpers.js';
 import { loginAs, loginAsAdmin } from './auth-helpers.js';
-import { todayISO, addDays } from '../src/lib/dates.js';
+import { todayISO, addDays, weekDays } from '../src/lib/dates.js';
+import { parseTimeRange } from '../src/modules/plan/plan.sync.js';
 
 const { agent: admin } = await setup();
 await loginAsAdmin(admin);
@@ -15,19 +16,27 @@ const { agent: nam } = await setup();
 await loginAs(nam, { email: 'nam@test.local', password: 'mat-khau-123' });
 
 const add = (agent, data) => postForm(agent, '/plan', data, { from: '/plan/new' });
-const idOf = async (title) => {
-  const row = (await admin.get('/plan?status=all')).text.split('data-plan-row').slice(1).find((r) => r.includes(title));
-  return row.match(/\/plan\/(\d+)\/edit/)[1];
+const userId = async (name) => (await admin.get('/plan/new')).text.match(new RegExp(`<option value="(\\d+)"[^>]*>${name}<`))[1];
+/** Thẻ của một nội dung trên bảng Idea bank (cột nào, có link sửa không). */
+const cardOf = async (agent, title, query = '') => {
+  const page = (await agent.get(`/plan?dropped=1${query}`)).text;
+  const cols = page.split('data-plan-col="').slice(1);
+  for (const col of cols) {
+    const card = col.split('data-plan-row').slice(1).find((c) => c.includes(title));
+    if (card) return { column: col.slice(0, col.indexOf('"')), html: card, id: card.match(/\/plan\/(\d+)\//)?.[1] };
+  }
+  return null;
 };
-const month = todayISO().slice(0, 7);
+const idOf = async (title) => (await cardOf(admin, title)).id;
+const today = todayISO();
 
-test('menu có tab Plan, Idea bank trống thì có hướng dẫn', async () => {
+test('menu có tab Plan; Idea bank trống thì có hướng dẫn; còn 2 tab', async () => {
   const page = await mai.get('/plan');
   assert.equal(page.status, 200);
   assert.match(page.text, /href="\/plan"/);
   assert.match(page.text, /Kho ý tưởng đang trống/);
-  assert.match(page.text, /Plan tuần/);
-  assert.match(page.text, /Lịch tháng/);
+  assert.match(page.text, /💡 Idea bank/);
+  assert.match(page.text, /📅 Lịch quay \/ đăng/);
 });
 
 test('chưa đăng nhập -> về trang đăng nhập', async () => {
@@ -37,23 +46,21 @@ test('chưa đăng nhập -> về trang đăng nhập', async () => {
   assert.match(res.headers.location, /\/login/);
 });
 
-test('nhân viên thêm ý tưởng không có ngày -> nằm trong Idea bank "Chưa lên lịch"', async () => {
-  const res = await add(mai, { title: 'Hậu trường nung gốm', platform: 'tiktok', topic: 'Hậu trường', description: 'Hook: lò 1200 độ' });
+test('thêm ý tưởng không ngày -> nằm ở cột "Mới"; tìm không dấu, lọc brand/tuyến', async () => {
+  const res = await add(mai, { title: 'Hậu trường nung gốm', brand: 'Vũ Gia', topic: 'VG – Xưởng & nghệ nhân', description: 'Hook: lò 1200 độ' });
   assert.equal(res.status, 302);
   assert.equal(res.headers.location, '/plan');
 
-  const page = (await nam.get('/plan')).text;
-  assert.match(page, /Hậu trường nung gốm/);
-  assert.match(page, /Mới/);
-  // Tìm không dấu
+  const card = await cardOf(nam, 'Hậu trường nung gốm');
+  assert.equal(card.column, 'idea');
+  assert.match(card.html, /Vũ Gia/);
   assert.match((await nam.get('/plan?q=hau+truong+nung')).text, /Hậu trường nung gốm/);
   assert.doesNotMatch((await nam.get('/plan?q=khong+co')).text, /Hậu trường nung gốm/);
-  // Lọc theo nhóm và kênh
-  assert.match((await nam.get('/plan?topic=Hậu%20trường')).text, /Hậu trường nung gốm/);
-  assert.doesNotMatch((await nam.get('/plan?platform=facebook')).text, /Hậu trường nung gốm/);
+  assert.match((await nam.get('/plan?topic=VG%20–%20Xưởng%20%26%20nghệ%20nhân')).text, /Hậu trường nung gốm/);
+  assert.doesNotMatch((await nam.get('/plan?brand=GSXD')).text, /Hậu trường nung gốm/);
 });
 
-test('thiếu tên, link sai, ngày đăng trước ngày quay -> báo lỗi, giữ dữ liệu đã nhập', async () => {
+test('thiếu tên, link sai, ngày đăng trước ngày quay -> báo lỗi, giữ dữ liệu, mở đúng phần', async () => {
   const noTitle = await add(mai, { title: ' ', description: 'Giữ lại nội dung này' });
   assert.equal(noTitle.status, 422);
   assert.match(noTitle.text, /Vui lòng nhập tên ý tưởng/);
@@ -62,169 +69,203 @@ test('thiếu tên, link sai, ngày đăng trước ngày quay -> báo lỗi, gi
   const badUrl = await add(mai, { title: 'X', post_url: 'javascript:alert(1)' });
   assert.equal(badUrl.status, 422);
   assert.match(badUrl.text, /http:\/\/ hoặc https:\/\//);
+  assert.match(badUrl.text, /<details class="plan-fold" open>\s*<summary>📤 Đăng bài/); // phần có lỗi tự mở
 
-  const badDates = await add(mai, { title: 'X', shoot_date: addDays(todayISO(), 3), post_date: todayISO() });
+  const badDates = await add(mai, { title: 'X', shoot_date: addDays(today, 3), post_date: today });
   assert.equal(badDates.status, 422);
   assert.match(badDates.text, /Ngày đăng phải sau hoặc cùng ngày quay/);
+
+  const bad = await add(mai, { title: 'X', brand: 'Hãng khác' });
+  assert.equal(bad.status, 422);
+  assert.match(bad.text, /Brand không hợp lệ/);
 });
 
-test('gắn ngày quay/đăng -> tự thành "Đã lên lịch" và hiện trên lịch tháng', async () => {
-  const today = todayISO();
-  const res = await add(admin, { title: 'Review bình hoa men lam', platform: 'facebook', shoot_date: today, post_date: today, post_time: '20:00' });
-  assert.equal(res.status, 302);
-  assert.equal(res.headers.location, `/plan/calendar?month=${month}`);
-
-  const cal = (await mai.get('/plan/calendar')).text;
-  assert.match(cal, /Review bình hoa men lam/);
-  assert.match(cal, /🎬 1 buổi quay/);
-  assert.match(cal, /📤 1 bài cần đăng/);
-  assert.match(cal, /20:00/);
-  assert.match(cal.split('data-plan-agenda')[1], /Review bình hoa men lam/); // danh sách theo ngày cho điện thoại
-  // Đã có lịch -> không còn ở "Chưa lên lịch"
-  assert.doesNotMatch((await mai.get('/plan')).text, /Review bình hoa men lam/);
-  assert.match((await mai.get('/plan?status=scheduled')).text, /Review bình hoa men lam/);
+test('form gọn: ý tưởng mới chỉ mở phần chính; bấm + ở một ngày -> mở sẵn phần Đăng bài', async () => {
+  const blank = (await mai.get('/plan/new')).text;
+  assert.doesNotMatch(blank, /plan-fold" open/);
+  const day = addDays(today, 2);
+  const page = (await mai.get(`/plan/new?post_date=${day}`)).text;
+  assert.match(page, new RegExp(`name="post_date" type="date" value="${day}"`));
+  assert.match(page, /<details class="plan-fold" open>\s*<summary>📤 Đăng bài/);
 });
 
-test('bấm + ở một ngày -> form điền sẵn ngày đăng', async () => {
-  const day = addDays(todayISO(), 2);
-  const page = await mai.get(`/plan/new?post_date=${day}`);
-  assert.equal(page.status, 200);
-  assert.match(page.text, new RegExp(`name="post_date" type="date" value="${day}"`));
-});
-
-test('lịch tháng khác: tháng sai -> về tháng này', async () => {
-  assert.equal((await mai.get('/plan/calendar?month=2026-13')).status, 200);
-  assert.match((await mai.get('/plan/calendar?month=2030-01')).text, /Tháng 1\/2030/);
-});
-
-test('đổi nhanh trạng thái Đã quay / Đã đăng', async () => {
+test('nút bước tiếp theo: Mới → Đã chọn → Đã viết kịch bản; gắn ngày -> Đã lên lịch', async () => {
   const id = await idOf('Hậu trường nung gốm');
-  const res = await postForm(mai, `/plan/${id}/status`, { status: 'posted', back: '/plan?status=posted' }, { from: '/plan' });
-  assert.equal(res.status, 302);
-  assert.equal(res.headers.location, '/plan?status=posted');
-  assert.match((await mai.get('/plan?status=posted')).text, /Hậu trường nung gốm/);
+  await postForm(mai, `/plan/${id}/status`, { status: 'selected', back: '/plan' }, { from: '/plan' });
+  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'selected');
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /✍ Xong kịch bản/);
+  await postForm(mai, `/plan/${id}/status`, { status: 'scripted', back: '/plan' }, { from: '/plan' });
+  assert.match((await cardOf(mai, 'Hậu trường nung gốm')).html, /📅 Lên lịch/);
+
+  const edit = await postForm(mai, `/plan/${id}`, { title: 'Hậu trường nung gốm', status: 'scripted', post_date: today }, { from: `/plan/${id}/edit` });
+  assert.equal(edit.status, 302);
+  assert.equal(edit.headers.location, `/plan/weeks?week=${today}`);
+  assert.equal((await cardOf(mai, 'Hậu trường nung gốm')).column, 'scheduled');
 
   const bad = await postForm(mai, `/plan/${id}/status`, { status: 'hack' }, { from: '/plan' });
   assert.equal(bad.status, 302);
 });
 
-test('quyền: người khác không sửa/xoá được ý tưởng của mình; người phụ trách sửa được, không xoá được', async () => {
-  const id = await idOf('Hậu trường nung gốm'); // Mai tạo
+test('lịch tuần: 7 ngày, đặt tên tuần như Sheet, hiện buổi quay + bài đăng theo giờ và cảnh báo', async () => {
+  // Tuần thuộc tháng chứa ngày Thứ 5
+  assert.match((await mai.get('/plan/weeks?week=2026-11-04')).text, /Tuần 1 \(tháng 11\)[\s\S]*02\/11 – 08\/11\/2026/);
+  assert.match((await mai.get('/plan/weeks?week=2026-10-28')).text, /Tuần 5 \(tháng 10\)[\s\S]*26\/10 – 01\/11\/2026/);
+  assert.equal((await mai.get('/plan/weeks?week=abc')).status, 200);
+
+  const namId = await userId('Trần Nam');
+  const base = { owner_id: namId, shoot_time: '15h00 - 15h30', brand: 'GSXD' };
+  await add(admin, { ...base, title: 'Quay ở xưởng', shoot_date: '2026-12-01', post_date: '2026-12-02', location: 'Xưởng' });
+  await add(admin, { ...base, title: 'Quay ở số 18', shoot_date: '2026-12-01', post_date: '2026-12-10', location: '18' });
+  await add(admin, { title: 'Chưa quay gì', post_date: '2026-12-03', post_time: '19:00' });
+
+  const week = (await mai.get('/plan/weeks?week=2026-12-01')).text;
+  const tuesday = week.split('data-plan-day="2026-12-01"')[1].split('data-plan-day=')[0];
+  assert.match(tuesday, /Quay 15:00–15:30/);
+  assert.match(tuesday, /📍 Xưởng/);
+  assert.match(tuesday, /⚠/); // Nam bị xếp 2 nơi cùng giờ
+  assert.match(week, /trùng giờ quay/);
+  assert.match(week, /chưa có ngày quay/);
+  assert.match(week.split('data-plan-day="2026-12-03"')[1], /Đăng 19:00[\s\S]*Chưa quay gì/);
+  assert.match(week.split('data-plan-unshot')[1] ?? '', /Chưa quay gì/); // danh sách cần chốt ngày quay
+  assert.match((await mai.get('/plan/calendar?month=2026-12')).text, /Quay ở xưởng/); // xem theo tháng vẫn có
+});
+
+test('đồng bộ sang lịch làm việc: người phụ trách có việc Quay + Đăng; đổi ở Plan thì lịch đổi theo', async () => {
+  const namId = await userId('Trần Nam');
+  const maiId = await userId('Lê Mai');
+  const res = await add(admin, {
+    title: 'Mở lò vẽ vàng', owner_id: namId, shoot_date: '2026-12-14', shoot_time: '9h30 - 11h', location: 'Xưởng',
+    props: 'Đèn, chân máy', post_date: '2026-12-16', post_time: '20:00', script: 'https://docs.google.com/document/d/abc',
+  });
+  assert.equal(res.status, 302);
+
+  const shootDay = (await nam.get('/today?date=2026-12-14')).text;
+  assert.match(shootDay, /🎬 Quay: Mở lò vẽ vàng/);
+  assert.match(shootDay, /09:30[\s\S]*11:00/);
+  assert.match(shootDay, /📍 Địa điểm: Xưởng/);
+  assert.match(shootDay, /Đèn, chân máy/);
+  assert.match(shootDay, /docs\.google\.com\/document\/d\/abc/);
+  assert.match(shootDay, />Plan</);
+  assert.match(shootDay, /Xem ở Plan/);
+  assert.match((await nam.get('/today?date=2026-12-16')).text, /📤 Đăng: Mở lò vẽ vàng[\s\S]*20:00|20:00[\s\S]*📤 Đăng: Mở lò vẽ vàng/);
+
+  // Không sửa/xoá trực tiếp trên lịch — chuyển sang Plan
+  const taskId = shootDay.match(/\/tasks\/(\d+)\/status/)[1];
+  const editLink = await admin.get(`/tasks/${taskId}/edit`);
+  assert.equal(editLink.status, 302);
+  assert.match(editLink.headers.location, /^\/plan\/\d+\/edit$/);
+  assert.equal((await postForm(admin, `/tasks/${taskId}/delete`, {}, { from: '/today' })).status, 403);
+
+  // Đổi ngày quay + giao cho Mai -> việc chuyển ngày, chuyển người
+  const id = await idOf('Mở lò vẽ vàng');
+  await postForm(admin, `/plan/${id}`, { title: 'Mở lò vẽ vàng', owner_id: maiId, shoot_date: '2026-12-15', post_date: '2026-12-16', status: 'scheduled' }, { from: `/plan/${id}/edit` });
+  assert.doesNotMatch((await nam.get('/today?date=2026-12-14')).text, /Mở lò vẽ vàng/);
+  assert.match((await mai.get('/today?date=2026-12-15')).text, /🎬 Quay: Mở lò vẽ vàng/);
+  assert.doesNotMatch((await mai.get('/today?date=2026-12-15')).text, /09:30/); // bỏ khung giờ -> cả ngày
+
+  // Bỏ ngày quay -> việc quay biến mất, việc đăng còn
+  await postForm(admin, `/plan/${id}`, { title: 'Mở lò vẽ vàng', owner_id: maiId, post_date: '2026-12-16', status: 'scheduled' }, { from: `/plan/${id}/edit` });
+  assert.doesNotMatch((await mai.get('/today?date=2026-12-15')).text, /🎬 Quay: Mở lò vẽ vàng/);
+  assert.match((await mai.get('/today?date=2026-12-16')).text, /📤 Đăng: Mở lò vẽ vàng/);
+});
+
+test('đồng bộ 2 chiều: tick xong việc trên lịch -> Plan đổi bước; Bỏ / xoá ở Plan -> việc biến mất', async () => {
+  const namId = await userId('Trần Nam');
+  await add(admin, { title: 'Bình hút lộc', owner_id: namId, shoot_date: '2026-12-21', post_date: '2026-12-23' });
+  const id = await idOf('Bình hút lộc');
+  // id việc trong danh sách của ngày (bỏ qua dải 7 ngày phía trên)
+  const taskOf = async (date) =>
+    (await nam.get(`/today?date=${date}`)).text.match(/<h3[^>]*>[^<]*Bình hút lộc<\/h3>[\s\S]*?\/tasks\/(\d+)\/status/)[1];
+
+  await postForm(nam, `/tasks/${await taskOf('2026-12-21')}/status`, { status: 'done' }, { from: '/today' });
+  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'filmed');
+
+  await postForm(nam, `/tasks/${await taskOf('2026-12-23')}/status`, { status: 'done' }, { from: '/today' });
+  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'posted');
+
+  // Mở lại việc đăng -> Plan lùi về Đã quay
+  await postForm(nam, `/tasks/${await taskOf('2026-12-23')}/status`, { status: 'todo' }, { from: '/today' });
+  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'filmed');
+
+  // Đổi trạng thái ở Plan -> việc trên lịch xong theo
+  await postForm(admin, `/plan/${id}/status`, { status: 'posted' }, { from: '/plan' });
+  assert.match((await nam.get('/today?date=2026-12-23')).text, /📤 Đăng: Bình hút lộc[\s\S]*?Mở lại/);
+
+  await postForm(admin, `/plan/${id}/status`, { status: 'dropped' }, { from: '/plan' });
+  assert.doesNotMatch((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
+  assert.equal((await cardOf(admin, 'Bình hút lộc')).column, 'dropped');
+
+  await postForm(admin, `/plan/${id}/status`, { status: 'scheduled' }, { from: '/plan' });
+  assert.match((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
+  await postForm(admin, `/plan/${id}/delete`, {}, { from: '/plan' });
+  assert.doesNotMatch((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
+});
+
+test('đọc khung giờ quay gõ tự do', () => {
+  assert.deepEqual(parseTimeRange('15h00 - 15h30'), { start: '15:00', end: '15:30' });
+  assert.deepEqual(parseTimeRange('9h - 11h'), { start: '09:00', end: '11:00' });
+  assert.deepEqual(parseTimeRange('13:00-15:00'), { start: '13:00', end: '15:00' });
+  assert.deepEqual(parseTimeRange('9h30'), { start: '09:30', end: null });
+  assert.deepEqual(parseTimeRange('sáng'), { start: null, end: null });
+  assert.deepEqual(parseTimeRange('25h'), { start: null, end: null });
+});
+
+test('quyền: người khác không sửa/xoá được; người phụ trách sửa được, không xoá được', async () => {
+  await add(mai, { title: 'Ý tưởng của Mai' });
+  const id = await idOf('Ý tưởng của Mai');
+  assert.ok(!(await cardOf(nam, 'Ý tưởng của Mai')).id); // Nam không thấy link sửa
   assert.equal((await nam.get(`/plan/${id}/edit`)).status, 403);
   assert.equal((await postForm(nam, `/plan/${id}`, { title: 'Hack' }, { from: '/plan' })).status, 403);
   assert.equal((await postForm(nam, `/plan/${id}/status`, { status: 'dropped' }, { from: '/plan' })).status, 403);
   assert.equal((await postForm(nam, `/plan/${id}/delete`, {}, { from: '/plan' })).status, 403);
 
-  // Quản lý giao cho Nam phụ trách
-  const namId = (await admin.get(`/plan/${id}/edit`)).text.match(/<option value="(\d+)"[^>]*>Trần Nam</)[1];
-  const edit = await postForm(admin, `/plan/${id}`, { title: 'Hậu trường nung gốm', platform: 'tiktok', status: 'idea', owner_id: namId }, { from: `/plan/${id}/edit` });
-  assert.equal(edit.status, 302);
-
+  const namId = await userId('Trần Nam');
+  await postForm(admin, `/plan/${id}`, { title: 'Ý tưởng của Mai', owner_id: namId }, { from: `/plan/${id}/edit` });
   assert.equal((await nam.get(`/plan/${id}/edit`)).status, 200);
-  assert.equal((await postForm(nam, `/plan/${id}`, { title: 'Hậu trường nung gốm (bản Nam)', platform: 'tiktok' }, { from: '/plan' })).status, 302);
+  assert.doesNotMatch((await nam.get(`/plan/${id}/edit`)).text, /Xoá nội dung này/);
+  assert.equal((await postForm(nam, `/plan/${id}`, { title: 'Ý tưởng của Mai (bản Nam)' }, { from: '/plan' })).status, 302);
   assert.equal((await postForm(nam, `/plan/${id}/delete`, {}, { from: '/plan' })).status, 403);
-  assert.match((await mai.get('/plan')).text, /bản Nam/);
-});
 
-test('người tạo xoá được; id lạ -> 404', async () => {
-  const id = await idOf('bản Nam');
-  const del = await postForm(mai, `/plan/${id}/delete`, {}, { from: '/plan' });
-  assert.equal(del.status, 302);
-  assert.ok(!(await mai.get('/plan?status=all')).text.split('data-plan-row').slice(1).some((r) => r.includes('bản Nam')));
-
+  // Người tạo xoá được; id lạ -> 404
+  assert.equal((await postForm(mai, `/plan/${id}/delete`, {}, { from: '/plan' })).status, 302);
+  assert.equal(await cardOf(admin, 'bản Nam'), null);
   assert.equal((await admin.get('/plan/99999/edit')).status, 404);
   assert.equal((await admin.get('/plan/abc/edit')).status, 404);
-  assert.equal((await postForm(admin, '/plan/99999/delete', {}, { from: '/plan' })).status, 404);
 });
 
-test('link quay lại không cho trỏ ra ngoài app', async () => {
-  const res = await add(mai, { title: 'Ý tưởng an toàn', back: 'https://evil.example' });
+test('link quay lại không cho trỏ ra ngoài app; chữ "javascript:" không thành link', async () => {
+  const res = await add(mai, { title: 'Ý tưởng an toàn', back: 'https://evil.example', reference_url: 'javascript:alert(1)' });
   assert.equal(res.status, 302);
   assert.equal(res.headers.location, '/plan');
+  assert.doesNotMatch((await mai.get('/plan')).text, /href="javascript:/);
 });
 
-test('lưu đủ các cột như Sheet: brand, loại video, người góp, kịch bản, khung giờ, địa điểm, CSVC, ghi chú', async () => {
-  const maiId = (await admin.get('/plan/new')).text.match(/<option value="(\d+)"[^>]*>Lê Mai</)[1];
-  const res = await add(nam, {
-    title: 'Mở lò vẽ vàng',
-    brand: 'Vũ Gia',
-    video_type: 'B – Trung bình',
-    topic: 'VG – Xưởng & nghệ nhân',
-    reference_url: 'Lò vàng Vạn An Lộc', // Sheet hay ghi chữ thay vì link
-    writer_id: maiId,
-    script: 'https://docs.google.com/document/d/abc',
-    note: 'Hook: ném nhẫn vàng vào bát',
-  });
-  assert.equal(res.status, 302);
-  const page = (await nam.get('/plan?brand=Vũ%20Gia')).text;
-  assert.match(page, /Mở lò vẽ vàng/);
-  assert.match(page, /B – Trung bình/);
-  assert.match(page, /💡 Trần Nam/); // không chọn người góp -> là người nhập
-  assert.match(page, /✍ Lê Mai/);
-  assert.match(page, /🔗 Lò vàng Vạn An Lộc/);
-  assert.match(page, /href="https:\/\/docs.google.com\/document\/d\/abc"/);
-  assert.match(page, /Hook: ném nhẫn vàng/);
-  assert.doesNotMatch((await nam.get('/plan?brand=GSXD')).text, /Mở lò vẽ vàng/);
-  assert.match((await nam.get('/plan?q=nhan+vang')).text, /Mở lò vẽ vàng/); // tìm cả trong ghi chú
+test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch làm việc, bấm lại không trùng', async () => {
+  assert.doesNotMatch((await mai.get('/plan')).text, /Nhập từ Sheet/);
+  assert.equal((await postForm(mai, '/plan/import-sheet', {}, { from: '/plan' })).status, 403);
 
-  // Chữ "javascript:" ở ô link-hoặc-chữ không bao giờ thành link bấm được
-  await add(nam, { title: 'Link độc', reference_url: 'javascript:alert(1)' });
-  assert.doesNotMatch((await nam.get('/plan?q=link+doc')).text, /href="javascript:/);
+  // "Nhài" trong Sheet -> tạo tài khoản trước để việc quay vào lịch của chị
+  await postForm(admin, '/staff', { name: 'Phạm Nhài', email: 'nhai@test.local', role: 'member', password: 'mat-khau-123' }, { from: '/staff/new' });
+  const { agent: nhai } = await setup();
+  await loginAs(nhai, { email: 'nhai@test.local', password: 'mat-khau-123' });
 
-  // Brand / loại video lạ -> báo lỗi
-  const bad = await add(nam, { title: 'X', brand: 'Hãng khác', video_type: 'Z' });
-  assert.equal(bad.status, 422);
-  assert.match(bad.text, /Brand không hợp lệ/);
-});
-
-test('Plan tuần: đánh số tuần như Sheet, cảnh báo chưa có ngày quay / quay sát ngày / trùng giờ quay', async () => {
-  // Tuần thuộc tháng chứa ngày Thứ 5: 26/10–01/11/2026 là Tuần 5 tháng 10, 02/11 là Tuần 1 tháng 11
-  const nov = (await mai.get('/plan/weeks?month=2026-11')).text;
-  assert.match(nov, /Tuần 1 \(tháng 11\)[\s\S]*02\/11 – 08\/11\/2026/);
-  assert.doesNotMatch(nov, /26\/10 – 01\/11/);
-  assert.match((await mai.get('/plan/weeks?month=2026-10')).text, /Tuần 5 \(tháng 10\)[\s\S]*26\/10 – 01\/11\/2026/);
-
-  const namId = (await admin.get('/plan/new')).text.match(/<option value="(\d+)"[^>]*>Trần Nam</)[1];
-  const base = { platform: 'tiktok', owner_id: namId, shoot_time: '15h00 - 15h30' };
-  await add(admin, { ...base, title: 'Quay ở xưởng', shoot_date: '2026-11-03', post_date: '2026-11-04', location: 'Xưởng' });
-  await add(admin, { ...base, title: 'Quay ở số 18', shoot_date: '2026-11-03', post_date: '2026-11-10', location: '18' });
-  await add(admin, { title: 'Chưa quay gì', post_date: '2026-11-06', post_time: '19:00' });
-
-  const posts = (await mai.get('/plan/weeks?month=2026-11')).text;
-  assert.match(posts, /Quay ở xưởng/);
-  assert.match(posts, /Chưa quay gì/);
-  assert.match(posts, /chưa có ngày quay/);
-  assert.match(posts, /trùng giờ quay/);
-  // Bảng xếp theo ngày đăng
-  assert.ok(posts.indexOf('Quay ở xưởng') < posts.indexOf('Chưa quay gì'));
-  assert.ok(posts.indexOf('Chưa quay gì') < posts.indexOf('Quay ở số 18'));
-
-  const shoot = (await mai.get('/plan/weeks?month=2026-11&by=shoot')).text;
-  assert.match(shoot, /⚠ 15h00 - 15h30/); // Nam bị xếp 2 nơi cùng giờ
-  assert.match(shoot.split('data-plan-week')[1], /Quay ở xưởng/);
-  assert.doesNotMatch(shoot.split('data-plan-unshot')[0], /Chưa quay gì/); // không có ngày quay -> không nằm trong bảng quay
-  // Tham số lạ không làm lỗi
-  assert.equal((await mai.get('/plan/weeks?month=abc&by=xyz')).status, 200);
-});
-
-test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên nhân viên, bấm lại không trùng', async () => {
-  assert.doesNotMatch((await mai.get('/plan/weeks')).text, /Nhập từ Sheet/);
-  assert.equal((await postForm(mai, '/plan/import-sheet', {}, { from: '/plan/weeks' })).status, 403);
-
-  const first = await postForm(admin, '/plan/import-sheet', {}, { from: '/plan/weeks' });
-  assert.equal(first.status, 302);
-  const flash = (await admin.get('/plan/weeks')).text;
+  assert.equal((await postForm(admin, '/plan/import-sheet', {}, { from: '/plan' })).status, 302);
+  const flash = (await admin.get('/plan')).text;
   assert.match(flash, /Đã nhập \d+ nội dung từ Google Sheet/);
-  assert.match(flash, /Chưa có tài khoản: .*Nhài/);
+  assert.match(flash, /Chưa có tài khoản: .*Long/);
 
-  const oct = (await admin.get('/plan/weeks?month=2026-10')).text;
-  assert.match(oct, /Video men lam/);
-  assert.match(oct, /Giới thiệu xưởng[\s\S]*?Đã quay/);
-  const ideas = (await admin.get('/plan?status=all&q=mo+lo+ve+vang')).text;
-  assert.match(ideas, /Lê Mai/); // "Mai" trong Sheet khớp tài khoản Lê Mai
+  assert.match((await admin.get(`/plan/weeks?week=2026-10-26`)).text, /Video men lam/);
+  assert.equal((await cardOf(admin, 'Giới thiệu xưởng')).column, 'filmed');
+  assert.match((await cardOf(admin, 'Mở lò vẽ vàng', '&brand=Vũ%20Gia')).html, /✍ Lê Mai/);
+  assert.match((await nhai.get('/today?date=2026-10-26')).text, /🎬 Quay: Video men lam[\s\S]*15:00/);
 
-  const total = (await admin.get('/plan?status=all')).text.split('data-plan-row').length;
-  await postForm(admin, '/plan/import-sheet', {}, { from: '/plan/weeks' });
-  assert.match((await admin.get('/plan/weeks')).text, /Đã nhập 0 nội dung/);
-  assert.equal((await admin.get('/plan?status=all')).text.split('data-plan-row').length, total);
+  const count = (await admin.get('/plan?dropped=1')).text.split('data-plan-row').length;
+  await postForm(admin, '/plan/import-sheet', {}, { from: '/plan' });
+  assert.match((await admin.get('/plan')).text, /Đã nhập 0 nội dung/);
+  assert.equal((await admin.get('/plan?dropped=1')).text.split('data-plan-row').length, count);
+});
+
+test('lịch tuần mặc định là tuần này', async () => {
+  const page = (await mai.get('/plan/weeks')).text;
+  assert.match(page, new RegExp(`data-plan-day="${weekDays(today)[0]}"`));
 });

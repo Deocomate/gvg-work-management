@@ -16,6 +16,7 @@
       {{#if isHigh}}<span class="badge-red">Quan trọng</span>{{/if}}
       {{#if isNow}}<span class="badge-pink">Đang diễn ra</span>{{/if}}
       {{#if isLate}}<span class="badge-red">Trễ</span>{{/if}}
+      {{#if plan_id}}<span class="badge-blue" title="Lấy từ Plan nội dung — đổi ở Plan thì lịch tự đổi">Plan</span>{{/if}}
     </div>
     {{#if showDate}}<p class="mt-0.5 text-xs text-ink-faint">{{formatWeekday date}}</p>{{/if}}
     {{#if (or showAssignee coworkers)}}<p class="mt-0.5 text-xs text-ink-faint">Phụ trách: <span class="font-medium text-ink-soft">{{assignee_name}}{{#if coworkers}}, {{coworkers}}{{/if}}</span></p>{{/if}}
@@ -37,7 +38,7 @@
       </ul>
     {{/if}}
 
-    {{#if (or canStatus canEdit)}}
+    {{#if (or canStatus canEdit plan_id)}}
       <div class="mt-3 flex flex-wrap items-center gap-2">
         {{#if canStatus}}
           {{#if (eq status 'todo')}}
@@ -49,7 +50,11 @@
             {{> schedule/status-button id=id status="todo" label="Mở lại" class="btn-ghost btn-sm" back=back group=isGroup}}
           {{/if}}
         {{/if}}
-        {{#if canEdit}}<a href="/tasks/{{id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Sửa</a>{{/if}}
+        {{#if plan_id}}
+          <a href="/plan/{{plan_id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Xem ở Plan</a>
+        {{else if canEdit}}
+          <a href="/tasks/{{id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Sửa</a>
+        {{/if}}
       </div>
     {{/if}}
   </div>

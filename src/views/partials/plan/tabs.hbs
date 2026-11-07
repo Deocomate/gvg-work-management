@@ -1,6 +1,13 @@
-{{!-- Ba tab con của Plan. Dùng: {{> plan/tabs}} (biến tab = 'ideas' | 'weeks' | 'calendar') --}}
-<div class="segmented mb-5 max-w-xl overflow-x-auto" role="tablist" aria-label="Plan nội dung">
-  <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>💡 Idea bank</a>
-  <a href="/plan/weeks" role="tab" class="plan-tab {{#if (eq @root.tab 'weeks')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'weeks')}} aria-selected="true"{{/if}}>📋 Plan tuần</a>
-  <a href="/plan/calendar" role="tab" class="plan-tab {{#if (eq @root.tab 'calendar')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'calendar')}} aria-selected="true"{{/if}}>📅 Lịch tháng</a>
+{{!-- Hai tab con của Plan. Dùng: {{> plan/tabs}} (biến tab = 'ideas' | 'calendar'; view = 'week' | 'month' ở tab Lịch) --}}
+<div class="mb-5 flex flex-wrap items-center gap-3">
+  <div class="segmented w-full max-w-md" role="tablist" aria-label="Plan nội dung">
+    <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>💡 Idea bank</a>
+    <a href="/plan/weeks" role="tab" class="plan-tab {{#if (eq @root.tab 'calendar')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'calendar')}} aria-selected="true"{{/if}}>📅 Lịch quay / đăng</a>
+  </div>
+  {{#if (eq @root.tab 'calendar')}}
+    <div class="segmented" aria-label="Xem theo">
+      <a href="/plan/weeks" class="plan-tab {{#if (eq @root.view 'week')}}plan-tab-active{{/if}}">Tuần</a>
+      <a href="/plan/calendar" class="plan-tab {{#if (eq @root.view 'month')}}plan-tab-active{{/if}}">Tháng</a>
+    </div>
+  {{/if}}
 </div>

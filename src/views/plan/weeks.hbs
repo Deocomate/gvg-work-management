@@ -1,123 +1,76 @@
-{{#> page-header title="Plan nội dung" subtitle="Lịch đăng và lịch quay theo tuần — thay cho Google Sheet Plan"}}
+{{#> page-header title="Plan nội dung" subtitle="Lịch quay và đăng bài — tự lên lịch làm việc của người phụ trách"}}
   <a href="/plan/new?back={{urlEncode back}}" class="btn-primary">+ Thêm nội dung</a>
 {{/page-header}}
 
 {{> plan/tabs}}
 
-<div class="mb-4 flex flex-wrap items-center gap-2">
-  <a href="/plan/weeks?month={{prev}}&by={{view}}" class="btn-secondary btn-sm">‹ Tháng trước</a>
-  <h2 class="px-2 text-lg font-semibold text-ink">{{monthLabel}}</h2>
-  <a href="/plan/weeks?month={{next}}&by={{view}}" class="btn-secondary btn-sm">Tháng sau ›</a>
-  {{#if (ne month thisMonth)}}<a href="/plan/weeks?month={{thisMonth}}&by={{view}}" class="btn-ghost btn-sm">Tháng này</a>{{/if}}
-  <div class="segmented sm:ml-auto" role="tablist" aria-label="Xếp theo">
-    {{#each views}}
-      <a href="/plan/weeks?month={{@root.month}}&by={{value}}" role="tab" class="plan-tab {{#if (eq value @root.view)}}plan-tab-active{{/if}}"{{#if (eq value @root.view)}} aria-selected="true"{{/if}}>{{label}}</a>
-    {{/each}}
-  </div>
+<div class="mb-3 flex flex-wrap items-center gap-2">
+  <a href="/plan/weeks?week={{prev}}" class="btn-secondary btn-sm" aria-label="Tuần trước">‹</a>
+  <h2 class="px-1 text-lg font-semibold text-ink">{{label}} <span class="text-sm font-normal text-ink-faint">· {{range}}</span></h2>
+  <a href="/plan/weeks?week={{next}}" class="btn-secondary btn-sm" aria-label="Tuần sau">›</a>
+  {{#if (ne week thisWeek)}}<a href="/plan/weeks" class="btn-ghost btn-sm">Tuần này</a>{{/if}}
 </div>
 
-<p class="mb-5 flex flex-wrap gap-2 text-xs" data-plan-summary>
+<p class="mb-4 flex flex-wrap gap-2 text-xs" data-plan-summary>
+  <span class="badge-yellow">🎬 {{summary.shoots}} buổi quay</span>
   <span class="badge-blue">📤 {{summary.posts}} bài cần đăng</span>
   <span class="badge-green">✅ {{summary.posted}} đã đăng</span>
-  {{#if summary.missingShoot}}<span class="badge-yellow">🎬 {{summary.missingShoot}} chưa có ngày quay</span>{{/if}}
-  {{#if summary.overdue}}<span class="badge-red">⏰ {{summary.overdue}} quá ngày đăng chưa đánh dấu Đã đăng</span>{{/if}}
+  {{#if summary.missingShoot}}<span class="badge-orange">❗ {{summary.missingShoot}} chưa có ngày quay</span>{{/if}}
+  {{#if summary.overdue}}<span class="badge-red">⏰ {{summary.overdue}} quá ngày đăng</span>{{/if}}
   {{#if summary.conflicts}}<span class="badge-red">⚠ {{summary.conflicts}} trùng giờ quay</span>{{/if}}
 </p>
 
-{{#if (eq view 'shoot')}}
-  <p class="mb-4 text-xs text-ink-faint">Xếp theo ngày quay → khung giờ → địa điểm. <span class="text-brand-300">Chữ đỏ</span> ở khung giờ = 1 người bị xếp 2 việc cùng giờ ở 2 địa điểm; ở “Quay trước” = quay cách ngày đăng dưới 2 ngày.</p>
-{{/if}}
-
-{{#each weeks}}
-  <section class="mb-6" data-plan-week>
-    <h3 class="mb-2 flex flex-wrap items-baseline gap-2 text-sm font-semibold uppercase tracking-wide {{#if isCurrent}}text-brand-300{{else}}text-ink-soft{{/if}}">
-      {{label}} <span class="font-normal normal-case text-ink-faint">· {{range}}</span>
-      {{#if isCurrent}}<span class="badge-pink normal-case">Tuần này</span>{{/if}}
-    </h3>
-    {{#if items.length}}
-      <div class="table-wrap">
-        <table class="table plan-table">
-          <thead>
-            {{#if (eq @root.view 'shoot')}}
-              <tr><th>Thứ</th><th>Ngày quay</th><th>Khung giờ</th><th>Địa điểm</th><th>Nội dung</th><th>Tham khảo</th><th>Kịch bản</th><th>Phụ trách</th><th>CSVC</th><th>Ngày đăng</th><th>Quay trước</th><th>Trạng thái</th><th>Ghi chú</th></tr>
-            {{else}}
-              <tr><th>Thứ</th><th>Ngày đăng</th><th>Nội dung</th><th>Brand</th><th>Tham khảo</th><th>Kịch bản</th><th>Phụ trách</th><th>Ngày quay</th><th>Khung giờ</th><th>Địa điểm</th><th>CSVC</th><th>Trạng thái</th><th>Ghi chú</th></tr>
-            {{/if}}
-          </thead>
-          <tbody>
-            {{#each items}}
-              <tr data-plan-row{{#if overdue}} class="plan-row-overdue"{{/if}}>
-                <td class="whitespace-nowrap">{{weekday}}</td>
-                {{#if (eq @root.view 'shoot')}}
-                  <td class="whitespace-nowrap tabular-nums">{{formatDay shoot_date}}</td>
-                  <td class="whitespace-nowrap{{#if conflict}} font-semibold text-brand-300{{/if}}"{{#if conflict}} title="Người phụ trách bị xếp quay cùng giờ ở địa điểm khác"{{/if}}>{{#if conflict}}⚠ {{/if}}{{shoot_time}}</td>
-                  <td class="whitespace-nowrap">{{location}}</td>
-                  <td>{{> plan/title-cell}}</td>
-                  <td>{{> plan/link-or-text value=reference_url label="Xem"}}</td>
-                  <td>{{> plan/link-or-text value=script label="Mở"}}</td>
-                  <td class="whitespace-nowrap">{{owner_name}}</td>
-                  <td>{{props}}</td>
-                  <td class="whitespace-nowrap tabular-nums">{{#if post_date}}{{formatDay post_date}}{{else}}<span class="text-ink-faint">Chưa chốt</span>{{/if}}</td>
-                  <td class="text-center tabular-nums{{#if shootTight}} font-semibold text-brand-300{{/if}}">{{leadDays}}</td>
-                {{else}}
-                  <td class="whitespace-nowrap tabular-nums">{{formatDay post_date}}{{#if post_time}} <span class="text-ink-faint">{{post_time}}</span>{{/if}}</td>
-                  <td>{{> plan/title-cell}}</td>
-                  <td class="whitespace-nowrap">{{brand}}</td>
-                  <td>{{> plan/link-or-text value=reference_url label="Xem"}}</td>
-                  <td>{{> plan/link-or-text value=script label="Mở"}}</td>
-                  <td class="whitespace-nowrap">{{owner_name}}</td>
-                  <td class="whitespace-nowrap tabular-nums">
-                    {{#if shoot_date}}<span{{#if shootTight}} class="font-semibold text-brand-300" title="Quay cách ngày đăng dưới 2 ngày"{{/if}}>{{formatDay shoot_date}}</span>
-                    {{else if missingShoot}}<span class="text-sun-300">Chưa có</span>{{/if}}
-                  </td>
-                  <td class="whitespace-nowrap{{#if conflict}} font-semibold text-brand-300{{/if}}">{{#if conflict}}⚠ {{/if}}{{shoot_time}}</td>
-                  <td class="whitespace-nowrap">{{location}}</td>
-                  <td>{{props}}</td>
-                {{/if}}
-                <td class="whitespace-nowrap">
-                  <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
-                  {{#if overdue}}<span class="mt-1 block text-[11px] text-brand-300">⏰ Quá ngày đăng</span>{{/if}}
-                </td>
-                <td><span class="plan-cell-text" title="{{note}}">{{note}}</span></td>
-              </tr>
-            {{/each}}
-          </tbody>
-        </table>
+{{!-- 7 ngày: máy tính 7 cột, điện thoại xếp dọc --}}
+<div class="plan-week" data-plan-week>
+  {{#each days}}
+    <section class="plan-day{{#if isToday}} plan-day-today{{/if}}{{#if isPast}} plan-day-past{{/if}}" data-plan-day="{{date}}">
+      <div class="plan-day-head">
+        <span><span class="font-semibold">{{weekday}}</span> <span class="text-ink-faint">{{dayMonth}}</span></span>
+        <a href="/plan/new?post_date={{date}}&back={{urlEncode @root.back}}" class="plan-day-add" title="Thêm nội dung đăng ngày {{dayMonth}}" aria-label="Thêm nội dung đăng ngày {{dayMonth}}">+</a>
       </div>
-    {{else}}
-      <p class="rounded-xl border border-dashed border-line px-4 py-3 text-sm text-ink-faint">Chưa có nội dung {{#if (eq @root.view 'shoot')}}quay{{else}}đăng{{/if}} trong tuần này.</p>
-    {{/if}}
-  </section>
-{{/each}}
+      <ul class="space-y-1.5">
+        {{#each entries}}
+          <li class="plan-entry {{statusInfo.chip}}" data-plan-row>
+            <p class="flex items-center gap-1 text-[11px] font-semibold">
+              <span aria-hidden="true">{{#if (eq kind 'shoot')}}🎬{{else}}📤{{/if}}</span>
+              <span>{{#if (eq kind 'shoot')}}Quay{{else}}Đăng{{/if}}{{#if time}} {{time}}{{/if}}</span>
+              {{#if (and (eq kind 'shoot') conflict)}}<span title="Người phụ trách bị xếp quay cùng giờ ở địa điểm khác">⚠</span>{{/if}}
+              {{#if (and (eq kind 'post') overdue)}}<span title="Quá ngày đăng mà chưa đánh dấu Đã đăng">⏰</span>{{/if}}
+              {{#if (and (eq kind 'post') missingShoot)}}<span title="Chưa có ngày quay">❗</span>{{/if}}
+              {{#if shootTight}}<span title="Quay cách ngày đăng dưới 2 ngày">⏱</span>{{/if}}
+            </p>
+            {{#if canEdit}}
+              <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="plan-entry-title hover:underline" title="{{title}}">{{title}}</a>
+            {{else}}
+              <span class="plan-entry-title" title="{{title}}">{{title}}</span>
+            {{/if}}
+            <p class="mt-0.5 truncate text-[11px] opacity-80">
+              {{#if (and (eq kind 'shoot') location)}}📍 {{location}} · {{/if}}{{#if brand}}{{brand}} · {{/if}}{{#if owner_name}}{{owner_name}}{{else}}Chưa giao{{/if}}
+            </p>
+          </li>
+        {{else}}
+          <li class="hidden text-xs text-ink-faint lg:block">—</li>
+        {{/each}}
+      </ul>
+    </section>
+  {{/each}}
+</div>
 
-{{#if (eq view 'shoot')}}
-  <h2 class="mt-8 mb-3 text-lg font-semibold text-ink">Chưa có ngày quay <span class="text-sm font-normal text-ink-faint">(video sắp đăng)</span></h2>
-  {{#if unshot.length}}
-    <ul class="card divide-y divide-line" data-plan-unshot>
-      {{#each unshot}}
-        <li class="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
-          <span class="w-24 shrink-0 tabular-nums text-ink-soft">📤 {{formatDay post_date}}</span>
-          {{> plan/title-cell}}
-          {{#if owner_name}}<span class="text-xs text-ink-faint">👤 {{owner_name}}</span>{{/if}}
-          {{#if location}}<span class="text-xs text-ink-faint">📍 {{location}}</span>{{/if}}
-          {{#if canEdit}}<a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="btn-ghost btn-sm ml-auto">🎬 Chốt ngày quay</a>{{/if}}
-        </li>
-      {{/each}}
-    </ul>
-  {{else}}
-    <p class="text-sm text-ink-faint">Không có — mọi video sắp đăng đều đã có ngày quay. 👍</p>
-  {{/if}}
-{{/if}}
+<p class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
+  <span>🎬 Buổi quay</span><span>📤 Bài đăng</span><span>❗ Chưa có ngày quay</span><span>⏱ Quay sát ngày đăng (&lt; 2 ngày)</span><span>⚠ Trùng giờ quay</span><span>⏰ Quá ngày đăng</span>
+  <span>Màu thẻ = trạng thái. Nội dung có người phụ trách tự hiện ở “Hôm nay” / “Tháng” của người đó.</span>
+</p>
 
-{{#if canImport}}
-  <div class="card card-body mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-    <div class="min-w-0 flex-1">
-      <p class="font-medium text-ink">Chuyển dữ liệu từ Google Sheet cũ</p>
-      <p class="text-sm text-ink-faint">Nhập các dòng ở tab Plan và Idea bank của Sheet “Idea bank - Gốm Vũ Gia, Klayy &amp; GSXD” vào app. Bấm lại cũng không bị trùng. Chỉ quản lý thấy nút này.</p>
-    </div>
-    <form method="post" action="/plan/import-sheet" data-confirm="Nhập dữ liệu từ Google Sheet cũ vào Plan?">
-      {{> form/csrf}}
-      <button type="submit" class="btn-secondary whitespace-nowrap">⬇ Nhập từ Sheet</button>
-    </form>
-  </div>
+{{#if unshot.length}}
+  <h2 class="mt-8 mb-3 text-lg font-semibold text-ink">Cần chốt ngày quay <span class="text-sm font-normal text-ink-faint">(sắp đăng mà chưa có ngày quay)</span></h2>
+  <ul class="card divide-y divide-line" data-plan-unshot>
+    {{#each unshot}}
+      <li class="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
+        <span class="w-28 shrink-0 tabular-nums text-ink-soft">📤 {{formatDay post_date}}</span>
+        <span class="min-w-0 flex-1 truncate font-medium text-ink" title="{{title}}">{{title}}</span>
+        {{#if owner_name}}<span class="text-xs text-ink-faint">👤 {{owner_name}}</span>{{/if}}
+        {{#if canEdit}}<a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="btn-ghost btn-sm">🎬 Chốt ngày quay</a>{{/if}}
+      </li>
+    {{/each}}
+  </ul>
 {{/if}}

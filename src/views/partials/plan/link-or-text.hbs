@@ -1,8 +1,0 @@
-{{!-- Ô "link hoặc chữ" (link tham khảo, kịch bản). Dùng: {{> plan/link-or-text value=script label="Mở kịch bản"}} --}}
-{{#if value}}
-  {{#if (isUrl value)}}
-    <a href="{{value}}" target="_blank" rel="noopener noreferrer" class="link font-normal whitespace-nowrap" title="{{value}}">🔗 {{label}}</a>
-  {{else}}
-    <span class="plan-cell-text" title="{{value}}">{{value}}</span>
-  {{/if}}
-{{/if}}

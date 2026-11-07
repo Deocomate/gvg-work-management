@@ -116,3 +116,22 @@ export async function remove(id) {
   const { changes } = await run('DELETE FROM tasks WHERE id = ?', [id]);
   return changes > 0;
 }
+
+// ---- Việc lấy từ Plan nội dung (plan_id, plan_kind) — chỉ src/modules/plan/plan.sync.js dùng ----
+
+/** Các việc (quay / đăng) đang gắn với một nội dung Plan. */
+export const listForPlan = (planId) => all(`${SELECT_SQL} WHERE t.plan_id = ? ORDER BY t.id`, [planId]);
+
+const INSERT_PLAN_SQL = `INSERT INTO tasks (title, note, links, facilities, group_key, assignee_id, created_by, date, start_time, end_time, priority, status, plan_id, plan_kind)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+/** Thêm / sửa / xoá việc của một nội dung Plan trong một transaction. */
+export async function savePlanTasks({ updates = [], creates = [], deletes = [] }) {
+  await transaction([
+    ...updates.map(({ id, task }) => ({ sql: UPDATE_SQL, args: updateArgs(id, task) })),
+    ...creates.map((t) => ({ sql: INSERT_PLAN_SQL, args: [...insertArgs(t), t.plan_id, t.plan_kind] })),
+    ...deletes.map((id) => ({ sql: 'DELETE FROM tasks WHERE id = ?', args: [id] })),
+  ]);
+}
+
+export const removeForPlan = (planId) => run('DELETE FROM tasks WHERE plan_id = ?', [planId]);
