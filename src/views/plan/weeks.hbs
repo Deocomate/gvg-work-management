@@ -55,11 +55,7 @@
                       {{#if shootTight}}<span class="plan-flag" title="Quay cách ngày đăng dưới 2 ngày">Quay sát ngày</span>{{/if}}
                     </p>
                   {{/if}}
-                  {{#if canEdit}}
-                    <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="plan-entry-title hover:underline" title="{{title}}">{{title}}</a>
-                  {{else}}
-                    <span class="plan-entry-title" title="{{title}}">{{title}}</span>
-                  {{/if}}
+                  {{> plan/detail-link class="plan-entry-title hover:underline"}}
                   {{#if (and (eq kind 'shoot') location)}}<p class="mt-0.5 truncate text-[11px] text-ink-soft">{{location}}</p>{{/if}}
                   {{> plan/script-summary}}
                   <p class="plan-entry-status"><span class="plan-dot {{statusInfo.dot}}"></span>{{statusInfo.label}}</p>

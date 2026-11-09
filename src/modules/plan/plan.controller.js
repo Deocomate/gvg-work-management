@@ -157,6 +157,22 @@ export async function create(req, res) {
   res.redirect(safeBack(req.body.back, afterSave(result.data)));
 }
 
+/**
+ * Xem chi tiết một nội dung (ai cũng xem được). Nút "Sửa" riêng, chỉ hiện khi có quyền.
+ * ?modal=1 -> chỉ trả khung thẻ (không layout) để chèn vào popup (public/js/plan-detail.js).
+ */
+export async function show(req, res) {
+  const plan = service.decorate(await service.getPlan(req.params.id), req.user);
+  const modal = Boolean(req.query.modal);
+  res.render('plan/show', {
+    ...(modal && { layout: false }),
+    modal,
+    title: plan.title,
+    plan,
+    back: safeBack(req.query.back, '/plan'),
+  });
+}
+
 export async function editForm(req, res) {
   const plan = await service.getEditablePlan(req.params.id, req.user);
   return renderForm(req, res, {

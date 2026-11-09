@@ -297,6 +297,28 @@ test('quyền: người khác không sửa/xoá được; người phụ trách 
   assert.equal((await admin.get('/plan/abc/edit')).status, 404);
 });
 
+test('bấm tiêu đề xem chi tiết (ai cũng xem được); nút Sửa riêng chỉ hiện khi có quyền', async () => {
+  await add(mai, { title: 'Chọn thợ lợp ra sao', description: 'Hook: mái ngói đẹp nhờ thợ giỏi', brand: 'GSXD' });
+  const id = await idOf('Chọn thợ lợp ra sao');
+  const card = await cardOf(mai, 'Chọn thợ lợp ra sao');
+  assert.match(card.html, new RegExp(`href="/plan/${id}\\?back=[^"]*" data-plan-detail`));
+  assert.match(card.html, new RegExp(`href="/plan/${id}/edit`));
+
+  const own = await mai.get(`/plan/${id}`);
+  assert.equal(own.status, 200);
+  assert.match(own.text, /Hook: mái ngói đẹp nhờ thợ giỏi/);
+  assert.match(own.text, new RegExp(`href="/plan/${id}/edit[^"]*" class="btn-primary btn-sm">Sửa<`));
+  assert.doesNotMatch(own.text, /<form[^>]*action="\/plan\/\d+"/); // chỉ xem, không có form sửa
+
+  const other = await nam.get(`/plan/${id}?modal=1`);
+  assert.equal(other.status, 200);
+  assert.doesNotMatch(other.text, /<html/); // popup: không layout
+  assert.match(other.text, /Chọn thợ lợp ra sao/);
+  assert.doesNotMatch(other.text, /\/edit/);
+  assert.doesNotMatch((await cardOf(nam, 'Chọn thợ lợp ra sao')).html, /\/edit/);
+  assert.equal((await admin.get('/plan/99999')).status, 404);
+});
+
 test('link quay lại không cho trỏ ra ngoài app; chữ "javascript:" không thành link', async () => {
   const res = await add(mai, { title: 'Ý tưởng an toàn', back: 'https://evil.example', reference_url: 'javascript:alert(1)' });
   assert.equal(res.status, 302);

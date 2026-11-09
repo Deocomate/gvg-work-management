@@ -14,6 +14,7 @@ router.get('/calendar', controller.calendar);
 router.post('/import-sheet', controller.importSheet);
 router.get('/new', controller.newForm);
 router.post('/', controller.create);
+router.get('/:id', controller.show);
 router.get('/:id/edit', controller.editForm);
 router.post('/:id', controller.update);
 router.post('/:id/status', controller.setStatus);

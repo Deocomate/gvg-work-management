@@ -34,7 +34,7 @@
             <ul class="mt-1 hidden space-y-1 sm:block">
               {{#each entries}}
                 <li>
-                  <a href="{{#if canEdit}}/plan/{{id}}/edit?back={{urlEncode @root.back}}{{else}}/plan?q={{urlEncode title}}{{/if}}"
+                  <a href="/plan/{{id}}?back={{urlEncode @root.back}}" data-plan-detail
                      class="plan-chip {{statusInfo.bar}}"
                      title="{{@root.text.verb}}: {{title}} — {{brandInfo.label}} · {{statusInfo.label}}{{#if description}} — {{description}}{{/if}}">
                     <span class="{{brandInfo.badge}} shrink-0 px-1 py-0 text-[10px]">{{brandInfo.short}}</span>
@@ -67,11 +67,7 @@
             <li class="flex flex-wrap items-center gap-2 text-sm">
               <span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>
               {{#if (eq kind 'shoot')}}{{#if shoot_time}}<span class="text-ink-faint">{{shoot_time}}</span>{{/if}}{{/if}}
-              {{#if canEdit}}
-                <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="min-w-0 truncate font-medium text-ink hover:underline">{{title}}</a>
-              {{else}}
-                <span class="min-w-0 truncate font-medium text-ink">{{title}}</span>
-              {{/if}}
+              {{> plan/detail-link class="min-w-0 truncate font-medium text-ink hover:underline"}}
               <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
               {{#if (and (eq kind 'shoot') location)}}<span class="text-xs text-ink-faint">{{location}}</span>{{/if}}
               {{#if description}}<span class="w-full text-xs whitespace-pre-line text-ink-faint">{{description}}</span>{{/if}}

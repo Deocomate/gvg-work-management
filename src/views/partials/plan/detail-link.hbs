@@ -1,0 +1,3 @@
+{{!-- Tiêu đề nội dung -> xem chi tiết (popup qua public/js/plan-detail.js; tắt JS thì mở trang /plan/:id).
+     Dùng trong vòng lặp nội dung: {{> plan/detail-link class="..."}} --}}
+<a href="/plan/{{id}}?back={{urlEncode @root.back}}" data-plan-detail class="{{class}}" title="{{title}}">{{title}}</a>

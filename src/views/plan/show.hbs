@@ -1,0 +1,70 @@
+{{!--
+  Xem chi tiết một nội dung Plan (chỉ xem, không sửa). Hai cách mở:
+  - Popup khi bấm tiêu đề ở Idea bank / Lưu trữ / Lịch đăng / Lịch quay: ?modal=1, không layout,
+    chèn vào <dialog id="plan-dialog"> (public/js/plan-detail.js).
+  - Trang riêng /plan/:id (tắt JS hoặc mở link trực tiếp).
+  Nút "Sửa" riêng, chỉ hiện khi có quyền sửa.
+--}}
+{{#unless modal}}
+  {{#> page-header title="Chi tiết nội dung"}}
+    <a href="{{back}}" class="btn-secondary">← Quay lại</a>
+  {{/page-header}}
+{{/unless}}
+
+<article class="plan-detail" data-plan-detail-card>
+  {{!-- 1. Tên + trạng thái, brand --}}
+  <header class="flex items-start gap-3">
+    <div class="min-w-0 flex-1">
+      <h2 class="text-lg font-semibold text-ink">{{plan.title}}</h2>
+      <p class="mt-2 flex flex-wrap gap-1.5 text-xs">
+        <span class="{{plan.statusInfo.badge}}">{{plan.statusInfo.label}}</span>
+        {{#if plan.brandInfo}}<span class="{{plan.brandInfo.badge}}">{{plan.brandInfo.label}}</span>{{else}}<span class="badge-gray">Chưa chọn brand</span>{{/if}}
+      </p>
+    </div>
+    {{#if modal}}<button type="button" class="btn-ghost btn-sm shrink-0" data-dialog-close aria-label="Đóng">✕</button>{{/if}}
+  </header>
+
+  {{!-- 2. Nội dung: mô tả chung --}}
+  <section>
+    <h3 class="plan-detail-label">Mô tả chung</h3>
+    {{#if plan.description}}<p class="whitespace-pre-line text-sm text-ink">{{plan.description}}</p>{{else}}<p class="text-sm text-ink-faint">Chưa có mô tả</p>{{/if}}
+  </section>
+
+  {{!-- 3. Lịch: quay trước, đăng sau --}}
+  <section>
+    <h3 class="plan-detail-label">Lịch</h3>
+    <dl class="plan-detail-grid">
+      <div><dt>Ngày quay</dt><dd>{{#if plan.shoot_date}}{{formatWeekday plan.shoot_date}}{{#if plan.shoot_time}} · {{plan.shoot_time}}{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
+      <div><dt>Ngày đăng</dt><dd>{{#if plan.post_date}}{{formatWeekday plan.post_date}}{{#if plan.post_time}} · {{plan.post_time}}{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
+    </dl>
+  </section>
+
+  {{!-- 4. Người --}}
+  <section>
+    <h3 class="plan-detail-label">Người</h3>
+    <dl class="plan-detail-grid">
+      <div><dt>Người phụ trách</dt><dd>{{#if plan.owner_name}}{{plan.owner_name}}{{else}}<span class="text-ink-faint">Chưa giao</span>{{/if}}</dd></div>
+      <div><dt>Người tạo</dt><dd>{{#if plan.creator_name}}{{plan.creator_name}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</dd></div>
+    </dl>
+  </section>
+
+  {{!-- 5. Link: kịch bản, tham khảo (link thì bấm mở tab mới, chữ thì hiện nguyên) --}}
+  <section>
+    <h3 class="plan-detail-label">Link</h3>
+    <dl class="plan-detail-grid">
+      <div><dt>Link kịch bản</dt><dd>{{#if plan.script}}{{#if (isUrl plan.script)}}<a href="{{plan.script}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 break-all">{{> plan/link-icon}}Mở kịch bản</a>{{else}}{{plan.script}}{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
+      <div><dt>Link tham khảo</dt><dd>{{#if plan.reference_url}}{{#if (isUrl plan.reference_url)}}<a href="{{plan.reference_url}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 break-all">{{> plan/link-icon}}Mở link tham khảo</a>{{else}}{{plan.reference_url}}{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
+    </dl>
+  </section>
+
+  {{!-- 6. Ghi chú --}}
+  <section>
+    <h3 class="plan-detail-label">Ghi chú</h3>
+    {{#if plan.note}}<p class="whitespace-pre-line text-sm text-ink">{{plan.note}}</p>{{else}}<p class="text-sm text-ink-faint">Không có</p>{{/if}}
+  </section>
+
+  <footer class="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+    {{#if plan.canEdit}}<a href="/plan/{{plan.id}}/edit?back={{urlEncode back}}" class="btn-primary btn-sm">Sửa</a>{{/if}}
+    {{#if modal}}<button type="button" class="btn-ghost btn-sm" data-dialog-close>Đóng</button>{{/if}}
+  </footer>
+</article>

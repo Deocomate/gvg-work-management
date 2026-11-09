@@ -1,4 +1,5 @@
 {{!-- Tab con của Plan: Idea bank, Lịch đăng, Lịch quay + Lưu trữ (chỉ icon). Dùng: {{> plan/tabs}}
+     Kèm popup xem chi tiết nội dung (bấm tiêu đề -> public/js/plan-detail.js) cho mọi trang Plan.
      Biến: tab = 'ideas' | 'post' | 'shoot' | 'archive'. Ở 2 tab lịch thêm: view ('week'|'month'), weekHref, monthHref, brandLinks. --}}
 <div class="segmented mb-4 w-full max-w-xl" role="tablist" aria-label="Plan nội dung">
   <a href="/plan" role="tab" class="plan-tab {{#if (eq @root.tab 'ideas')}}plan-tab-active{{/if}}"{{#if (eq @root.tab 'ideas')}} aria-selected="true"{{/if}}>Idea bank</a>
@@ -19,3 +20,5 @@
     </nav>
   </div>
 {{/if}}
+<dialog id="plan-dialog" class="customer-dialog" aria-label="Chi tiết nội dung"></dialog>
+<script src="/js/plan-detail.js?v={{@root.assetVersion}}" defer></script>

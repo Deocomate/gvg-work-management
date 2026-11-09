@@ -1,12 +1,11 @@
 {{!-- Thẻ một nội dung (Idea bank và Lưu trữ). Dùng trong vòng lặp: {{> plan/card}} (restore=true: nút "Mở lại" về Đã chọn) --}}
 <li class="plan-card" data-plan-row>
-  {{#if canEdit}}
-    <a href="/plan/{{id}}/edit?back={{urlEncode @root.back}}" class="plan-card-title hover:underline" title="{{title}}">{{title}}</a>
-  {{else}}
-    <p class="plan-card-title" title="{{title}}">{{title}}</p>
-  {{/if}}
+  <div class="flex items-start gap-1">
+    {{> plan/detail-link class="plan-card-title min-w-0 flex-1 hover:underline"}}
+    {{#if canEdit}}{{> plan/edit-button}}{{/if}}
+  </div>
   <p class="mt-1.5 flex flex-wrap gap-1 text-[11px]">
-    {{#if brandInfo}}<span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>{{/if}}
+    {{#if brandInfo}}<span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>{{else}}<span class="badge-gray opacity-70">Chưa chọn brand</span>{{/if}}
   </p>
   <p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
     {{#if shoot_date}}<span>Quay {{formatDay shoot_date}}</span>{{/if}}

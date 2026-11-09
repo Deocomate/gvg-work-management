@@ -487,6 +487,14 @@
   .plan-group-head { @apply mb-1.5 flex flex-wrap items-baseline justify-between gap-2 px-0.5 text-[11px] font-semibold tracking-wide text-ink-soft; }
   .plan-card { @apply rounded-lg border border-line bg-surface/70 p-2.5 transition hover:border-pine-400/50 hover:shadow-md hover:shadow-pine-500/10; }
   .plan-card-title { @apply line-clamp-3 text-sm font-medium text-ink; }
+  .plan-edit-btn { @apply -mt-0.5 -mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink-faint transition hover:bg-pine-500/30 hover:text-ink; }
+  /* Xem chi tiết nội dung (popup + trang /plan/:id) */
+  .plan-detail { @apply glass-strong mx-auto max-w-2xl space-y-4 rounded-2xl border p-5 sm:p-6; }
+  .plan-detail-label { @apply mb-1.5 text-xs font-semibold tracking-wide text-ink-faint uppercase; }
+  .plan-detail-grid { @apply grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2; }
+  .plan-detail > section + section { @apply border-t border-line pt-4; }
+  .plan-detail-grid dt { @apply text-xs text-ink-faint; }
+  .plan-detail-grid dd { @apply mt-0.5 text-ink; }
 
   /* Lịch tuần: mỗi brand một hàng 7 cột trên máy tính; điện thoại xếp dọc, ẩn ngày trống */
   .plan-week-head { @apply hidden gap-2 px-3 text-center text-xs text-ink-faint lg:grid lg:grid-cols-7; }
