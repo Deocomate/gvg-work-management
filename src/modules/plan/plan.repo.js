@@ -72,6 +72,17 @@ export async function remove(id) {
   return changes > 0;
 }
 
+/** Nội dung cùng tên + cùng ngày đăng (như exists) — để nhập lại từ Sheet bổ sung link cho nội dung đã có. */
+export const findImported = ({ title, post_date }) =>
+  get('SELECT id, reference_url, script, note FROM content_plans WHERE title = ? AND post_date IS ? ORDER BY id LIMIT 1', [title, post_date ?? null]);
+
+/** Chỉ ghi link tham khảo, kịch bản, ghi chú (nhập lại từ Sheet). */
+export async function updateLinks(id, { reference_url, script, note }) {
+  await run(`UPDATE content_plans SET reference_url = ?, script = ?, note = ?, updated_at = datetime('now') WHERE id = ?`, [
+    reference_url ?? null, script ?? null, note ?? null, id,
+  ]);
+}
+
 /** Đã có nội dung cùng tên + cùng ngày đăng chưa (để nhập từ Sheet không bị trùng khi bấm 2 lần). */
 export const exists = async ({ title, post_date }) =>
   Boolean(await get('SELECT 1 AS found FROM content_plans WHERE title = ? AND post_date IS ?', [title, post_date ?? null]));

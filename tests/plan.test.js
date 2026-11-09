@@ -326,7 +326,7 @@ test('link quay lại không cho trỏ ra ngoài app; chữ "javascript:" không
   assert.doesNotMatch((await mai.get('/plan')).text, /href="javascript:/);
 });
 
-test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch làm việc, bấm lại không trùng', async () => {
+test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch làm việc, bấm lại không trùng, bổ sung link còn thiếu', async () => {
   assert.doesNotMatch((await mai.get('/plan')).text, /Nhập từ Sheet/);
   assert.equal((await postForm(mai, '/plan/import-sheet', {}, { from: '/plan' })).status, 403);
 
@@ -335,19 +335,28 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
   const { agent: nhai } = await setup();
   await loginAs(nhai, { email: 'nhai@test.local', password: 'mat-khau-123' });
 
+  // Nội dung đã nhập từ bản cũ (link tham khảo mới là chữ) -> nhập lại thì có link thật, không tạo bản trùng, giữ ghi chú đã sửa
+  await add(mai, { title: 'Mở lò vẽ vàng', reference_url: 'Lò vàng Vạn An Lộc', note: 'Ghi chú sửa trong app' });
+
   assert.equal((await postForm(admin, '/plan/import-sheet', {}, { from: '/plan' })).status, 302);
   const flash = (await admin.get('/plan')).text;
-  assert.match(flash, /Đã nhập \d+ nội dung từ Google Sheet/);
+  assert.match(flash, /Đã nhập \d+ nội dung mới từ Google Sheet, bổ sung link cho 1 nội dung đã có/);
   assert.match(flash, /Chưa có tài khoản: .*Long/);
 
   assert.match((await admin.get(`/plan/weeks?week=2026-10-26`)).text, /Video men lam/);
   assert.equal((await cardOf(admin, 'Giới thiệu xưởng')).column, 'selected');
-  assert.match((await cardOf(admin, 'Mở lò vẽ vàng', '&brand=Vũ%20Gia')).html, /Kịch bản: Lê Mai/);
+  const loVang = (await cardOf(admin, 'gomsucaocap.vananloc/video/7598477484430085396'));
+  assert.ok(loVang, 'thẻ "Mở lò vẽ vàng" có link TikTok thật');
+  assert.match((await admin.get(`/plan/${loVang.id}`)).text, /Ghi chú sửa trong app/);
+  // Nội dung mới nhập: link thật (không còn là chữ "Kịch bản GVG - Mai")
+  const kiemTra = await cardOf(admin, 'Kiểm tra sản phẩm trước khi vẽ vàng');
+  assert.match(kiemTra.html, /href="https:\/\/docs\.google\.com\/spreadsheets\/d\/1EGnOy3vv1cB7JY1ADDl9n500eH8tyOuRmZ9oJmjzh1M/);
+  assert.match(kiemTra.html, /Kịch bản: Lê Mai/);
   assert.match((await nhai.get('/today?date=2026-10-26')).text, /🎬 Quay: Video men lam[\s\S]*15:00/);
 
   const count = (await admin.get('/plan?dropped=1')).text.split('data-plan-row').length;
   await postForm(admin, '/plan/import-sheet', {}, { from: '/plan' });
-  assert.match((await admin.get('/plan')).text, /Đã nhập 0 nội dung/);
+  assert.match((await admin.get('/plan')).text, /Đã nhập 0 nội dung mới từ Google Sheet \(bỏ qua/);
   assert.equal((await admin.get('/plan?dropped=1')).text.split('data-plan-row').length, count);
 });
 
