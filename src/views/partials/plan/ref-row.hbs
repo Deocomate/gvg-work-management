@@ -1,0 +1,7 @@
+{{!-- Một ô "Link tham khảo 2, 3…" trong form Plan. Dùng: {{> plan/ref-row n=2 value="…"}}
+     (n bỏ trống trong <template>: public/js/app.js tự đánh số lại khi thêm/xoá) --}}
+<div class="flex items-center gap-2" data-ref-row>
+  <input name="extra_reference_urls" type="text" value="{{value}}" class="input flex-1" data-ref-input
+    aria-label="Link tham khảo {{n}}" placeholder="Link tham khảo {{n}} — https://…">
+  <button type="button" class="btn-ghost btn-sm shrink-0" data-ref-remove aria-label="Bỏ link này" title="Bỏ link này">✕</button>
+</div>

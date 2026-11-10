@@ -10,7 +10,18 @@
   {{!-- Phần chính: đủ để ghi nhanh một ý tưởng --}}
   {{> form/field name="title" label="Nội dung / tên ý tưởng" value=values.title error=errors.title required=true autofocus=(not plan) placeholder="VD: Mở lò vẽ vàng"}}
   {{> form/textarea name="description" label="Mô tả kịch bản" value=values.description error=errors.description rows=3 placeholder="Tóm tắt kịch bản: hook, các cảnh chính, lời thoại…" hint="Hiện ngay trên Lịch đăng / Lịch quay để cả nhóm biết video quay gì."}}
-  {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/… — video mẫu, bài viết gợi ý (hoặc ghi tên video)"}}
+  {{!-- Link tham khảo chính + "Link tham khảo 2, 3…" (bấm nút để thêm ô; JS trong public/js/app.js) --}}
+  <div data-ref-list data-max="{{maxExtraReferences}}">
+    {{> form/field name="reference_url" label="Link tham khảo" value=values.reference_url error=errors.reference_url placeholder="https://www.tiktok.com/… — video mẫu, bài viết gợi ý (hoặc ghi tên video)"}}
+    <div class="-mt-1 mb-4 space-y-2">
+      <div class="space-y-2" data-ref-rows>
+        {{#each extraReferences}}{{> plan/ref-row n=(inc (inc @index)) value=this}}{{/each}}
+      </div>
+      <template data-ref-template>{{> plan/ref-row}}</template>
+      <button type="button" class="btn-ghost btn-sm" data-ref-add>+ Thêm link tham khảo</button>
+      {{#if errors.extra_reference_urls}}<p class="field-error">{{errors.extra_reference_urls}}</p>{{/if}}
+    </div>
+  </div>
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
     {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}

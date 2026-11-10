@@ -474,3 +474,43 @@ test('mỗi brand một màu riêng trên Idea bank và lịch', async () => {
   assert.match((await cardOf(mai, 'Thẻ GSXD')).html, /badge-brand-gs/);
   assert.match((await mai.get('/plan/weeks?kind=shoot&week=2026-12-01')).text, /badge-brand-gs">GSXD/);
 });
+
+test('thêm được link tham khảo 2, 3…: lưu, hiện trên thẻ/chi tiết, sửa giữ lại, bỏ ô trống', async () => {
+  const form = (await mai.get('/plan/new')).text;
+  assert.match(form, /data-ref-add/);
+  assert.match(form, /<template data-ref-template>[\s\S]*name="extra_reference_urls"/);
+
+  await add(mai, {
+    title: 'Ý tưởng nhiều tham khảo',
+    reference_url: 'https://www.tiktok.com/@mau/video/1',
+    extra_reference_urls: ['https://www.tiktok.com/@mau/video/2', '  ', 'Video xưởng Bát Tràng'],
+  });
+  const card = await cardOf(mai, 'Ý tưởng nhiều tham khảo');
+  assert.match(card.html, /video\/2"[^>]*>[\s\S]*?Tham khảo 2</);
+  assert.doesNotMatch(card.html, /Tham khảo 3/); // chữ (không phải link) không thành link trên thẻ
+
+  const detail = (await mai.get(`/plan/${card.id}`)).text;
+  assert.match(detail, /Link tham khảo 2/);
+  assert.match(detail, /Link tham khảo 3<\/dt><dd>Video xưởng Bát Tràng/);
+
+  const edit = (await mai.get(`/plan/${card.id}/edit`)).text;
+  assert.match(edit, /value="https:\/\/www\.tiktok\.com\/@mau\/video\/2"/);
+  assert.match(edit, /value="Video xưởng Bát Tràng"/);
+
+  // Lọc "Có link tham khảo" tính cả link thêm
+  await add(mai, { title: 'Chỉ có link thêm', extra_reference_urls: 'https://www.tiktok.com/@mau/video/7' });
+  assert.match((await mai.get('/plan?link=ref')).text, /Chỉ có link thêm/);
+  assert.doesNotMatch((await mai.get('/plan?link=noref')).text, /Chỉ có link thêm/);
+
+  // Sửa: bỏ hết link thêm
+  await postForm(mai, `/plan/${card.id}`, { title: 'Ý tưởng nhiều tham khảo' }, { from: `/plan/${card.id}/edit` });
+  assert.doesNotMatch((await mai.get(`/plan/${card.id}`)).text, /Link tham khảo 2/);
+});
+
+test('link tham khảo thêm: quá 10 link thì báo lỗi, không lưu', async () => {
+  const many = Array.from({ length: 11 }, (_, i) => `https://example.com/${i}`);
+  const res = await add(mai, { title: 'Quá nhiều tham khảo', extra_reference_urls: many });
+  assert.equal(res.status, 422);
+  assert.match(res.text, /Tối đa 10 link tham khảo thêm/);
+  assert.equal(await cardOf(mai, 'Quá nhiều tham khảo'), null);
+});

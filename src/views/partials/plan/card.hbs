@@ -14,6 +14,7 @@
     {{#if writer_name}}<span>Kịch bản: {{writer_name}}</span>{{/if}}
     {{#if (and (not owner_name) (not writer_name) proposer_name)}}<span>{{proposer_name}}</span>{{/if}}
     {{#if reference_url}}{{#if (isUrl reference_url)}}<a href="{{reference_url}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Tham khảo</a>{{/if}}{{/if}}
+    {{#each extraReferences}}{{#if (isUrl this)}}<a href="{{this}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Tham khảo {{inc (inc @index)}}</a>{{/if}}{{/each}}
     {{#if script}}{{#if (isUrl script)}}<a href="{{script}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Kịch bản</a>{{/if}}{{/if}}
     {{#if post_url}}<a href="{{post_url}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 font-normal">{{> plan/link-icon}}Bài đăng</a>{{/if}}
   </p>

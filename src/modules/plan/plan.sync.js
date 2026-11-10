@@ -32,7 +32,7 @@ const isDone = (plan) => plan.status === 'posted';
 function desiredTasks(plan) {
   if (!plan.owner_id || plan.status === 'dropped') return {};
   const base = { assignee_id: plan.owner_id, created_by: plan.created_by, priority: 'normal', group_key: null, plan_id: plan.id };
-  const links = [plan.script, plan.reference_url, plan.source_url].filter(isUrl).map((u) => u.trim());
+  const links = [plan.script, plan.reference_url, ...(plan.extra_reference_urls ?? '').split('\n'), plan.source_url].filter(isUrl).map((u) => u.trim());
   const wanted = {};
   if (plan.shoot_date) {
     const { start, end } = parseTimeRange(plan.shoot_time);

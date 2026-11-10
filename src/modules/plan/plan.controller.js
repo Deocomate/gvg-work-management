@@ -4,7 +4,7 @@ import { isISODate } from '#lib/dates.js';
 import { parseMonth } from '#modules/schedule/schedule.service.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
-import { BRANDS, PLATFORMS, PLAN_STATUSES } from './plan.schema.js';
+import { BRANDS, PLATFORMS, PLAN_STATUSES, MAX_EXTRA_REFERENCES, extraReferences } from './plan.schema.js';
 import * as service from './plan.service.js';
 import { importFromSheet } from './plan.import.js';
 
@@ -54,11 +54,15 @@ const openSections = (values, errors) =>
 
 async function renderForm(req, res, { plan = null, values = {}, errors = {}, status = 200 }) {
   const owners = await staffOptions();
+  // Lỗi của từng link tham khảo thêm (extra_reference_urls.0, .1…) gộp thành một dòng dưới danh sách.
+  const extraError = Object.entries(errors).find(([k]) => k.startsWith('extra_reference_urls'))?.[1];
   res.status(status).render('plan/form', {
     title: plan ? 'Sửa nội dung' : 'Thêm ý tưởng',
     plan,
     values,
-    errors,
+    errors: { ...errors, extra_reference_urls: extraError },
+    extraReferences: extraReferences(values.extra_reference_urls),
+    maxExtraReferences: MAX_EXTRA_REFERENCES,
     open: openSections(values, errors),
     back: safeBack(values.back, '/plan'),
     platformOptions: PLATFORMS,

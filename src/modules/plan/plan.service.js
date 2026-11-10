@@ -7,7 +7,7 @@ import { validate } from '#lib/validate.js';
 import { foldText } from '#lib/text.js';
 import { monthGrid, todayISO, addDays, addMonths, daysBetween, isISODate, weekDays } from '#lib/dates.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
-import { BRANDS, PLAN_STATUSES, PLATFORMS, planSchema } from './plan.schema.js';
+import { BRANDS, PLAN_STATUSES, PLATFORMS, extraReferences, planSchema } from './plan.schema.js';
 import * as repo from './plan.repo.js';
 import { parseTimeRange, removePlanTasks, syncPlan } from './plan.sync.js';
 
@@ -34,22 +34,26 @@ export const decorate = (plan, user) => ({
   statusInfo: STATUS[plan.status],
   brandInfo: BRAND[plan.brand] ?? null,
   platformInfo: PLATFORM[plan.platform],
+  // Link tham khảo 2, 3… (link tham khảo chính vẫn là reference_url).
+  extraReferences: extraReferences(plan.extra_reference_urls),
   nextStep: NEXT_STEP[plan.status] ?? null,
   canEdit: canEdit(user, plan),
   canDelete: canDelete(user, plan),
 });
 
 const searchText = (p) =>
-  [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.location, p.owner_name, p.proposer_name, p.writer_name].join(' ');
+  [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.extra_reference_urls, p.location, p.owner_name, p.proposer_name, p.writer_name].join(' ');
 
 // Ô chỉ tính là "có link" khi chứa đường link http(s) (ô kịch bản có thể chỉ là chữ).
 const hasLink = (v) => typeof v === 'string' && /https?:\/\/\S+/i.test(v);
+// Có link tham khảo = ô chính hoặc một trong các link tham khảo thêm.
+const hasRef = (p) => hasLink(p.reference_url) || hasLink(p.extra_reference_urls);
 /** Bộ lọc theo link tham khảo / link kịch bản (dropdown "Mọi link"). */
 export const LINK_FILTERS = [
-  { value: 'ref', label: 'Có link tham khảo', test: (p) => hasLink(p.reference_url) },
+  { value: 'ref', label: 'Có link tham khảo', test: hasRef },
   { value: 'script', label: 'Có link kịch bản', test: (p) => hasLink(p.script) },
-  { value: 'both', label: 'Có cả 2 link', test: (p) => hasLink(p.reference_url) && hasLink(p.script) },
-  { value: 'noref', label: 'Chưa có link tham khảo', test: (p) => !hasLink(p.reference_url) },
+  { value: 'both', label: 'Có cả 2 link', test: (p) => hasRef(p) && hasLink(p.script) },
+  { value: 'noref', label: 'Chưa có link tham khảo', test: (p) => !hasRef(p) },
   { value: 'noscript', label: 'Chưa có link kịch bản', test: (p) => !hasLink(p.script) },
 ];
 const LINK_FILTER = byValue(LINK_FILTERS);

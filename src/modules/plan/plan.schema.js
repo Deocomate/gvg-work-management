@@ -70,6 +70,23 @@ const optionalUrl = z.preprocess(
 // Link tham khảo / kịch bản: Sheet cũ hay ghi chữ (tên video, tên file) thay vì link -> cho gõ tự do,
 // view chỉ biến thành link khi là http(s) (helper isUrl).
 const linkOrText = optionalText(2000, 'Tối đa 2000 ký tự');
+
+export const MAX_EXTRA_REFERENCES = 10;
+/**
+ * Link tham khảo 2, 3…: form gửi nhiều ô cùng tên (mảng), DB lưu mỗi link một dòng.
+ * Hàm này đọc cả hai dạng thành danh sách, bỏ ô trống.
+ */
+export const extraReferences = (v) =>
+  (Array.isArray(v) ? v : typeof v === 'string' ? v.split(/\r?\n/) : [])
+    .map((x) => (typeof x === 'string' ? x.trim() : ''))
+    .filter(Boolean);
+const extraReferenceList = z.preprocess(
+  extraReferences,
+  z
+    .array(z.string().max(2000, 'Mỗi link tối đa 2000 ký tự'))
+    .max(MAX_EXTRA_REFERENCES, `Tối đa ${MAX_EXTRA_REFERENCES} link tham khảo thêm`)
+    .transform((list) => (list.length ? list.join('\n') : undefined)),
+);
 const optionalUser = (message) =>
   z.preprocess(emptyToUndefined, z.coerce.number({ error: message }).int().positive().optional());
 const oneOf = (list, message) => z.preprocess(emptyToUndefined, z.enum(values(list), { error: message }).optional());
@@ -80,6 +97,7 @@ export const planSchema = z
     title: z.string({ error: 'Vui lòng nhập tên ý tưởng' }).trim().min(1, 'Vui lòng nhập tên ý tưởng').max(1000, 'Tối đa 1000 ký tự'),
     description: optionalText(3000, 'Tối đa 3000 ký tự'),
     reference_url: linkOrText,
+    extra_reference_urls: extraReferenceList,
     platform: z.preprocess((v) => emptyToUndefined(v) ?? 'tiktok', z.enum(values(PLATFORMS), { error: 'Kênh không hợp lệ' })),
     topic: optionalText(120, 'Tối đa 120 ký tự'),
     status: z.preprocess((v) => emptyToUndefined(v) ?? 'idea', z.enum(values(PLAN_STATUSES), { error: 'Trạng thái không hợp lệ' })),

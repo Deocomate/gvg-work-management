@@ -127,3 +127,29 @@ document.addEventListener('change', (event) => {
     input.value = '';
   }
 });
+
+// <div data-ref-list data-max="10"> (form Plan): nút "+ Thêm link tham khảo" thêm ô Link tham khảo 2, 3…
+// từ <template data-ref-template>; nút ✕ bỏ ô. Số thứ tự đánh lại sau mỗi lần thêm/bỏ.
+function renumberRefs(list) {
+  const rows = [...list.querySelectorAll('[data-ref-rows] [data-ref-row]')];
+  rows.forEach((row, i) => {
+    const input = row.querySelector('[data-ref-input]');
+    input.setAttribute('aria-label', `Link tham khảo ${i + 2}`);
+    input.placeholder = `Link tham khảo ${i + 2} — https://…`;
+  });
+  list.querySelector('[data-ref-add]').hidden = rows.length >= Number(list.dataset.max || 10);
+}
+document.addEventListener('click', (event) => {
+  const list = event.target.closest('[data-ref-list]');
+  if (!list) return;
+  if (event.target.closest('[data-ref-add]')) {
+    const row = list.querySelector('[data-ref-template]').content.firstElementChild.cloneNode(true);
+    list.querySelector('[data-ref-rows]').append(row);
+    renumberRefs(list);
+    row.querySelector('[data-ref-input]').focus();
+  } else if (event.target.closest('[data-ref-remove]')) {
+    event.target.closest('[data-ref-row]').remove();
+    renumberRefs(list);
+  }
+});
+document.querySelectorAll('[data-ref-list]').forEach(renumberRefs);
