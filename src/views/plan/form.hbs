@@ -22,10 +22,11 @@
       {{#if errors.extra_reference_urls}}<p class="field-error">{{errors.extra_reference_urls}}</p>{{/if}}
     </div>
   </div>
-  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {{> form/field name="post_date" label="Ngày đăng" type="date" value=values.post_date error=errors.post_date clearLabel="Chưa chốt"}}
+    {{> form/select name="poster_id" label="Người đăng" options=ownerOptions value=values.poster_id error=errors.poster_id placeholder="Như người phụ trách" hint="Việc “Đăng” lên lịch làm việc của người này."}}
     {{> form/select name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand placeholder="Chưa chọn"}}
-    {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao" hint="Việc quay / đăng tự lên lịch làm việc của người này."}}
+    {{> form/select name="owner_id" label="Người phụ trách" options=ownerOptions value=values.owner_id error=errors.owner_id placeholder="Chưa giao" hint="Làm việc quay / đăng khi chưa chọn người quay / người đăng."}}
     {{> form/select name="status" label="Bước hiện tại" options=statusOptions value=values.status error=errors.status hint="Có ngày quay/đăng thì “Mới” tự thành “Đã chọn”."}}
   </div>
 
@@ -40,8 +41,9 @@
     </details>
 
     <details class="plan-fold"{{#if open.shoot}} open{{/if}}>
-      <summary>Lịch quay <span>ngày, khung giờ, địa điểm, CSVC</span></summary>
+      <summary>Lịch quay <span>người quay, ngày, khung giờ, địa điểm, CSVC</span></summary>
       <div class="plan-fold-body">
+        {{> form/select name="shooter_id" label="Người quay" options=ownerOptions value=values.shooter_id error=errors.shooter_id placeholder="Như người phụ trách" hint="Việc “Quay” lên lịch làm việc của người này."}}
         <div class="grid gap-4 sm:grid-cols-3">
           {{> form/field name="shoot_date" label="Ngày quay" type="date" value=values.shoot_date error=errors.shoot_date clearLabel="Chưa chốt"}}
           {{> form/field name="shoot_time" label="Khung giờ quay" value=values.shoot_time error=errors.shoot_time placeholder="VD: 15h00 - 15h30"}}

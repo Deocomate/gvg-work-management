@@ -44,6 +44,8 @@
     <h3 class="plan-detail-label">Người</h3>
     <dl class="plan-detail-grid">
       <div><dt>Người phụ trách</dt><dd>{{#if plan.owner_name}}{{plan.owner_name}}{{else}}<span class="text-ink-faint">Chưa giao</span>{{/if}}</dd></div>
+      <div><dt>Người quay</dt><dd>{{#if plan.shooter_name}}{{plan.shooter_name}}{{else if plan.owner_name}}{{plan.owner_name}} <span class="text-ink-faint">(phụ trách)</span>{{else}}<span class="text-ink-faint">Chưa giao</span>{{/if}}</dd></div>
+      <div><dt>Người đăng</dt><dd>{{#if plan.poster_name}}{{plan.poster_name}}{{else if plan.owner_name}}{{plan.owner_name}} <span class="text-ink-faint">(phụ trách)</span>{{else}}<span class="text-ink-faint">Chưa giao</span>{{/if}}</dd></div>
       <div><dt>Người tạo</dt><dd>{{#if plan.creator_name}}{{plan.creator_name}}{{else}}<span class="text-ink-faint">—</span>{{/if}}</dd></div>
     </dl>
   </section>

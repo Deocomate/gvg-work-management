@@ -234,6 +234,42 @@ test('đồng bộ sang lịch làm việc: người phụ trách có việc Qua
   assert.match((await mai.get('/today?date=2026-12-16')).text, /📤 Đăng: Mở lò vẽ vàng/);
 });
 
+test('người quay và người đăng riêng: việc Quay / Đăng lên lịch của từng người; trống thì theo người phụ trách', async () => {
+  const namId = await userId('Trần Nam');
+  const maiId = await userId('Lê Mai');
+  const form = (await admin.get('/plan/new')).text;
+  assert.match(form, /name="shooter_id"/);
+  assert.match(form, /name="poster_id"/);
+
+  await add(admin, { title: 'Tách người quay đăng', owner_id: namId, shooter_id: maiId, shoot_date: '2026-12-21', post_date: '2026-12-29' });
+  const id = await idOf('Tách người quay đăng');
+  assert.match((await mai.get('/today?date=2026-12-21')).text, /🎬 Quay: Tách người quay đăng/);
+  assert.doesNotMatch((await nam.get('/today?date=2026-12-21')).text, /Tách người quay đăng/);
+  // Chưa chọn người đăng -> người phụ trách đăng
+  assert.match((await nam.get('/today?date=2026-12-29')).text, /📤 Đăng: Tách người quay đăng/);
+  assert.doesNotMatch((await mai.get('/today?date=2026-12-29')).text, /Tách người quay đăng/);
+
+  // Trang chi tiết ghi rõ ai quay, ai đăng
+  const detail = (await mai.get(`/plan/${id}`)).text;
+  assert.match(detail, /Người quay<\/dt><dd>Lê Mai/);
+  assert.match(detail, /Người đăng<\/dt><dd>Trần Nam <span[^>]*>\(phụ trách\)/);
+
+  // Đổi: Nam quay, Mai đăng, bỏ người phụ trách -> việc vẫn có người làm
+  await postForm(admin, `/plan/${id}`, { title: 'Tách người quay đăng', shooter_id: namId, poster_id: maiId, shoot_date: '2026-12-21', post_date: '2026-12-29', status: 'selected' }, { from: `/plan/${id}/edit` });
+  assert.match((await nam.get('/today?date=2026-12-21')).text, /🎬 Quay: Tách người quay đăng/);
+  assert.doesNotMatch((await mai.get('/today?date=2026-12-21')).text, /Tách người quay đăng/);
+  assert.match((await mai.get('/today?date=2026-12-29')).text, /📤 Đăng: Tách người quay đăng/);
+  assert.doesNotMatch((await nam.get('/today?date=2026-12-29')).text, /Tách người quay đăng/);
+
+  // Người đăng tick Xong -> Plan "Đã xong"
+  const postDay = (await mai.get('/today?date=2026-12-29')).text;
+  const taskId = postDay.match(/\/tasks\/(\d+)\/status/)[1];
+  await postForm(mai, `/tasks/${taskId}/status`, { status: 'done' }, { from: '/today?date=2026-12-29' });
+  assert.match((await admin.get(`/plan/${id}`)).text, /Đã xong/);
+  // Lọc theo người ở Idea bank / Lưu trữ tính cả người quay, người đăng
+  assert.match((await admin.get(`/plan/archive?owner=${maiId}`)).text, /Tách người quay đăng/);
+});
+
 test('đồng bộ 2 chiều: tick xong việc trên lịch -> Plan đổi bước; Bỏ / xoá ở Plan -> việc biến mất', async () => {
   const namId = await userId('Trần Nam');
   await add(admin, { title: 'Bình hút lộc', owner_id: namId, shoot_date: '2026-12-21', post_date: '2026-12-23' });

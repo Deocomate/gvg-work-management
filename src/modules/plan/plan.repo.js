@@ -4,13 +4,16 @@ import { all, get, run } from '#db';
 const COLUMNS = `p.id, p.title, p.description, p.reference_url, p.platform, p.topic, p.status,
   p.shoot_date, p.post_date, p.post_time, p.post_url, p.owner_id, p.created_by, p.created_at,
   p.brand, p.video_type, p.proposer_id, p.writer_id, p.script, p.shoot_time, p.location, p.props, p.source_url, p.note,
-  p.extra_reference_urls,
-  o.name AS owner_name, c.name AS creator_name, pr.name AS proposer_name, w.name AS writer_name`;
+  p.extra_reference_urls, p.shooter_id, p.poster_id,
+  o.name AS owner_name, c.name AS creator_name, pr.name AS proposer_name, w.name AS writer_name,
+  sh.name AS shooter_name, po.name AS poster_name`;
 const FROM = `FROM content_plans p
   LEFT JOIN users o ON o.id = p.owner_id
   LEFT JOIN users c ON c.id = p.created_by
   LEFT JOIN users pr ON pr.id = p.proposer_id
-  LEFT JOIN users w ON w.id = p.writer_id`;
+  LEFT JOIN users w ON w.id = p.writer_id
+  LEFT JOIN users sh ON sh.id = p.shooter_id
+  LEFT JOIN users po ON po.id = p.poster_id`;
 
 /** Mới nhất lên đầu. Lọc tìm kiếm (không dấu) làm trong service. */
 export const listAll = () => all(`SELECT ${COLUMNS} ${FROM} ORDER BY p.created_at DESC, p.id DESC`);
@@ -38,7 +41,7 @@ export const findById =(id) => get(`SELECT ${COLUMNS} ${FROM} WHERE p.id = ?`, [
 const FIELDS = [
   'title', 'description', 'reference_url', 'platform', 'topic', 'status', 'shoot_date', 'post_date', 'post_time', 'post_url', 'owner_id',
   'brand', 'video_type', 'proposer_id', 'writer_id', 'script', 'shoot_time', 'location', 'props', 'source_url', 'note',
-  'extra_reference_urls',
+  'extra_reference_urls', 'shooter_id', 'poster_id',
 ];
 const argsOf = (data) => FIELDS.map((f) => data[f] ?? null);
 // Danh sách cột cố định do code tạo (không chứa dữ liệu người dùng).

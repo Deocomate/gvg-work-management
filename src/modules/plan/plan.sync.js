@@ -1,7 +1,7 @@
 // Đồng bộ Plan nội dung <-> lịch làm việc (bảng tasks), 2 chiều:
-// - Plan -> lịch: nội dung có người phụ trách tạo việc "🎬 Quay: …" (ngày quay, khung giờ, địa điểm, CSVC)
-//   và "📤 Đăng: …" (ngày đăng, cả ngày) cho người đó. Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo;
-//   bỏ ngày, bỏ người phụ trách hoặc chuyển "Bỏ" thì việc bị xoá.
+// - Plan -> lịch: việc "🎬 Quay: …" (ngày quay, khung giờ, địa điểm, CSVC) giao cho người quay,
+//   "📤 Đăng: …" (ngày đăng, cả ngày) giao cho người đăng; chưa chọn thì giao cho người phụ trách.
+//   Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo; bỏ ngày, không còn ai làm hoặc chuyển "Bỏ" thì việc bị xoá.
 // - Lịch -> Plan: tick ✓ Xong việc đăng -> Plan "Đã xong"; mở lại việc đăng -> lùi về "Đã chọn".
 //   Việc quay tick xong/mở lại tuỳ người làm (Plan không còn bước "Đã quay").
 // Việc lấy từ Plan chỉ sửa ở Plan (tasks.service chặn sửa/xoá trực tiếp).
@@ -30,14 +30,17 @@ const isDone = (plan) => plan.status === 'posted';
 
 /** Các việc lẽ ra phải có trên lịch cho nội dung này: { shoot?, post? }. */
 function desiredTasks(plan) {
-  if (!plan.owner_id || plan.status === 'dropped') return {};
-  const base = { assignee_id: plan.owner_id, created_by: plan.created_by, priority: 'normal', group_key: null, plan_id: plan.id, brand: plan.brand || null };
+  if (plan.status === 'dropped') return {};
+  const shooter = plan.shooter_id ?? plan.owner_id;
+  const poster = plan.poster_id ?? plan.owner_id;
+  const base = { created_by: plan.created_by, priority: 'normal', group_key: null, plan_id: plan.id, brand: plan.brand || null };
   const links = [plan.script, plan.reference_url, ...(plan.extra_reference_urls ?? '').split('\n'), plan.source_url].filter(isUrl).map((u) => u.trim());
   const wanted = {};
-  if (plan.shoot_date) {
+  if (plan.shoot_date && shooter) {
     const { start, end } = parseTimeRange(plan.shoot_time);
     wanted.shoot = {
       ...base,
+      assignee_id: shooter,
       title: cut(`🎬 Quay: ${plan.title}`, 200),
       date: plan.shoot_date,
       start_time: start,
@@ -53,9 +56,10 @@ function desiredTasks(plan) {
       links: lines(...links),
     };
   }
-  if (plan.post_date) {
+  if (plan.post_date && poster) {
     wanted.post = {
       ...base,
+      assignee_id: poster,
       title: cut(`📤 Đăng: ${plan.title}`, 200),
       date: plan.post_date,
       start_time: null, // lịch đăng không theo giờ -> cả ngày

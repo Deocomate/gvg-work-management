@@ -42,7 +42,7 @@ export const decorate = (plan, user) => ({
 });
 
 const searchText = (p) =>
-  [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.extra_reference_urls, p.location, p.owner_name, p.proposer_name, p.writer_name].join(' ');
+  [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.extra_reference_urls, p.location, p.owner_name, p.proposer_name, p.writer_name, p.shooter_name, p.poster_name].join(' ');
 
 // Ô chỉ tính là "có link" khi chứa đường link http(s) (ô kịch bản có thể chỉ là chữ).
 const hasLink = (v) => typeof v === 'string' && /https?:\/\/\S+/i.test(v);
@@ -70,7 +70,7 @@ async function filteredPlans({ brand, owner, link, q }) {
   const shown = plans.filter(
     (p) =>
       (!BRAND[brand] || p.brand === brand) &&
-      (!ownerId || p.owner_id === ownerId || p.writer_id === ownerId) &&
+      (!ownerId || [p.owner_id, p.writer_id, p.shooter_id, p.poster_id].includes(ownerId)) &&
       (!linkFilter || linkFilter.test(p)) &&
       (!words.length || words.every((w) => foldText(searchText(p)).includes(w))),
   );
@@ -231,7 +231,10 @@ function withChecks(plan, today) {
 
 /** Đánh dấu 1 người bị xếp quay cùng ngày, cùng khung giờ ở 2 địa điểm khác nhau (xét mọi brand). */
 function markConflicts(rows) {
-  const keyOf = (p) => (p.owner_id && p.shoot_date && p.shoot_time ? `${p.owner_id}|${p.shoot_date}|${foldText(p.shoot_time)}` : null);
+  const keyOf = (p) => {
+    const who = p.shooter_id ?? p.owner_id;
+    return who && p.shoot_date && p.shoot_time ? `${who}|${p.shoot_date}|${foldText(p.shoot_time)}` : null;
+  };
   const places = new Map();
   for (const p of rows) {
     const key = keyOf(p);

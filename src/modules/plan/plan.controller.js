@@ -47,7 +47,7 @@ function calendarNav({ kind, brand, view, week, month }) {
 // Form gọn: mỗi nhóm ô là một mục gập lại, tự mở khi đã có dữ liệu hoặc có lỗi.
 const SECTION_FIELDS = {
   script: ['writer_id', 'script'],
-  shoot: ['shoot_date', 'shoot_time', 'location', 'props'],
+  shoot: ['shoot_date', 'shoot_time', 'location', 'props', 'shooter_id'],
 };
 const openSections = (values, errors) =>
   Object.fromEntries(Object.entries(SECTION_FIELDS).map(([name, fields]) => [name, fields.some((f) => values[f] || errors[f])]));
@@ -185,7 +185,7 @@ export async function editForm(req, res) {
     plan,
     values: {
       ...plan,
-      ...Object.fromEntries(['owner_id', 'proposer_id', 'writer_id'].map((f) => [f, plan[f] ? String(plan[f]) : ''])),
+      ...Object.fromEntries(['owner_id', 'proposer_id', 'writer_id', 'shooter_id', 'poster_id'].map((f) => [f, plan[f] ? String(plan[f]) : ''])),
       back: req.query.back,
     },
   });

@@ -105,6 +105,9 @@ export const planSchema = z
     video_type: oneOf(VIDEO_TYPES, 'Loại video không hợp lệ'),
     proposer_id: optionalUser('Người góp không hợp lệ'),
     writer_id: optionalUser('Người viết kịch bản không hợp lệ'),
+    // Người quay / người đăng: trống = người phụ trách làm.
+    shooter_id: optionalUser('Người quay không hợp lệ'),
+    poster_id: optionalUser('Người đăng không hợp lệ'),
     // Kịch bản: link, hoặc viết thẳng cả kịch bản (nhiều dòng) nên cho dài hơn.
     script: optionalText(5000, 'Tối đa 5000 ký tự'),
     shoot_time: optionalText(40, 'Tối đa 40 ký tự'),
