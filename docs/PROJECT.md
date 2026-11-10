@@ -83,6 +83,7 @@
 
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-10 — Plan: thêm 12 video GSXD 10/11–06/12 từ Sheet "Kế hoạch content GSXD – T11/2026" (tab Lịch đăng + Quay theo lô) vào `sheet-import.json`: hook = tên, trụ cột/phễu/CTA/ads vào mô tả, tham khảo 1 = link tham khảo, tham khảo 2 + lô quay vào ghi chú; phụ trách Long, viết kịch bản theo tab Quay theo lô. Quản lý bấm "Nhập từ Sheet" để đưa vào.
 - 2026-11-07 — Plan: cột Đã chọn chia theo tuần đăng (class `.plan-group`, khác `.plan-week` của lịch tuần).
 - 2026-11-07 — Plan: nội dung Đã xong rời bảng Idea bank, vào tab Lưu trữ (chỉ icon) có tìm/lọc và nút Mở lại. Thẻ tách thành partial `plan/card` dùng chung.
 - 2026-11-07 — Plan: chỉ còn 3 bước Mới → Đã chọn → Đã xong. Migration 015 gộp Đã viết kịch bản / Đã lên lịch / Đã quay vào Đã chọn; "Đã xong" dùng lại giá trị `posted` (CHECK cũ giữ nguyên). Nhập Sheet cũng gộp như vậy.
