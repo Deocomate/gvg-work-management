@@ -5,7 +5,9 @@
 // giữa các dòng bảng / trước tiêu đề mỗi người (data-export-breaks) để không cắt ngang một việc.
 // Link trong PDF là ảnh nên không bấm được — muốn bấm link thì dùng nút "In / Lưu PDF".
 
-const CAPTURE = { pixelRatio: 2, backgroundColor: '#ffffff', skipFonts: true, cacheBust: true };
+// style.margin = 0: khung căn giữa bằng margin auto (phiếu công việc) sẽ bị html-to-image chép nguyên lề
+// tính ra (VD 380px trên màn rộng) vào ảnh -> nội dung lệch phải, mất nửa phiếu. Bỏ lề ngoài khi chụp.
+const CAPTURE = { pixelRatio: 2, backgroundColor: '#ffffff', skipFonts: true, cacheBust: true, style: { margin: '0' } };
 const A4_W = 595.28;
 const A4_H = 841.89;
 const MARGIN = 28;
