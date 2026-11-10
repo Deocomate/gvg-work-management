@@ -205,7 +205,9 @@ test('đồng bộ sang lịch làm việc: người phụ trách có việc Qua
   assert.match(shootDay, /Đèn, chân máy/);
   assert.match(shootDay, /docs\.google\.com\/document\/d\/abc/);
   assert.match(shootDay, />Plan</);
-  assert.match(shootDay, /Xem ở Plan/);
+  // "Xem ở Plan" mở trang xem chi tiết, không mở thẳng form sửa
+  assert.match(shootDay, /href="\/plan\/\d+\?back=[^"]*"[^>]*>Xem ở Plan/);
+  assert.doesNotMatch(shootDay, /\/plan\/\d+\/edit[^"]*"[^>]*>Xem ở Plan/);
   const postDay = (await nam.get('/today?date=2026-12-16')).text;
   assert.match(postDay, /📤 Đăng: Mở lò vẽ vàng/);
   assert.doesNotMatch(postDay, /Kênh: TikTok/);

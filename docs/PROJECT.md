@@ -84,6 +84,7 @@
 ## Nhật ký thay đổi
 
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-10 — Lịch làm việc: nút "Xem ở Plan" trên việc Quay/Đăng mở trang xem chi tiết nội dung (trước mở thẳng form sửa); muốn sửa thì bấm Sửa ở trang chi tiết.
 - 2026-11-10 — Plan: thêm "Link tham khảo 2, 3…" (nút + Thêm link tham khảo trong form, tối đa 10, bỏ ô bằng ✕). Hiện trên thẻ Idea bank (Tham khảo 2…), trang chi tiết, việc trên lịch làm việc; bộ lọc "Có/Chưa có link tham khảo" tính cả link thêm. Migration 016.
 - 2026-11-10 — Lịch đăng xếp lại: GSXD cách ngày từ 10/11 (12 video, tới 02/12), Vũ Gia cách ngày từ 11/11 (18 video "Đã chọn" chưa xong, tới 15/12; 15 video cũ chưa gắn brand được gắn Vũ Gia). Thứ tự: có kịch bản + có footage (đã quay / source có sẵn) → có kịch bản → có footage → còn lại, cùng nhóm giữ thứ tự cũ. Đổi cả `data/app.db` (sao lưu `app.backup-2026-11-10.db`) và ngày trong `sheet-import.json` — khoá chống trùng khi nhập là tên + ngày đăng nên hai nơi phải khớp.
 - 2026-11-10 — Plan: viết kịch bản cho 12 video GSXD T11/2026 (hook 3 lớp, từng đoạn theo giây, footage lấy từ kho ổ E theo 2 file "Báo cáo tổng quan video" + "Góc quay & cảnh quay công trình", chỗ cần số thật ghi [CẦN THAY]) vào trường `script` của `sheet-import.json`. Ô Kịch bản trong form thành ô nhiều dòng (tối đa 5000 ký tự); popup chi tiết hiện kịch bản viết sẵn thành mục riêng. "Nhập từ Sheet" điền kịch bản chữ vào nội dung đã có nếu ô kịch bản đang trống (không đè).

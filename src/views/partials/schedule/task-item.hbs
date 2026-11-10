@@ -51,7 +51,7 @@
           {{/if}}
         {{/if}}
         {{#if plan_id}}
-          <a href="/plan/{{plan_id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Xem ở Plan</a>
+          <a href="/plan/{{plan_id}}?back={{urlEncode back}}" class="btn-ghost btn-sm">Xem ở Plan</a>
         {{else if canEdit}}
           <a href="/tasks/{{id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Sửa</a>
         {{/if}}
