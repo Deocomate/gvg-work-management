@@ -340,7 +340,7 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
 
   assert.equal((await postForm(admin, '/plan/import-sheet', {}, { from: '/plan' })).status, 302);
   const flash = (await admin.get('/plan')).text;
-  assert.match(flash, /Đã nhập \d+ nội dung mới từ Google Sheet, bổ sung link cho 1 nội dung đã có/);
+  assert.match(flash, /Đã nhập \d+ nội dung mới từ Google Sheet, bổ sung link\/kịch bản cho 1 nội dung đã có/);
   assert.match(flash, /Chưa có tài khoản: .*Long/);
 
   assert.match((await admin.get(`/plan/weeks?week=2026-10-26`)).text, /Video men lam/);
@@ -352,6 +352,10 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
   const kiemTra = await cardOf(admin, 'Kiểm tra sản phẩm trước khi vẽ vàng');
   assert.match(kiemTra.html, /href="https:\/\/docs\.google\.com\/spreadsheets\/d\/1EGnOy3vv1cB7JY1ADDl9n500eH8tyOuRmZ9oJmjzh1M/);
   assert.match(kiemTra.html, /Kịch bản: Lê Mai/);
+  // Video GSXD có kịch bản viết sẵn: popup chi tiết hiện đủ kịch bản, giữ xuống dòng
+  const moLo = await cardOf(admin, 'Mở lò 1.300°C');
+  const moLoDetail = (await admin.get(`/plan/${moLo.id}`)).text;
+  assert.match(moLoDetail, /data-plan-script>~35s · quay tại xưởng[\s\S]*FOOTAGE: Quay mới dỡ lò 03\/11/);
   assert.match((await nhai.get('/today?date=2026-10-26')).text, /🎬 Quay: Video men lam[\s\S]*15:00/);
 
   const count = (await admin.get('/plan?dropped=1')).text.split('data-plan-row').length;

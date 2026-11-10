@@ -21,10 +21,10 @@
   {{!-- Các phần chi tiết: gập lại, tự mở khi đã có dữ liệu --}}
   <div class="mt-2 space-y-3">
     <details class="plan-fold"{{#if open.script}} open{{/if}}>
-      <summary>Kịch bản <span>người viết, link kịch bản</span></summary>
-      <div class="plan-fold-body grid gap-4 sm:grid-cols-[1fr_2fr]">
+      <summary>Kịch bản <span>người viết, link hoặc nội dung kịch bản</span></summary>
+      <div class="plan-fold-body grid gap-4">
         {{> form/select name="writer_id" label="Người viết kịch bản" options=ownerOptions value=values.writer_id error=errors.writer_id placeholder="Chưa giao"}}
-        {{> form/field name="script" label="Kịch bản" value=values.script error=errors.script placeholder="Link Google Docs, tên file, hoặc “Không cần”"}}
+        {{> form/textarea name="script" label="Kịch bản" value=values.script error=errors.script rows=8 placeholder="Link Google Docs, hoặc viết thẳng kịch bản: hook, từng đoạn, footage dùng…"}}
       </div>
     </details>
 

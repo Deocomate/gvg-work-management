@@ -1,7 +1,7 @@
 // Nhập dữ liệu một lần từ Google Sheet "Idea bank - Gốm Vũ Gia, Klayy & GSXD" (tab Plan + Idea bank).
 // Dữ liệu đã chép sẵn trong sheet-import.json. Chỉ quản lý; bấm lại không bị trùng (cùng tên + ngày đăng thì bỏ qua).
 // Nhập lại: nội dung đã có chỉ được bổ sung link tham khảo / link kịch bản còn thiếu (ô đang trống hoặc mới là chữ),
-// không đụng các trường khác để giữ những gì đã sửa trong app.
+// kịch bản viết sẵn (chữ) chỉ điền khi ô kịch bản đang trống; không đụng các trường khác để giữ những gì đã sửa trong app.
 import { readFile } from 'node:fs/promises';
 import { forbidden } from '#lib/errors.js';
 import { foldText } from '#lib/text.js';
@@ -38,6 +38,8 @@ async function fillLinks(data) {
   for (const field of ['reference_url', 'script']) {
     if (isUrl(data[field]) && !isUrl(current[field])) next[field] = data[field];
   }
+  // Kịch bản viết sẵn (chữ) chỉ điền vào ô đang trống, không đè lên kịch bản đã gõ trong app.
+  if (data.script && !isUrl(data.script) && !clean(current.script)) next.script = data.script;
   const extra = linkLines(data.note).filter((line) => !(current.note ?? '').includes(line));
   if (extra.length) next.note = [current.note, ...extra].filter(Boolean).join('\n');
   const changed = ['reference_url', 'script', 'note'].some((f) => next[f] !== current[f]);

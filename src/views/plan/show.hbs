@@ -52,10 +52,18 @@
   <section>
     <h3 class="plan-detail-label">Link</h3>
     <dl class="plan-detail-grid">
-      <div><dt>Link kịch bản</dt><dd>{{#if plan.script}}{{#if (isUrl plan.script)}}<a href="{{plan.script}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 break-all">{{> plan/link-icon}}Mở kịch bản</a>{{else}}{{plan.script}}{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
+      <div><dt>Link kịch bản</dt><dd>{{#if plan.script}}{{#if (isUrl plan.script)}}<a href="{{plan.script}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 break-all">{{> plan/link-icon}}Mở kịch bản</a>{{else}}<span class="text-ink-soft">Viết sẵn bên dưới</span>{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
       <div><dt>Link tham khảo</dt><dd>{{#if plan.reference_url}}{{#if (isUrl plan.reference_url)}}<a href="{{plan.reference_url}}" target="_blank" rel="noopener noreferrer" class="link inline-flex items-center gap-1 break-all">{{> plan/link-icon}}Mở link tham khảo</a>{{else}}{{plan.reference_url}}{{/if}}{{else}}<span class="text-ink-faint">Chưa có</span>{{/if}}</dd></div>
     </dl>
   </section>
+
+  {{!-- 5b. Kịch bản viết thẳng trong app (không phải link) --}}
+  {{#if plan.script}}{{#unless (isUrl plan.script)}}
+    <section>
+      <h3 class="plan-detail-label">Kịch bản</h3>
+      <p class="whitespace-pre-line text-sm text-ink" data-plan-script>{{plan.script}}</p>
+    </section>
+  {{/unless}}{{/if}}
 
   {{!-- 6. Ghi chú --}}
   <section>

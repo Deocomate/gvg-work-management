@@ -136,7 +136,7 @@ export async function calendar(req, res) {
 
 export async function importSheet(req, res) {
   const { added, updated, skipped, unknown } = await importFromSheet(req.user);
-  let message = `Đã nhập ${added} nội dung mới từ Google Sheet${updated ? `, bổ sung link cho ${updated} nội dung đã có` : ''}${skipped ? ` (bỏ qua ${skipped} dòng không đổi)` : ''}.`;
+  let message = `Đã nhập ${added} nội dung mới từ Google Sheet${updated ? `, bổ sung link/kịch bản cho ${updated} nội dung đã có` : ''}${skipped ? ` (bỏ qua ${skipped} dòng không đổi)` : ''}.`;
   if (unknown.length) message += ` Chưa có tài khoản: ${unknown.join(', ')} — tên được ghi vào Ghi chú.`;
   req.flash('success', message);
   res.redirect('/plan');
