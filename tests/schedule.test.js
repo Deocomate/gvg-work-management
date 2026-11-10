@@ -117,6 +117,9 @@ test('phiếu công việc: ai xuất cũng ra việc của tất cả mọi ng�
   assert.match(all, /Việc riêng của quản lý/);
   assert.match(all, /Tồn \d{2}\/\d{2}\/\d{4}/); // việc tồn hôm qua
   assert.match(all, /data-print/);
+  assert.match(all, /data-export="png" data-export-target="#sheet"/);
+  assert.match(all, /data-export="pdf" data-export-target="#sheet"/);
+  assert.match(all, new RegExp(`data-filename="phieu-cong-viec-${today}"`));
   // Nhân viên xuất phiếu cũng thấy việc của cả nhóm; ?user= không lọc bớt
   const byHoa = (await hoa.get(`/today/sheet?user=${hoaId}`)).text;
   assert.match(byHoa, /Họp sáng/);
@@ -134,6 +137,8 @@ test('phiếu tuần: việc T2–CN của mọi người, chia theo ngày; chuy
   assert.ok((await hoa.get('/today')).text.includes(`href="/today/sheet?date=${today}&range=week"`));
   const html = (await hoa.get(`/today/sheet?date=${today}&range=week`)).text;
   assert.match(html, /PHIẾU CÔNG VIỆC TUẦN/);
+  assert.match(html, /data-export="pdf"/);
+  assert.match(html, new RegExp(`data-filename="phieu-cong-viec-tuan-${week[0]}"`));
   assert.match(html, /<h2>Phạm Hoa/);
   assert.match(html, /Việc riêng của quản lý/); // nhân viên cũng thấy cả nhóm
   assert.match(html, /Kiểm kê cuối tuần/);

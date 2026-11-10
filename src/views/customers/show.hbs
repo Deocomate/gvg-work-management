@@ -3,7 +3,7 @@
   - Popup ở trang danh sách (bấm tên khách): ?modal=1, không layout, chèn vào <dialog id="customer-dialog">.
   - Trang riêng /customers/:id (khi tắt JS hoặc mở link trực tiếp).
   Thẻ .cust-card luôn là "giấy trắng" (không theo giao diện tối) để ảnh PNG/PDF tải về dễ đọc, dễ gửi khách.
-  Nút tải xử lý trong public/js/customer-card.js.
+  Nút tải xử lý trong public/js/export-image.js.
 --}}
 {{#unless modal}}
   {{#> page-header title="Chi tiết khách hàng"}}
@@ -13,8 +13,8 @@
 
 <div class="customer-sheet" data-customer-sheet>
   <div class="customer-sheet-bar">
-    <button type="button" class="btn-secondary btn-sm" data-card-export="png">⬇ Tải PNG</button>
-    <button type="button" class="btn-secondary btn-sm" data-card-export="pdf">⬇ Tải PDF</button>
+    <button type="button" class="btn-secondary btn-sm" data-export="png" data-export-target="[data-customer-sheet] [data-card]">⬇ Tải PNG</button>
+    <button type="button" class="btn-secondary btn-sm" data-export="pdf" data-export-target="[data-customer-sheet] [data-card]">⬇ Tải PDF</button>
     <a href="/customers/{{customer.id}}/edit" class="btn-ghost btn-sm">Sửa</a>
     {{#if modal}}<button type="button" class="btn-ghost btn-sm ml-auto" data-dialog-close aria-label="Đóng">✕ Đóng</button>{{/if}}
   </div>
@@ -63,5 +63,6 @@
 
 {{#unless modal}}
   <script src="/vendor/html-to-image.js" defer></script>
+  <script src="/js/export-image.js" defer></script>
   <script src="/js/customer-card.js" defer></script>
 {{/unless}}

@@ -12,10 +12,12 @@
   </span>
   <span class="spacer"></span>
   <button type="button" class="btn" data-copy="#sheet">📋 Sao chép chữ</button>
-  <button type="button" class="btn btn-primary" data-print>🖨 In / Lưu PDF</button>
+  <button type="button" class="btn" data-export="png" data-export-target="#sheet" title="Tải ảnh phiếu để gửi Zalo">⬇ Tải PNG</button>
+  <button type="button" class="btn" data-export="pdf" data-export-target="#sheet" title="Tải file PDF khổ A4">⬇ Tải PDF</button>
+  <button type="button" class="btn btn-primary" data-print>🖨 In</button>
 </form>
 
-<article id="sheet" class="sheet sheet-week">
+<article id="sheet" data-filename="phieu-cong-viec-tuan-{{from}}" data-export-breaks="tbody tr, .person" class="sheet sheet-week">
   <header class="sheet-head">
     <p class="sheet-app">{{appName}}</p>
     <h1>PHIẾU CÔNG VIỆC TUẦN</h1>
@@ -56,3 +58,6 @@
     <p class="empty">Không có việc nào trong tuần này.</p>
   {{/each}}
 </article>
+
+<script src="/vendor/html-to-image.js" defer></script>
+<script src="/js/export-image.js" defer></script>

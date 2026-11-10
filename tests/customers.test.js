@@ -247,8 +247,8 @@ test('bấm tên khách -> thẻ chi tiết: tên, SĐT, địa chỉ, trạng t
   assert.match(modal.text, /01\/11\/2026[\s\S]*Đã chuyển khoản[\s\S]*1\.500\.000 đ/);
   assert.match(modal.text, /500\.000 đ/);
   assert.match(modal.text, /Tổng cộng[\s\S]*2\.000\.000 đ/);
-  assert.match(modal.text, /data-card-export="png"/);
-  assert.match(modal.text, /data-card-export="pdf"/);
+  assert.match(modal.text, /data-export="png"/);
+  assert.match(modal.text, /data-export="pdf"/);
   assert.match(modal.text, /data-filename="khach-hang-chi-hoa"/);
 
   // Mở link trực tiếp: trang đầy đủ có nạp script xuất file
