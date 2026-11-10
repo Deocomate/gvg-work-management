@@ -83,6 +83,7 @@
 
 ## Nhật ký thay đổi
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-10 — Lịch đăng xếp lại: GSXD cách ngày từ 10/11 (12 video, tới 02/12), Vũ Gia cách ngày từ 11/11 (18 video "Đã chọn" chưa xong, tới 15/12; 15 video cũ chưa gắn brand được gắn Vũ Gia). Thứ tự: có kịch bản + có footage (đã quay / source có sẵn) → có kịch bản → có footage → còn lại, cùng nhóm giữ thứ tự cũ. Đổi cả `data/app.db` (sao lưu `app.backup-2026-11-10.db`) và ngày trong `sheet-import.json` — khoá chống trùng khi nhập là tên + ngày đăng nên hai nơi phải khớp.
 - 2026-11-10 — Plan: viết kịch bản cho 12 video GSXD T11/2026 (hook 3 lớp, từng đoạn theo giây, footage lấy từ kho ổ E theo 2 file "Báo cáo tổng quan video" + "Góc quay & cảnh quay công trình", chỗ cần số thật ghi [CẦN THAY]) vào trường `script` của `sheet-import.json`. Ô Kịch bản trong form thành ô nhiều dòng (tối đa 5000 ký tự); popup chi tiết hiện kịch bản viết sẵn thành mục riêng. "Nhập từ Sheet" điền kịch bản chữ vào nội dung đã có nếu ô kịch bản đang trống (không đè).
 - 2026-11-10 — Plan: thêm 12 video GSXD 10/11–06/12 từ Sheet "Kế hoạch content GSXD – T11/2026" (tab Lịch đăng + Quay theo lô) vào `sheet-import.json`: hook = tên, trụ cột/phễu/CTA/ads vào mô tả, tham khảo 1 = link tham khảo, tham khảo 2 + lô quay vào ghi chú; phụ trách Long, viết kịch bản theo tab Quay theo lô. Quản lý bấm "Nhập từ Sheet" để đưa vào.
 - 2026-11-07 — Plan: cột Đã chọn chia theo tuần đăng (class `.plan-group`, khác `.plan-week` của lịch tuần).

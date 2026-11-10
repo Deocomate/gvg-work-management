@@ -343,7 +343,10 @@ test('nhập từ Google Sheet cũ: chỉ quản lý, khớp tên, lên lịch l
   assert.match(flash, /Đã nhập \d+ nội dung mới từ Google Sheet, bổ sung link\/kịch bản cho 1 nội dung đã có/);
   assert.match(flash, /Chưa có tài khoản: .*Long/);
 
-  assert.match((await admin.get(`/plan/weeks?week=2026-10-26`)).text, /Video men lam/);
+  // Lịch đăng xếp lại 10/11: Vũ Gia cách ngày từ 11/11 (Video men lam đầu tiên), GSXD cách ngày từ 10/11
+  const tuan2 = (await admin.get(`/plan/weeks?week=2026-11-09`)).text;
+  assert.match(tuan2, /Video men lam/);
+  assert.match(tuan2, /Đất sét thành ngói âm dương/);
   assert.equal((await cardOf(admin, 'Giới thiệu xưởng')).column, 'selected');
   const loVang = (await cardOf(admin, 'gomsucaocap.vananloc/video/7598477484430085396'));
   assert.ok(loVang, 'thẻ "Mở lò vẽ vàng" có link TikTok thật');
