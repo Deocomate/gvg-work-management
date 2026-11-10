@@ -15,9 +15,13 @@
     <option value="">Mọi người</option>
     {{#each ownerOptions}}<option value="{{value}}" {{selected value @root.owner}}>{{label}}</option>{{/each}}
   </select>
+  <select name="link" class="input w-auto" aria-label="Link" data-autosubmit>
+    <option value="">Mọi link</option>
+    {{#each linkOptions}}<option value="{{value}}" {{selected value @root.link}}>{{label}}</option>{{/each}}
+  </select>
   <button type="submit" class="btn-secondary">Tìm</button>
   {{#if filtered}}<a href="/plan{{#if dropped}}?dropped=1{{/if}}" class="btn-ghost">Xoá lọc</a>{{/if}}
-  <a href="/plan?{{#unless dropped}}dropped=1&{{/unless}}brand={{urlEncode brand}}&owner={{owner}}&q={{urlEncode query}}" class="btn-ghost btn-sm sm:ml-auto">
+  <a href="/plan?{{#unless dropped}}dropped=1&{{/unless}}brand={{urlEncode brand}}&owner={{owner}}&link={{link}}&q={{urlEncode query}}" class="btn-ghost btn-sm sm:ml-auto">
     {{#if dropped}}Ẩn cột “Bỏ”{{else}}Hiện cột “Bỏ” ({{droppedTotal}}){{/if}}
   </a>
 </form>

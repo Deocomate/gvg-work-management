@@ -14,6 +14,10 @@
     <option value="">Mọi người</option>
     {{#each ownerOptions}}<option value="{{value}}" {{selected value @root.owner}}>{{label}}</option>{{/each}}
   </select>
+  <select name="link" class="input w-auto" aria-label="Link" data-autosubmit>
+    <option value="">Mọi link</option>
+    {{#each linkOptions}}<option value="{{value}}" {{selected value @root.link}}>{{label}}</option>{{/each}}
+  </select>
   <button type="submit" class="btn-secondary">Tìm</button>
   {{#if filtered}}<a href="/plan/archive" class="btn-ghost">Xoá lọc</a>{{/if}}
   <span class="text-sm text-ink-faint sm:ml-auto">{{total}} nội dung</span>

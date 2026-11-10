@@ -69,9 +69,9 @@ async function renderForm(req, res, { plan = null, values = {}, errors = {}, sta
 }
 
 export async function index(req, res) {
-  const { brand, owner, q, dropped } = req.query;
+  const { brand, owner, link, q, dropped } = req.query;
   const [data, owners] = await Promise.all([
-    service.getBoard({ brand: str(brand), owner: str(owner), q: str(q), dropped: dropped === '1' }, req.user),
+    service.getBoard({ brand: str(brand), owner: str(owner), link: str(link), q: str(q), dropped: dropped === '1' }, req.user),
     staffOptions(),
   ]);
   res.render('plan/index', {
@@ -79,17 +79,18 @@ export async function index(req, res) {
     tab: 'ideas',
     ...data,
     brandOptions: BRANDS,
+    linkOptions: service.LINK_FILTERS,
     ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
-    filtered: Boolean(data.brand || data.owner || data.query),
+    filtered: Boolean(data.brand || data.owner || data.link || data.query),
     canImport: isManager(req.user),
     back: req.originalUrl,
   });
 }
 
 export async function archive(req, res) {
-  const { brand, owner, q } = req.query;
+  const { brand, owner, link, q } = req.query;
   const [data, owners] = await Promise.all([
-    service.getArchive({ brand: str(brand), owner: str(owner), q: str(q) }, req.user),
+    service.getArchive({ brand: str(brand), owner: str(owner), link: str(link), q: str(q) }, req.user),
     staffOptions(),
   ]);
   res.render('plan/archive', {
@@ -97,8 +98,9 @@ export async function archive(req, res) {
     tab: 'archive',
     ...data,
     brandOptions: BRANDS,
+    linkOptions: service.LINK_FILTERS,
     ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
-    filtered: Boolean(data.brand || data.owner || data.query),
+    filtered: Boolean(data.brand || data.owner || data.link || data.query),
     back: req.originalUrl,
   });
 }

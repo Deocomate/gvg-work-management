@@ -42,21 +42,43 @@ export const decorate = (plan, user) => ({
 const searchText = (p) =>
   [p.title, p.description, p.topic, p.brand, p.note, p.script, p.reference_url, p.location, p.owner_name, p.proposer_name, p.writer_name].join(' ');
 
+// Ô chỉ tính là "có link" khi chứa đường link http(s) (ô kịch bản có thể chỉ là chữ).
+const hasLink = (v) => typeof v === 'string' && /https?:\/\/\S+/i.test(v);
+/** Bộ lọc theo link tham khảo / link kịch bản (dropdown "Mọi link"). */
+export const LINK_FILTERS = [
+  { value: 'ref', label: 'Có link tham khảo', test: (p) => hasLink(p.reference_url) },
+  { value: 'script', label: 'Có link kịch bản', test: (p) => hasLink(p.script) },
+  { value: 'both', label: 'Có cả 2 link', test: (p) => hasLink(p.reference_url) && hasLink(p.script) },
+  { value: 'noref', label: 'Chưa có link tham khảo', test: (p) => !hasLink(p.reference_url) },
+  { value: 'noscript', label: 'Chưa có link kịch bản', test: (p) => !hasLink(p.script) },
+];
+const LINK_FILTER = byValue(LINK_FILTERS);
+
 /**
- * Lọc brand, người (phụ trách hoặc viết kịch bản) và tìm không dấu.
+ * Lọc brand, người (phụ trách hoặc viết kịch bản), link và tìm không dấu.
  * Số ý tưởng nhỏ (vài trăm) nên lọc trong JS để bỏ dấu tiếng Việt (SQLite LIKE không làm được).
  */
-async function filteredPlans({ brand, owner, q }) {
+async function filteredPlans({ brand, owner, link, q }) {
   const plans = await repo.listAll();
   const words = foldText(q).split(/\s+/).filter(Boolean);
   const ownerId = Number(owner) || null;
+  const linkFilter = LINK_FILTER[link];
   const shown = plans.filter(
     (p) =>
       (!BRAND[brand] || p.brand === brand) &&
       (!ownerId || p.owner_id === ownerId || p.writer_id === ownerId) &&
+      (!linkFilter || linkFilter.test(p)) &&
       (!words.length || words.every((w) => foldText(searchText(p)).includes(w))),
   );
-  return { shown, filters: { brand: BRAND[brand] ? brand : '', owner: ownerId ? String(ownerId) : '', query: q?.trim() ?? '' } };
+  return {
+    shown,
+    filters: {
+      brand: BRAND[brand] ? brand : '',
+      owner: ownerId ? String(ownerId) : '',
+      link: linkFilter ? link : '',
+      query: q?.trim() ?? '',
+    },
+  };
 }
 
 // "Đã xong" không nằm trên bảng mà chuyển vào Lưu trữ (getArchive).
@@ -80,8 +102,8 @@ function groupByPostWeek(items, today) {
 }
 
 /** Idea bank dạng bảng cột theo bước: Mới → Đã chọn (cột "Bỏ" chỉ hiện khi bật). */
-export async function getBoard({ brand, owner, q, dropped } = {}, user) {
-  const { shown: all, filters } = await filteredPlans({ brand, owner, q });
+export async function getBoard({ brand, owner, link, q, dropped } = {}, user) {
+  const { shown: all, filters } = await filteredPlans({ brand, owner, link, q });
   const shown = all.filter((p) => p.status !== ARCHIVED);
   const today = todayISO();
 
@@ -103,8 +125,8 @@ export async function getBoard({ brand, owner, q, dropped } = {}, user) {
 }
 
 /** Lưu trữ: nội dung đã xong, ngày đăng mới nhất ở trên (chưa có ngày đăng thì xuống cuối). */
-export async function getArchive({ brand, owner, q } = {}, user) {
-  const { shown, filters } = await filteredPlans({ brand, owner, q });
+export async function getArchive({ brand, owner, link, q } = {}, user) {
+  const { shown, filters } = await filteredPlans({ brand, owner, link, q });
   const items = shown
     .filter((p) => p.status === ARCHIVED)
     .sort((a, b) => (b.post_date ?? '').localeCompare(a.post_date ?? ''))
