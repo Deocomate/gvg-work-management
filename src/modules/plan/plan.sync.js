@@ -31,7 +31,7 @@ const isDone = (plan) => plan.status === 'posted';
 /** Các việc lẽ ra phải có trên lịch cho nội dung này: { shoot?, post? }. */
 function desiredTasks(plan) {
   if (!plan.owner_id || plan.status === 'dropped') return {};
-  const base = { assignee_id: plan.owner_id, created_by: plan.created_by, priority: 'normal', group_key: null, plan_id: plan.id };
+  const base = { assignee_id: plan.owner_id, created_by: plan.created_by, priority: 'normal', group_key: null, plan_id: plan.id, brand: plan.brand || null };
   const links = [plan.script, plan.reference_url, ...(plan.extra_reference_urls ?? '').split('\n'), plan.source_url].filter(isUrl).map((u) => u.trim());
   const wanted = {};
   if (plan.shoot_date) {
@@ -46,7 +46,6 @@ function desiredTasks(plan) {
       note: lines(
         plan.location && `📍 Địa điểm: ${plan.location}`,
         !start && plan.shoot_time && `🕒 Giờ quay: ${plan.shoot_time}`,
-        plan.brand && `Brand: ${plan.brand}`,
         plan.script && !isUrl(plan.script) && `Kịch bản: ${plan.script}`,
         plan.post_date && `Đăng ngày ${plan.post_date.split('-').reverse().join('/')}`,
         plan.note,
@@ -62,7 +61,7 @@ function desiredTasks(plan) {
       start_time: null, // lịch đăng không theo giờ -> cả ngày
       end_time: null,
       facilities: null,
-      note: lines(plan.brand && `Brand: ${plan.brand}`, plan.note),
+      note: lines(plan.note),
       links: lines(...[plan.source_url, plan.post_url].filter(isUrl).map((u) => u.trim())),
     };
   }

@@ -1,6 +1,9 @@
 // Luật dữ liệu cho form Plan nội dung. Lựa chọn cố định dùng chung cho view, bộ lọc và validate.
 import { z } from 'zod';
 import { emptyToUndefined } from '#lib/validate.js';
+import { BRANDS } from '#lib/brands.js';
+
+export { BRANDS };
 
 export const PLATFORMS = [
   { value: 'tiktok', label: 'TikTok', badge: 'badge-gray' },
@@ -8,14 +11,6 @@ export const PLATFORMS = [
   { value: 'instagram', label: 'Instagram', badge: 'badge-gray' },
   { value: 'youtube', label: 'YouTube', badge: 'badge-gray' },
   { value: 'other', label: 'Khác', badge: 'badge-gray' },
-];
-
-// Danh mục lấy từ tab "Danh mục" của Google Sheet cũ.
-// short = chữ viết tắt trên lịch tháng; badge = màu nhãn brand — mỗi brand một màu riêng, không trùng màu các bước.
-export const BRANDS = [
-  { value: 'Vũ Gia', label: 'Vũ Gia', short: 'VG', badge: 'badge-brand-vg' },
-  { value: 'Klayy', label: 'Klayy', short: 'KL', badge: 'badge-brand-kl' },
-  { value: 'GSXD', label: 'GSXD', short: 'GS', badge: 'badge-brand-gs' },
 ];
 
 export const VIDEO_TYPES = [

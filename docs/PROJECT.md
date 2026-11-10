@@ -25,6 +25,8 @@
 - [x] Quyền: quản lý giao việc cho mọi người, xem theo từng nhân viên hoặc tất cả; nhân viên chỉ thấy việc của mình, tự thêm việc cá nhân, sửa/xoá việc mình tạo
 - [x] Hiệu suất tuần (`/performance`, chỉ quản lý): tổng quan cả nhóm (tổng việc, % hoàn thành, % đúng hạn, quá hạn) + bảng từng người (thanh % hoàn thành xanh/vàng/cam, đã xong, đúng hạn, xong trễ, đang làm, quá hạn, so với tuần trước); chuyển tuần trước/sau; bấm tên → xem việc người đó
 - [x] Nhân viên (`/staff`, chỉ quản lý): thêm/sửa/xoá tài khoản, đặt lại mật khẩu, phân vai trò, số điện thoại (không bắt buộc, bấm để gọi)
+- [x] Brand cho công việc: nút chọn Không / Vũ Gia / Klayy / GSXD trong form giao việc (thêm + sửa); việc từ Plan tự mang brand của nội dung. Nhãn màu brand trên từng việc ở Hôm nay, chữ viết tắt VG/KL/GS trên lịch tuần, chữ brand trên phiếu in. Trang chủ có ô lọc **Tất cả brand / từng brand / Chưa gắn brand** (`?brand=`, `none` = chưa gắn) — áp cho lịch tuần, việc trong ngày, việc tồn, tiến độ; giữ khi chuyển ngày/tuần; "+ Thêm việc" chọn sẵn brand đang lọc
+- [x] Phiếu công việc để in / lưu PDF / sao chép gửi Zalo (`/today/sheet`, nút "Xuất phiếu" và "Phiếu tuần" ở trang Hôm nay): luôn gồm việc của tất cả mọi người, mỗi người một bảng. Theo **Ngày** (kèm việc tồn nếu là hôm nay) hoặc theo **Tuần** (`&range=week`, T2–CN, việc chia theo từng ngày, có số việc đã xong/tổng, nút tuần trước/sau); chuyển Ngày/Tuần ngay trên thanh công cụ
 - [x] Menu "Hôm nay" có số đỏ = số việc chưa xong hôm nay
 - [x] Tài liệu cần thiết: trang `/links` (menu "Tài liệu") cho mọi người xem, mở tab mới; chỉ quản lý thêm/sửa/xoá. Không hiện ở trang Hôm nay
   - Chia **thư mục** (cột trái trên máy tính, hàng nút trượt ngang trên điện thoại; có số link mỗi thư mục, mục "Chưa phân loại"). Quản lý tạo/đổi tên/xoá thư mục (xoá thì link chuyển về Chưa phân loại), chọn thư mục trong form link hoặc chọn "+ Tạo thư mục mới…" để tạo luôn (trùng tên thì dùng thư mục cũ)
@@ -55,6 +57,7 @@
 | link_folders | thư mục tài liệu: tên, name_key (tên viết thường, unique — chặn trùng kể cả chữ có dấu) |
 | customers | khách hàng: liên hệ, loại khách, công ty/MST, nguồn, trạng thái, nhu cầu, ghi chú, người phụ trách (owner_id), người nhập (created_by); phone_digits = SĐT chỉ còn chữ số (unique) để chặn trùng |
 | customer_invoices | hoá đơn của khách: ngày, giá trị (đồng), ghi chú, file (tên, loại, cỡ, nội dung BLOB); xoá khách thì xoá theo |
+| tasks (thêm) | brand: Vũ Gia / Klayy / GSXD hoặc trống (migration 017; việc từ Plan lấy brand của nội dung) |
 | tasks (thêm) | plan_id + plan_kind (shoot/post): việc lấy từ Plan nội dung (migration 014, unique theo cặp) |
 | content_plans | Plan nội dung: tên, mô tả, link tham khảo (link hoặc chữ), link tham khảo thêm (extra_reference_urls, mỗi link một dòng), kênh (platform), tuyến nội dung (topic), brand, loại video (video_type), người góp (proposer_id), người viết kịch bản (writer_id), kịch bản (script, link hoặc chữ), khung giờ quay (shoot_time, chữ tự do), địa điểm (location), CSVC (props), link source (source_url), ghi chú (note), trạng thái idea/selected/scripted/scheduled/filmed/posted/dropped, ngày quay, ngày + giờ đăng, link bài đã đăng, người phụ trách (owner_id), người tạo (created_by) |
 <!-- [vibe:tables] -->
@@ -84,6 +87,8 @@
 ## Nhật ký thay đổi
 
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
+- 2026-11-10 — Công việc có brand (migration 017 `tasks.brand`) + ô lọc brand ở trang chủ. Danh sách brand chuyển về `src/lib/brands.js` dùng chung cho Plan và công việc. Việc Quay/Đăng từ Plan bỏ dòng "Brand: …" trong ghi chú (đã có nhãn).
+- 2026-11-10 — Phiếu công việc theo tuần (`/today/sheet?range=week`, view `schedule/sheet-week`): T2–CN, mỗi người một bảng chia theo ngày; nút "🗓 Phiếu tuần" ở trang Hôm nay, chuyển Ngày/Tuần trên phiếu.
 - 2026-11-10 — Lịch làm việc: nút "Xem ở Plan" trên việc Quay/Đăng mở trang xem chi tiết nội dung (trước mở thẳng form sửa); muốn sửa thì bấm Sửa ở trang chi tiết.
 - 2026-11-10 — Plan: thêm "Link tham khảo 2, 3…" (nút + Thêm link tham khảo trong form, tối đa 10, bỏ ô bằng ✕). Hiện trên thẻ Idea bank (Tham khảo 2…), trang chi tiết, việc trên lịch làm việc; bộ lọc "Có/Chưa có link tham khảo" tính cả link thêm. Migration 016.
 - 2026-11-10 — Lịch đăng xếp lại: GSXD cách ngày từ 10/11 (12 video, tới 02/12), Vũ Gia cách ngày từ 11/11 (18 video "Đã chọn" chưa xong, tới 15/12; 15 video cũ chưa gắn brand được gắn Vũ Gia). Thứ tự: có kịch bản + có footage (đã quay / source có sẵn) → có kịch bản → có footage → còn lại, cùng nhóm giữ thứ tự cũ. Đổi cả `data/app.db` (sao lưu `app.backup-2026-11-10.db`) và ngày trong `sheet-import.json` — khoá chống trùng khi nhập là tên + ngày đăng nên hai nơi phải khớp.

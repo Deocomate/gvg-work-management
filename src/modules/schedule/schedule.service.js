@@ -65,13 +65,13 @@ export function mergeGroups(tasks) {
 }
 
 // perPerson: giữ mỗi người một bản (phiếu công việc); không thì xem cả nhóm sẽ gộp việc làm chung.
-export async function getDay({ date, assigneeId, perPerson = false }) {
+export async function getDay({ date, assigneeId, brand = '', perPerson = false }) {
   const today = todayISO();
   const now = nowTimeHM();
   const merge = assigneeId || perPerson ? (list) => list : mergeGroups;
   const [tasks, overdue] = await Promise.all([
-    tasksRepo.listForDay({ date, assigneeId }).then(merge),
-    date === today ? tasksRepo.listOverdue({ beforeDate: today, assigneeId }).then(merge) : [],
+    tasksRepo.listForDay({ date, assigneeId, brand }).then(merge),
+    date === today ? tasksRepo.listOverdue({ beforeDate: today, assigneeId, brand }).then(merge) : [],
   ]);
 
   const items = tasks.map((t) => ({ ...t, ...timing(t, today, now) }));
@@ -110,11 +110,36 @@ export async function getSheet({ date, assigneeId }) {
   };
 }
 
+/**
+ * Phiếu công việc theo tuần (T2–CN của tuần chứa `date`): mỗi người một bảng, việc chia theo từng ngày.
+ * Mỗi người giữ bản riêng của việc làm chung (như phiếu ngày); ngày không có việc của người đó thì bỏ.
+ */
+export async function getWeekSheet({ date }) {
+  const days = weekDays(date);
+  const tasks = await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId: null });
+  const people = new Map();
+  for (const task of tasks) {
+    const person = people.get(task.assignee_id) ?? { name: task.assignee_name, byDate: new Map(), total: 0, done: 0 };
+    person.byDate.set(task.date, [...(person.byDate.get(task.date) ?? []), task]);
+    person.total += 1;
+    if (task.status === 'done') person.done += 1;
+    people.set(task.assignee_id, person);
+  }
+  return {
+    days,
+    people: [...people.values()]
+      .sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+      .map(({ byDate, ...p }) => ({ ...p, days: days.filter((d) => byDate.has(d)).map((d) => ({ date: d, tasks: byDate.get(d) })) })),
+    prev: addDays(date, -7),
+    next: addDays(date, 7),
+  };
+}
+
 /** 7 ngày (T2–CN) của tuần chứa `date`, mỗi ngày kèm danh sách việc — dải lịch tuần trên trang "Hôm nay". */
-export async function getWeek({ date, assigneeId }) {
+export async function getWeek({ date, assigneeId, brand = '' }) {
   const days = weekDays(date);
   const today = todayISO();
-  const tasks = await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId });
+  const tasks = await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId, brand });
   const list = assigneeId ? tasks : mergeGroups(tasks);
 
   return {

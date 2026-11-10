@@ -1,6 +1,10 @@
 // Luật dữ liệu cho form giao việc. Lựa chọn cố định dùng chung cho view và validate.
 import { z } from 'zod';
 import { emptyToUndefined } from '#lib/validate.js';
+import { BRANDS } from '#lib/brands.js';
+
+/** Nút chọn brand trong form giao việc: "Không" + các brand. */
+export const TASK_BRAND_OPTIONS = [{ value: '', label: 'Không' }, ...BRANDS];
 
 export const TASK_STATUSES = [
   { value: 'todo', label: 'Chưa làm', badge: 'badge-gray', bar: 'border-line-strong', chip: 'bg-raised text-ink-soft' },
@@ -104,6 +108,7 @@ export const taskSchema = z
     date: z.iso.date({ error: 'Vui lòng chọn ngày' }),
     start_time: time,
     end_time: time,
+    brand: z.preprocess(emptyToUndefined, z.enum(values(BRANDS), { error: 'Brand không hợp lệ' }).optional()),
     priority: optionalEnum(TASK_PRIORITIES, 'normal', 'Mức ưu tiên không hợp lệ'),
     status: optionalEnum(TASK_STATUSES, 'todo', 'Trạng thái không hợp lệ'),
   })

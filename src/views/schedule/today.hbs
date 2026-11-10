@@ -1,6 +1,7 @@
 {{#> page-header title=title subtitle=(formatWeekday date)}}
   <a href="/today/sheet?date={{date}}" class="btn-secondary" title="Phiếu công việc trong ngày để in hoặc gửi cho mọi người">🖨 Xuất phiếu</a>
-  <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
+  <a href="/today/sheet?date={{date}}&range=week" class="btn-secondary" title="Phiếu công việc cả tuần (T2–CN) để in hoặc gửi cho mọi người">🗓 Phiếu tuần</a>
+  <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
 {{/page-header}}
 
 {{!-- Chọn tuần/ngày (và nhân viên nếu là quản lý) --}}
@@ -9,6 +10,9 @@
   <input type="date" name="date" value="{{date}}" class="input w-auto" aria-label="Chọn ngày" data-autosubmit>
   <a href="/today?date={{week.next}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần sau" title="Tuần sau">›</a>
   {{#unless isToday}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về hôm nay</a>{{/unless}}
+  <select name="brand" class="input w-auto min-w-40" aria-label="Lọc theo brand" data-autosubmit>
+    {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
+  </select>
   {{> schedule/staff-filter}}
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>

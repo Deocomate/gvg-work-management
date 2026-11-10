@@ -205,6 +205,8 @@ test('đồng bộ sang lịch làm việc: người phụ trách có việc Qua
   assert.match(shootDay, /Đèn, chân máy/);
   assert.match(shootDay, /docs\.google\.com\/document\/d\/abc/);
   assert.match(shootDay, />Plan</);
+  // Việc từ Plan mang brand của nội dung -> lọc brand ở trang chủ được
+  assert.doesNotMatch(shootDay, /Brand: /);
   // "Xem ở Plan" mở trang xem chi tiết, không mở thẳng form sửa
   assert.match(shootDay, /href="\/plan\/\d+\?back=[^"]*"[^>]*>Xem ở Plan/);
   assert.doesNotMatch(shootDay, /\/plan\/\d+\/edit[^"]*"[^>]*>Xem ở Plan/);

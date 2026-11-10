@@ -126,6 +126,64 @@ test('phiếu công việc: ai xuất cũng ra việc của tất cả mọi ng�
   assert.match(empty, /Không có việc nào trong ngày này/);
 });
 
+test('phiếu tuần: việc T2–CN của mọi người, chia theo ngày; chuyển tuần trước/sau', async () => {
+  const week = weekDays(today);
+  const otherDay = week.find((d) => d !== today);
+  await assign({ title: 'Kiểm kê cuối tuần', date: otherDay, start_time: '09:00' });
+  await assign({ title: 'Việc tuần sau', date: addDays(week[6], 1) });
+  assert.ok((await hoa.get('/today')).text.includes(`href="/today/sheet?date=${today}&range=week"`));
+  const html = (await hoa.get(`/today/sheet?date=${today}&range=week`)).text;
+  assert.match(html, /PHIẾU CÔNG VIỆC TUẦN/);
+  assert.match(html, /<h2>Phạm Hoa/);
+  assert.match(html, /Việc riêng của quản lý/); // nhân viên cũng thấy cả nhóm
+  assert.match(html, /Kiểm kê cuối tuần/);
+  assert.match(html, /Họp sáng/);
+  assert.doesNotMatch(html, /Việc tuần sau/);
+  // Ngày sớm hơn đứng trước
+  const [first, second] = [today, otherDay].sort();
+  const label = (d) => d.split('-').reverse().join('/');
+  assert.ok(html.indexOf(label(first)) < html.indexOf(label(second)));
+  assert.ok(html.includes(`href="/today/sheet?date=${addDays(today, 7)}&range=week"`));
+  const next = (await hoa.get(`/today/sheet?date=${addDays(today, 7)}&range=week`)).text;
+  assert.match(next, /Việc tuần sau/);
+  const empty = (await hoa.get(`/today/sheet?date=${addDays(today, 70)}&range=week`)).text;
+  assert.match(empty, /Không có việc nào trong tuần này/);
+});
+
+test('brand: gắn khi giao việc, hiện nhãn, lọc ở trang chủ (giữ khi chuyển tuần), sai brand -> lỗi', async () => {
+  const day = addDays(today, 40);
+  assert.match((await admin.get('/tasks/new')).text, /name="brand" value="GSXD"/);
+  await assign({ title: 'Chụp ảnh gạch GSXD', date: day, brand: 'GSXD' });
+  await assign({ title: 'Đóng gói Klayy', date: day, brand: 'Klayy' });
+  await assign({ title: 'Việc không brand', date: day });
+  const bad = await assign({ title: 'Brand lạ', date: day, brand: 'ABC' });
+  assert.equal(bad.status, 422);
+  assert.match(bad.text, /Brand không hợp lệ/);
+
+  const all = (await hoa.get(`/today?date=${day}`)).text;
+  assert.match(all, /Chụp ảnh gạch GSXD<\/h3>\s*<span class="badge-brand-gs">GSXD<\/span>/);
+  assert.match(all, /Đóng gói Klayy/);
+  assert.match(all, /Việc không brand/);
+  assert.match(all, /<select name="brand"[^>]*>/);
+
+  const gs = (await hoa.get(`/today?date=${day}&brand=GSXD`)).text;
+  assert.match(gs, /Chụp ảnh gạch GSXD/);
+  assert.doesNotMatch(gs, /Đóng gói Klayy|Việc không brand/);
+  assert.match(gs, /<option value="GSXD" selected>/);
+  assert.match(gs, new RegExp(`href="/today\\?date=${addDays(day, 7)}[^"]*brand(=|&#x3D;)GSXD"`)); // giữ brand khi sang tuần
+  assert.match(gs, /\/tasks\/new\?date=[^"]*&brand=GSXD/); // Thêm việc chọn sẵn brand
+
+  const none = (await hoa.get(`/today?date=${day}&brand=none`)).text;
+  assert.match(none, /Việc không brand/);
+  assert.doesNotMatch(none, /Chụp ảnh gạch GSXD|Đóng gói Klayy/);
+  // Brand lạ trên URL -> bỏ lọc
+  assert.match((await hoa.get(`/today?date=${day}&brand=xyz`)).text, /Đóng gói Klayy/);
+  // Form "Thêm việc" từ trang đang lọc -> chọn sẵn brand
+  assert.match((await admin.get(`/tasks/new?date=${day}&brand=Klayy`)).text, /name="brand" value="Klayy" checked/);
+  // Phiếu in ghi brand
+  assert.match((await hoa.get(`/today/sheet?date=${day}`)).text, /Chụp ảnh gạch GSXD<\/strong> <span class="tag-brand">GSXD/);
+});
+
 test('tuần luôn bắt đầu Thứ 2', () => {
   assert.deepEqual(weekDays('2026-10-28'), [
     '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01',

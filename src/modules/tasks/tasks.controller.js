@@ -1,5 +1,6 @@
 // Thêm/sửa/xoá việc và đổi trạng thái nhanh. Không chứa SQL hay quy tắc quyền.
 import { formatDayVN, isISODate, todayISO, weekdayOf } from '#lib/dates.js';
+import { NO_BRAND, parseBrandFilter } from '#lib/brands.js';
 import { safeBack } from '#lib/redirect.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import {
@@ -9,6 +10,7 @@ import {
   REPEAT_WEEKDAYS,
   repeatSummary,
   TASK_PRIORITIES,
+  TASK_BRAND_OPTIONS,
   TASK_STATUSES,
 } from './tasks.schema.js';
 import * as service from './tasks.service.js';
@@ -34,12 +36,13 @@ async function renderForm(req, res, { task = null, values = {}, errors = {}, sta
     ...weekdayChoices(values),
     title: task ? 'Sửa công việc' : 'Thêm công việc',
     task,
-    values,
+    values: { ...values, brand: values.brand ?? '' },
     errors,
     manager,
     assigneeChoices: options.map((o) => ({ ...o, checked: picked.includes(o.value) })),
     statusOptions: TASK_STATUSES,
     priorityOptions: TASK_PRIORITIES,
+    brandOptions: TASK_BRAND_OPTIONS,
     repeatOptions: REPEAT_OPTIONS,
     back: safeBack(values.back, dayUrl(values.date || todayISO())),
   });
@@ -48,9 +51,11 @@ async function renderForm(req, res, { task = null, values = {}, errors = {}, sta
 export function newForm(req, res) {
   const date = isISODate(req.query.date) ? req.query.date : todayISO();
   // Quản lý phải chủ động chọn người nhận (trừ khi đang xem lịch của một người cụ thể).
+  // Đang lọc một brand ở trang chủ -> chọn sẵn brand đó
+  const brand = parseBrandFilter(req.query.brand);
   const assignee = Number(req.query.user) || (service.isManager(req.user) ? '' : req.user.id);
   return renderForm(req, res, {
-    values: { date, assignee_id: assignee, priority: 'normal', repeat: 'none', back: req.query.back },
+    values: { date, assignee_id: assignee, brand: brand === NO_BRAND ? '' : brand, priority: 'normal', repeat: 'none', back: req.query.back },
   });
 }
 

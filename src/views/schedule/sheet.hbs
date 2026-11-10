@@ -1,7 +1,7 @@
 {{!-- Phiếu công việc trong ngày. Thanh công cụ chỉ hiện trên màn hình, không in ra. --}}
 {{#*inline "task-cell"}}
   <td>
-    <strong>{{title}}</strong>{{#if (eq priority 'high')}} <span class="tag-high">Quan trọng</span>{{/if}}
+    <strong>{{title}}</strong>{{#if brand}} <span class="tag-brand">{{brand}}</span>{{/if}}{{#if (eq priority 'high')}} <span class="tag-high">Quan trọng</span>{{/if}}
     {{#if coworkers}}<div class="note">Phụ trách: {{assignee_name}}, {{coworkers}}</div>{{/if}}
     {{#if note}}<div class="note">{{note}}</div>{{/if}}
     {{#if facilities}}<div class="note"><b>Chuẩn bị:</b> {{facilities}}</div>{{/if}}
@@ -15,6 +15,10 @@
   <a href="{{back}}" class="btn">‹ Quay lại</a>
   <input type="date" name="date" value="{{date}}" class="input" aria-label="Chọn ngày" data-autosubmit>
   <noscript><button type="submit" class="btn">Xem</button></noscript>
+  <span class="seg" role="group" aria-label="Phiếu theo">
+    <span class="seg-item is-active" aria-current="page">Ngày</span>
+    <a href="/today/sheet?date={{date}}&range=week" class="seg-item">Tuần</a>
+  </span>
   <span class="spacer"></span>
   <button type="button" class="btn" data-copy="#sheet">📋 Sao chép chữ</button>
   <button type="button" class="btn btn-primary" data-print>🖨 In / Lưu PDF</button>

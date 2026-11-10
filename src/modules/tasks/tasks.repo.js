@@ -9,19 +9,32 @@ const SELECT_SQL = `SELECT t.*, u.name AS assignee_name,
 // Trong ngày: việc "cả ngày" trước, rồi theo giờ; việc quan trọng lên trước khi cùng giờ.
 const DAY_ORDER_SQL = `ORDER BY t.start_time IS NOT NULL, t.start_time, t.priority = 'high' DESC, t.id`;
 
-// assigneeId = null -> mọi người. Phần SQL là chuỗi cố định, giá trị đi qua args.
-const byAssignee = (assigneeId) =>
-  assigneeId ? { assigneeSql: 'AND t.assignee_id = ?', args: [assigneeId] } : { assigneeSql: '', args: [] };
+// assigneeId = null -> mọi người; brand = '' -> mọi brand, 'none' -> việc chưa gắn brand.
+// Phần SQL là chuỗi cố định, giá trị đi qua args.
+function byAssignee(assigneeId, brand = '') {
+  const parts = [];
+  const args = [];
+  if (assigneeId) {
+    parts.push('AND t.assignee_id = ?');
+    args.push(assigneeId);
+  }
+  if (brand === 'none') parts.push('AND t.brand IS NULL');
+  else if (brand) {
+    parts.push('AND t.brand = ?');
+    args.push(brand);
+  }
+  return { assigneeSql: parts.join(' '), args };
+}
 
 export const findById = (id) => get(`${SELECT_SQL} WHERE t.id = ?`, [id]);
 
-export function listForDay({ date, assigneeId }) {
-  const { assigneeSql, args } = byAssignee(assigneeId);
+export function listForDay({ date, assigneeId, brand }) {
+  const { assigneeSql, args } = byAssignee(assigneeId, brand);
   return all(`${SELECT_SQL} WHERE t.date = ? ${assigneeSql} ${DAY_ORDER_SQL}`, [date, ...args]);
 }
 
-export function listForRange({ from, to, assigneeId }) {
-  const { assigneeSql, args } = byAssignee(assigneeId);
+export function listForRange({ from, to, assigneeId, brand }) {
+  const { assigneeSql, args } = byAssignee(assigneeId, brand);
   return all(
     `${SELECT_SQL} WHERE t.date BETWEEN ? AND ? ${assigneeSql}
      ORDER BY t.date, t.start_time IS NOT NULL, t.start_time, t.id`,
@@ -30,8 +43,8 @@ export function listForRange({ from, to, assigneeId }) {
 }
 
 /** Việc chưa xong của những ngày trước `beforeDate`. */
-export function listOverdue({ beforeDate, assigneeId, limit = 20 }) {
-  const { assigneeSql, args } = byAssignee(assigneeId);
+export function listOverdue({ beforeDate, assigneeId, brand, limit = 20 }) {
+  const { assigneeSql, args } = byAssignee(assigneeId, brand);
   return all(
     `${SELECT_SQL} WHERE t.date < ? AND t.status <> 'done' ${assigneeSql}
      ORDER BY t.date DESC, t.start_time LIMIT ?`,
@@ -47,8 +60,8 @@ export async function countUnfinished({ date, assigneeId }) {
   return Number(row.total);
 }
 
-const INSERT_SQL = `INSERT INTO tasks (title, note, links, facilities, group_key, assignee_id, created_by, date, start_time, end_time, priority, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+const INSERT_SQL = `INSERT INTO tasks (title, note, links, facilities, group_key, assignee_id, created_by, date, start_time, end_time, priority, status, brand)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 const insertArgs = (t) => [
   t.title,
   t.note ?? null,
@@ -62,6 +75,7 @@ const insertArgs = (t) => [
   t.end_time ?? null,
   t.priority,
   t.status,
+  t.brand ?? null,
 ];
 
 /** Thêm nhiều việc (VD việc lặp lại) trong một transaction: thêm hết hoặc không thêm gì. */
@@ -74,7 +88,7 @@ export async function createMany(tasks) {
 export const listGroup = (groupKey) => all(`${SELECT_SQL} WHERE t.group_key = ? ORDER BY t.id`, [groupKey]);
 
 const UPDATE_SQL = `UPDATE tasks SET title = ?, note = ?, links = ?, facilities = ?, group_key = ?, assignee_id = ?, date = ?,
-     start_time = ?, end_time = ?, priority = ?, status = ?,
+     start_time = ?, end_time = ?, priority = ?, status = ?, brand = ?,
      done_at = CASE WHEN ? = 'done' THEN COALESCE(done_at, datetime('now')) ELSE NULL END,
      updated_at = datetime('now')
    WHERE id = ?`;
@@ -90,6 +104,7 @@ const updateArgs = (id, t) => [
   t.end_time ?? null,
   t.priority,
   t.status,
+  t.brand ?? null,
   t.status,
   id,
 ];
@@ -122,8 +137,8 @@ export async function remove(id) {
 /** Các việc (quay / đăng) đang gắn với một nội dung Plan. */
 export const listForPlan = (planId) => all(`${SELECT_SQL} WHERE t.plan_id = ? ORDER BY t.id`, [planId]);
 
-const INSERT_PLAN_SQL = `INSERT INTO tasks (title, note, links, facilities, group_key, assignee_id, created_by, date, start_time, end_time, priority, status, plan_id, plan_kind)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+const INSERT_PLAN_SQL = `INSERT INTO tasks (title, note, links, facilities, group_key, assignee_id, created_by, date, start_time, end_time, priority, status, brand, plan_id, plan_kind)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
 /** Thêm / sửa / xoá việc của một nội dung Plan trong một transaction. */
 export async function savePlanTasks({ updates = [], creates = [], deletes = [] }) {

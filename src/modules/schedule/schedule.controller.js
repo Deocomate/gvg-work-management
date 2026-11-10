@@ -1,4 +1,5 @@
 // Màn hình "Hôm nay" và "Lịch". Chỉ đọc dữ liệu; thao tác thật nằm ở module tasks.
+import { BRANDS, NO_BRAND, brandInfo, parseBrandFilter } from '#lib/brands.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { TASK_STATUSES } from '#modules/tasks/tasks.schema.js';
 import { canChangeStatus, canEdit, isManager, taskLinks } from '#modules/tasks/tasks.service.js';
@@ -10,30 +11,40 @@ const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const decorate = (user) => (task) => ({
   ...task,
   statusInfo: statusInfo[task.status],
+  brandInfo: brandInfo(task.brand),
   isHigh: task.priority === 'high',
   linkList: taskLinks(task),
   canEdit: canEdit(user, task),
   canStatus: canChangeStatus(user, task),
 });
 
-// Phần chung: bộ lọc nhân viên cho quản lý.
+// Phần chung: bộ lọc nhân viên cho quản lý, bộ lọc brand cho mọi người.
 async function viewerContext(req) {
   const manager = isManager(req.user);
   const assigneeId = service.resolveAssignee(req.user, req.query.user);
   const selectedUser = manager ? (assigneeId ?? service.ALL_USERS) : '';
+  const brand = parseBrandFilter(req.query.brand);
+  const brandQuery = brand ? `&brand=${encodeURIComponent(brand)}` : '';
   return {
+    brand,
+    brandQuery,
+    brandOptions: [
+      { value: '', label: 'Tất cả brand' },
+      ...BRANDS.map((b) => ({ value: b.value, label: b.label })),
+      { value: NO_BRAND, label: 'Chưa gắn brand' },
+    ],
     assigneeId,
     manager,
     showAssignee: manager && !assigneeId,
     staffOptions: manager ? await staffOptions() : [],
     allUsers: service.ALL_USERS,
     selectedUser,
-    // Giữ lựa chọn của quản lý khi chuyển ngày/tuần/tháng
-    userQuery: manager ? `&user=${selectedUser}` : '',
+    // Giữ lựa chọn nhân viên (quản lý) + brand khi chuyển ngày/tuần/tháng
+    userQuery: (manager ? `&user=${selectedUser}` : '') + brandQuery,
   };
 }
 
-const withStatus = (task) => ({ ...task, statusInfo: statusInfo[task.status] });
+const withStatus = (task) => ({ ...task, statusInfo: statusInfo[task.status], brandInfo: brandInfo(task.brand) });
 const withLinks = (task) => ({ ...task, linkList: taskLinks(task) });
 
 // Trang chính: lịch tuần ở trên, việc của ngày đang chọn ở dưới.
@@ -41,8 +52,8 @@ export async function today(req, res) {
   const date = service.parseDate(req.query.date);
   const viewer = await viewerContext(req);
   const [day, week] = await Promise.all([
-    service.getDay({ date, assigneeId: viewer.assigneeId }),
-    service.getWeek({ date, assigneeId: viewer.assigneeId }),
+    service.getDay({ date, assigneeId: viewer.assigneeId, brand: viewer.brand }),
+    service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand }),
   ]);
   const withRights = decorate(req.user);
 
@@ -62,8 +73,10 @@ export async function today(req, res) {
 }
 
 // Phiếu công việc trong ngày (trang in được): luôn gồm việc của tất cả mọi người trong một phiếu.
+// ?range=week: phiếu cả tuần (T2–CN) chứa ngày đó.
 export async function sheet(req, res) {
   const date = service.parseDate(req.query.date);
+  if (req.query.range === 'week') return weekSheet(res, date);
   const data = await service.getSheet({ date, assigneeId: null });
 
   res.render('schedule/sheet', {
@@ -72,6 +85,20 @@ export async function sheet(req, res) {
     ...data,
     date,
     people: data.people.map((p) => ({ ...p, tasks: p.tasks.map(withLinks), overdue: p.overdue.map(withLinks) })),
+    back: `/today?date=${date}`,
+  });
+}
+
+async function weekSheet(res, date) {
+  const data = await service.getWeekSheet({ date });
+  res.render('schedule/sheet-week', {
+    layout: 'print',
+    title: 'Phiếu công việc tuần',
+    ...data,
+    date,
+    from: data.days[0],
+    to: data.days[6],
+    people: data.people.map((p) => ({ ...p, days: p.days.map((d) => ({ ...d, tasks: d.tasks.map(withLinks) })) })),
     back: `/today?date=${date}`,
   });
 }

@@ -12,6 +12,7 @@
   <div class="min-w-0 flex-1 border-l-4 pl-3 sm:pl-4 {{statusInfo.bar}}">
     <div class="flex flex-wrap items-center gap-2">
       <h3 class="font-medium {{#if (eq status 'done')}}text-ink-faint line-through{{else}}text-ink{{/if}}">{{title}}</h3>
+      {{#if brandInfo}}<span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>{{/if}}
       <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
       {{#if isHigh}}<span class="badge-red">Quan trọng</span>{{/if}}
       {{#if isNow}}<span class="badge-pink">Đang diễn ra</span>{{/if}}

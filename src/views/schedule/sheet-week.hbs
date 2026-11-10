@@ -1,0 +1,58 @@
+{{!-- Phiếu công việc theo tuần (T2–CN). Mỗi người một bảng, việc chia theo ngày. Thanh công cụ không in ra. --}}
+<form method="get" action="/today/sheet" class="toolbar no-print">
+  <a href="{{back}}" class="btn">‹ Quay lại</a>
+  <input type="hidden" name="range" value="week">
+  <a href="/today/sheet?date={{prev}}&range=week" class="btn" aria-label="Tuần trước" title="Tuần trước">‹</a>
+  <input type="date" name="date" value="{{date}}" class="input" aria-label="Chọn một ngày trong tuần" data-autosubmit>
+  <a href="/today/sheet?date={{next}}&range=week" class="btn" aria-label="Tuần sau" title="Tuần sau">›</a>
+  <noscript><button type="submit" class="btn">Xem</button></noscript>
+  <span class="seg" role="group" aria-label="Phiếu theo">
+    <a href="/today/sheet?date={{date}}" class="seg-item">Ngày</a>
+    <span class="seg-item is-active" aria-current="page">Tuần</span>
+  </span>
+  <span class="spacer"></span>
+  <button type="button" class="btn" data-copy="#sheet">📋 Sao chép chữ</button>
+  <button type="button" class="btn btn-primary" data-print>🖨 In / Lưu PDF</button>
+</form>
+
+<article id="sheet" class="sheet sheet-week">
+  <header class="sheet-head">
+    <p class="sheet-app">{{appName}}</p>
+    <h1>PHIẾU CÔNG VIỆC TUẦN</h1>
+    <p class="sheet-date">Thứ Hai {{formatDay from}} – Chủ nhật {{formatDay to}}</p>
+  </header>
+
+  {{#each people}}
+    <section class="person">
+      <h2>{{name}} <span class="person-count">· {{done}}/{{total}} việc đã xong</span></h2>
+      <table>
+        <thead>
+          <tr><th class="c-no">#</th><th class="c-time">Giờ</th><th>Công việc</th><th class="c-check">Xong</th></tr>
+        </thead>
+        {{#each days}}
+          <tbody class="day">
+            <tr class="row-day"><th colspan="4">{{formatWeekday date}}</th></tr>
+            {{#each tasks}}
+              <tr>
+                <td class="c-no">{{inc @index}}</td>
+                <td class="c-time">{{#if start_time}}{{start_time}}{{#if end_time}}–{{end_time}}{{/if}}{{else}}Cả ngày{{/if}}</td>
+                <td>
+                  <strong>{{title}}</strong>{{#if brand}} <span class="tag-brand">{{brand}}</span>{{/if}}{{#if (eq priority 'high')}} <span class="tag-high">Quan trọng</span>{{/if}}
+                  {{#if coworkers}}<div class="note">Phụ trách: {{assignee_name}}, {{coworkers}}</div>{{/if}}
+                  {{#if note}}<div class="note">{{note}}</div>{{/if}}
+                  {{#if facilities}}<div class="note"><b>Chuẩn bị:</b> {{facilities}}</div>{{/if}}
+                  {{#each linkList}}
+                    <div class="link"><a href="{{url}}" target="_blank" rel="noopener noreferrer">{{url}}</a></div>
+                  {{/each}}
+                </td>
+                <td class="c-check"><span class="box{{#if (eq status 'done')}} box-done{{/if}}"></span></td>
+              </tr>
+            {{/each}}
+          </tbody>
+        {{/each}}
+      </table>
+    </section>
+  {{else}}
+    <p class="empty">Không có việc nào trong tuần này.</p>
+  {{/each}}
+</article>

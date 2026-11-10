@@ -11,6 +11,7 @@
   <section class="form-section">
     <h2 class="form-section-title">Việc cần làm</h2>
     {{> form/field name="title" label="Tên công việc" value=values.title error=errors.title required=true autofocus=(not task) placeholder="VD: Kiểm kê kho tầng 2"}}
+    {{> form/segmented name="brand" label="Brand" options=brandOptions value=values.brand error=errors.brand}}
     {{> form/textarea name="note" label="Ghi chú / hướng dẫn" value=values.note error=errors.note rows=2 placeholder="Không bắt buộc — địa điểm, cách làm, tài liệu…"}}
     {{> form/textarea name="links" label="Link liên quan" value=values.links error=errors.links rows=2 placeholder="https://… (mỗi dòng một link)" hint="Video mẫu, kịch bản, thư mục Drive… Mỗi dòng một link, tối đa 10."}}
     {{> form/textarea name="facilities" label="Cơ sở vật chất cần chuẩn bị" value=values.facilities error=errors.facilities rows=2 placeholder="VD: máy quay, đèn, phòng họp tầng 2… (mỗi dòng một thứ)"}}
