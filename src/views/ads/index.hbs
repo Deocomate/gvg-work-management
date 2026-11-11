@@ -1,0 +1,132 @@
+{{#> page-header title=title subtitle=(concat (formatDay range.from) " – " (formatDay range.to) " · Chỉ người được chỉ định xem được")}}
+  <form method="post" action="/ads/refresh">
+    {{> form/csrf}}
+    <input type="hidden" name="range" value="{{range.key}}">
+    <button type="submit" class="btn-secondary btn-sm">↻ Cập nhật ngay</button>
+  </form>
+{{/page-header}}
+
+{{!-- Tự tải lại trang khi hết thời gian lưu tạm (public/js/app.js) --}}
+<div data-auto-reload="{{refreshSeconds}}" hidden></div>
+
+<div class="mb-5 flex flex-wrap gap-2" role="group" aria-label="Khoảng thời gian">
+  {{#each ranges}}
+    <a href="/ads?range={{value}}" class="btn-sm {{#if (eq value @root.range.key)}}btn-secondary{{else}}btn-ghost{{/if}}"{{#if (eq value @root.range.key)}} aria-current="page"{{/if}}>{{label}}</a>
+  {{/each}}
+</div>
+
+{{#unless anyConfigured}}
+  <div class="card card-body mb-6">
+    <h2 class="text-lg font-semibold text-ink">Chưa kết nối tài khoản quảng cáo</h2>
+    <p class="mt-2 text-sm text-ink-soft">Người quản trị máy chủ thêm các dòng sau vào file <code>.env</code> (hoặc biến môi trường trên Render) rồi khởi động lại app:</p>
+    <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-soft">
+      <li><b>Facebook / Instagram:</b> <code>META_ACCESS_TOKEN</code> (token Người dùng hệ thống, quyền <i>ads_read</i>) và <code>META_AD_ACCOUNT_IDS</code> (ID tài khoản quảng cáo, cách nhau dấu phẩy).</li>
+      <li><b>TikTok:</b> <code>TIKTOK_ACCESS_TOKEN</code> (TikTok for Business – Marketing API) và <code>TIKTOK_ADVERTISER_IDS</code>.</li>
+    </ul>
+  </div>
+{{/unless}}
+
+{{#if combined}}
+  <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="card p-4"><p class="text-xs text-ink-faint">Tổng chi tiêu (FB + TikTok)</p><p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{combined.spend}}</p></div>
+    <div class="card p-4"><p class="text-xs text-ink-faint">Tổng kết quả</p><p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{combined.results}}</p></div>
+    <div class="card p-4"><p class="text-xs text-ink-faint">Chi phí / kết quả</p><p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{combined.costPerResult}}</p></div>
+    <div class="card p-4"><p class="text-xs text-ink-faint">Tổng lượt nhấp</p><p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{combined.clicks}}</p></div>
+  </div>
+{{/if}}
+
+{{#each platforms}}
+  <section class="card card-body mb-6" aria-labelledby="ads-{{key}}">
+    <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+      <div>
+        <h2 id="ads-{{key}}" class="text-lg font-semibold text-ink">{{label}}</h2>
+        {{#if accountNames}}<p class="text-xs text-ink-faint">Tài khoản: {{accountNames}}</p>{{/if}}
+      </div>
+      {{#if fetchedAt}}<p class="text-xs text-ink-faint">Cập nhật lúc {{formatDate fetchedAt}}</p>{{/if}}
+    </div>
+
+    {{#unless configured}}
+      <p class="text-sm text-ink-faint">Chưa kết nối. Cần thêm token và ID tài khoản {{label}} vào cấu hình máy chủ.</p>
+    {{else}}
+      {{#if error}}
+        <div class="mb-4 rounded-xl border border-bad-500/40 bg-bad-500/10 px-4 py-3 text-sm text-bad-300" role="alert">
+          Không lấy được số liệu mới: {{error}}{{#if totals}} — đang hiện bản lưu lúc {{formatDate fetchedAt}}.{{/if}}
+        </div>
+      {{/if}}
+
+      {{#if totals}}
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Chi tiêu</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.spend}}</p></div>
+          <div class="rounded-xl border border-line bg-surface/60 p-3" title="{{resultLabel}}"><p class="text-xs text-ink-faint">Kết quả</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.results}}</p><p class="text-xs text-ink-faint">{{totals.f.costPerResult}} / kết quả</p></div>
+          <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Hiển thị</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.impressions}}</p><p class="text-xs text-ink-faint">CPM {{totals.f.cpm}}</p></div>
+          <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Lượt nhấp</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.clicks}}</p><p class="text-xs text-ink-faint">CTR {{totals.f.ctr}}</p></div>
+          <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Chi phí / nhấp</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.cpc}}</p></div>
+          {{#if (eq key 'meta')}}
+            <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Doanh thu (pixel)</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.revenue}}</p><p class="text-xs text-ink-faint">ROAS {{totals.f.roas}}</p></div>
+          {{else}}
+            <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Lượt xem video</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{totals.f.videoViews}}</p></div>
+          {{/if}}
+        </div>
+        {{#if (eq key 'meta')}}
+          <p class="mt-2 text-xs text-ink-faint">Kết quả = {{totals.f.messages}} tin nhắn mới · {{totals.f.leads}} khách tiềm năng · {{totals.f.purchases}} lượt mua</p>
+        {{else}}
+          <p class="mt-2 text-xs text-ink-faint">Kết quả = số chuyển đổi theo mục tiêu tối ưu của từng chiến dịch</p>
+        {{/if}}
+
+        {{#if daily.length}}
+          <h3 class="mt-5 mb-2 text-sm font-medium text-ink-soft">Chi tiêu theo ngày</h3>
+          <div class="flex h-28 items-end gap-1" role="img" aria-label="Biểu đồ chi tiêu theo ngày của {{label}}">
+            {{#each daily}}
+              <div class="flex h-full flex-1 flex-col justify-end" title="{{tip}}">
+                <div class="w-full rounded-t bg-brand-500/80 hover:bg-brand-400" style="height: {{height}}%"></div>
+              </div>
+            {{/each}}
+          </div>
+        {{/if}}
+
+        <h3 class="mt-5 mb-2 text-sm font-medium text-ink-soft">Theo chiến dịch</h3>
+        {{#if campaigns.length}}
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Chiến dịch</th>
+                  <th class="text-right">Chi tiêu</th>
+                  <th class="text-right">Kết quả</th>
+                  <th class="text-right">Chi phí / KQ</th>
+                  <th class="text-right">Hiển thị</th>
+                  <th class="text-right">Nhấp</th>
+                  <th class="text-right">CTR</th>
+                  <th class="text-right">CPC</th>
+                  {{#if (eq key 'meta')}}<th class="text-right">ROAS</th>{{/if}}
+                </tr>
+              </thead>
+              <tbody>
+                {{#each campaigns}}
+                  <tr>
+                    <td class="max-w-72"><span class="font-medium text-ink">{{name}}</span>{{#if (gt ../accounts.length 1)}}<br><span class="text-xs text-ink-faint">{{account}}</span>{{/if}}</td>
+                    <td class="text-right tabular-nums whitespace-nowrap">{{f.spend}}</td>
+                    <td class="text-right tabular-nums">{{f.results}}</td>
+                    <td class="text-right tabular-nums whitespace-nowrap">{{f.costPerResult}}</td>
+                    <td class="text-right tabular-nums">{{f.impressions}}</td>
+                    <td class="text-right tabular-nums">{{f.clicks}}</td>
+                    <td class="text-right tabular-nums">{{f.ctr}}</td>
+                    <td class="text-right tabular-nums whitespace-nowrap">{{f.cpc}}</td>
+                    {{#if (eq ../key 'meta')}}<td class="text-right tabular-nums">{{f.roas}}</td>{{/if}}
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        {{else}}
+          <p class="text-sm text-ink-faint">Không có chiến dịch nào chạy trong khoảng thời gian này.</p>
+        {{/if}}
+      {{/if}}
+    {{/unless}}
+  </section>
+{{/each}}
+
+<p class="text-xs text-ink-faint">
+  Số liệu lấy trực tiếp từ Facebook và TikTok, tự làm mới mỗi {{refreshMinutes}} phút khi trang đang mở; bấm <b>Cập nhật ngay</b> để lấy lại tức thì.
+  Số của hôm nay có thể còn thay đổi vài giờ sau (nền tảng chốt số chậm).
+</p>

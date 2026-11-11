@@ -4,12 +4,14 @@
 //   requireRole('admin') -> sai vai trò thì 403
 import { forbidden } from '#lib/errors.js';
 import { findUserById } from '#modules/auth/auth.service.js';
+import { canViewAds } from '#modules/ads/ads.service.js';
 
 export async function loadUser(req, res, next) {
   const userId = req.session.userId;
   req.user = userId ? await findUserById(userId) : null;
   if (userId && !req.user) req.session.userId = null; // user đã bị xoá
   res.locals.currentUser = req.user;
+  res.locals.canViewAds = canViewAds(req.user); // hiện menu Quảng cáo
   next();
 }
 

@@ -17,6 +17,8 @@ import performanceRoutes from './performance/performance.routes.js';
 import customersRoutes from './customers/customers.routes.js';
 import { requireCustomerAccess } from './customers/customers.service.js';
 import planRoutes from './plan/plan.routes.js';
+import adsRoutes from './ads/ads.routes.js';
+import { requireAdsAccess } from './ads/ads.service.js';
 // [vibe:module-imports]
 
 export const modules = [
@@ -29,6 +31,7 @@ export const modules = [
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
   { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + Sale
   { path: '/plan', router: planRoutes, middleware: [requireAuth] }, // Idea bank + lịch quay/đăng; mọi người
+  { path: '/ads', router: adsRoutes, middleware: [requireAuth, requireAdsAccess] }, // chỉ email trong ADS_VIEWER_EMAILS
   // [vibe:module-mounts]
 ];
 

@@ -153,3 +153,14 @@ document.addEventListener('click', (event) => {
   }
 });
 document.querySelectorAll('[data-ref-list]').forEach(renumberRefs);
+
+// <div data-auto-reload="900"> (trang Quảng cáo): tự tải lại trang sau N giây để số liệu luôn mới.
+// Chỉ tải lại khi tab đang mở trước mặt — tab ẩn thì đợi người dùng quay lại mới tải.
+document.querySelectorAll('[data-auto-reload]').forEach((el) => {
+  const due = Date.now() + Number(el.dataset.autoReload) * 1000;
+  const check = () => {
+    if (document.visibilityState === 'visible' && Date.now() >= due) window.location.reload();
+  };
+  setInterval(check, 30_000);
+  document.addEventListener('visibilitychange', check);
+});

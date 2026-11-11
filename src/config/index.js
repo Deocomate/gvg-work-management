@@ -5,6 +5,8 @@ const env = process.env;
 const DEV_SECRET = 'dev-only-secret-change-me';
 
 const nodeEnv = env.NODE_ENV ?? 'development';
+// "a, b ,c" -> ['a', 'b', 'c']
+const list = (value) => (value || '').split(',').map((s) => s.trim()).filter(Boolean);
 
 export const config = Object.freeze({
   env: nodeEnv,
@@ -25,6 +27,20 @@ export const config = Object.freeze({
     adminEmail: env.ADMIN_EMAIL || undefined,
     adminPassword: env.ADMIN_PASSWORD || undefined,
     allowSignup: env.ALLOW_SIGNUP === 'true',
+  }),
+  // Quảng cáo Facebook / TikTok (trang /ads). Chỉ email trong ADS_VIEWER_EMAILS xem được.
+  ads: Object.freeze({
+    viewerEmails: list(env.ADS_VIEWER_EMAILS).map((e) => e.toLowerCase()),
+    cacheMinutes: Math.max(1, Number(env.ADS_CACHE_MINUTES) || 15),
+    meta: Object.freeze({
+      token: env.META_ACCESS_TOKEN || undefined,
+      accountIds: list(env.META_AD_ACCOUNT_IDS).map((id) => id.replace(/^act_/, '')),
+      apiVersion: env.META_API_VERSION || 'v21.0',
+    }),
+    tiktok: Object.freeze({
+      token: env.TIKTOK_ACCESS_TOKEN || undefined,
+      advertiserIds: list(env.TIKTOK_ADVERTISER_IDS),
+    }),
   }),
   // [vibe:config]
 });

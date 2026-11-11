@@ -24,6 +24,9 @@
         {{#if (or (eq currentUser.role 'admin') (eq currentUser.role 'sale'))}}
           {{> nav-link href="/customers" label="Data khách hàng"}}
         {{/if}}
+        {{#if canViewAds}}
+          {{> nav-link href="/ads" label="Quảng cáo"}}
+        {{/if}}
         {{#if (eq currentUser.role 'admin')}}
           {{> nav-link href="/performance" label="Hiệu suất"}}
           {{> nav-link href="/staff" label="Nhân viên"}}
