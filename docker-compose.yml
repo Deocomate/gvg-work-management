@@ -24,6 +24,12 @@ services:
       # Mặc định lưu SQLite trong volume bên dưới. Muốn dùng Turso thì điền 2 biến này.
       - DATABASE_URL=${DATABASE_URL:-file:data/app.db}
       - DATABASE_AUTH_TOKEN=${DATABASE_AUTH_TOKEN:-}
+      # Trang Quảng cáo (/ads): điền trong tab Environment Variables của Coolify (để trống = chưa kết nối)
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
+      - META_AD_ACCOUNT_IDS=${META_AD_ACCOUNT_IDS:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      - TIKTOK_ADVERTISER_IDS=${TIKTOK_ADVERTISER_IDS:-}
+      - ADS_CACHE_MINUTES=${ADS_CACHE_MINUTES:-15}
     volumes:
       # Dữ liệu SQLite: giữ lại qua các lần deploy / khởi động lại
       - app-data:/app/data
