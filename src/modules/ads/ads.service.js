@@ -1,5 +1,5 @@
 // Kết quả & hiệu suất quảng cáo Facebook / TikTok.
-// - Quyền: CHỈ email trong ADS_VIEWER_EMAILS (không theo vai trò — quản lý khác cũng không xem được).
+// - Quyền: mọi quản lý (vai trò admin). Nhân viên, Sale không xem được.
 // - Số liệu lấy thẳng từ API, lưu tạm ADS_CACHE_MINUTES phút trong ads_cache để nhiều lần mở trang
 //   không gọi API liên tục (API có giới hạn số lần gọi). Bấm "Cập nhật ngay" thì lấy lại luôn.
 // - API lỗi mà còn bản lưu cũ -> vẫn hiện bản cũ kèm cảnh báo, không để trang trống.
@@ -9,11 +9,11 @@ import { addDays, todayISO } from '#lib/dates.js';
 import { PLATFORMS, fetchPlatform, AdsApiError } from './ads.providers.js';
 import * as repo from './ads.repo.js';
 
-export const canViewAds = (user) => Boolean(user?.email) && config.ads.viewerEmails.includes(user.email.toLowerCase());
+export const canViewAds = (user) => user?.role === 'admin';
 
 export function requireAdsAccess(req, res, next) {
   if (canViewAds(req.user)) return next();
-  next(forbidden('Trang Quảng cáo chỉ dành cho người được chỉ định.'));
+  next(forbidden('Trang Quảng cáo chỉ dành cho quản lý.'));
 }
 
 export const RANGES = [

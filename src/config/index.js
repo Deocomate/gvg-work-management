@@ -28,9 +28,8 @@ export const config = Object.freeze({
     adminPassword: env.ADMIN_PASSWORD || undefined,
     allowSignup: env.ALLOW_SIGNUP === 'true',
   }),
-  // Quảng cáo Facebook / TikTok (trang /ads). Chỉ email trong ADS_VIEWER_EMAILS xem được.
+  // Quảng cáo Facebook / TikTok (trang /ads, chỉ quản lý xem).
   ads: Object.freeze({
-    viewerEmails: list(env.ADS_VIEWER_EMAILS).map((e) => e.toLowerCase()),
     cacheMinutes: Math.max(1, Number(env.ADS_CACHE_MINUTES) || 15),
     meta: Object.freeze({
       token: env.META_ACCESS_TOKEN || undefined,

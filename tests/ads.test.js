@@ -1,5 +1,4 @@
-// Trang Quảng cáo: quyền theo email + lấy số liệu Facebook/TikTok (giả lập fetch, không gọi API thật).
-process.env.ADS_VIEWER_EMAILS = 'admin@test.local, Mai@Test.Local';
+// Trang Quảng cáo: chỉ quản lý xem + lấy số liệu Facebook/TikTok (giả lập fetch, không gọi API thật).
 process.env.META_ACCESS_TOKEN = 'meta-test-token';
 process.env.META_AD_ACCOUNT_IDS = 'act_111';
 process.env.TIKTOK_ACCESS_TOKEN = 'tiktok-test-token';
@@ -71,22 +70,28 @@ beforeEach(() => {
 
 const { agent: admin } = await setup();
 await loginAsAdmin(admin);
-for (const [name, email] of [['Chị Mai', 'mai@test.local'], ['Quản lý khác', 'boss@test.local']]) {
-  await postForm(admin, '/staff', { name, email, role: 'admin', password: 'mat-khau-123' }, { from: '/staff/new' });
+for (const [name, email, role] of [['Chị Mai', 'mai@test.local', 'admin'], ['Nhân viên', 'staff@test.local', 'member'], ['Bán hàng', 'sale@test.local', 'sale']]) {
+  await postForm(admin, '/staff', { name, email, role, password: 'mat-khau-123' }, { from: '/staff/new' });
 }
-const { agent: mai } = await setup();
-await loginAs(mai, { email: 'mai@test.local', password: 'mat-khau-123' });
-const { agent: boss } = await setup();
-await loginAs(boss, { email: 'boss@test.local', password: 'mat-khau-123' });
+const login = async (email) => {
+  const { agent } = await setup();
+  await loginAs(agent, { email, password: 'mat-khau-123' });
+  return agent;
+};
+const mai = await login('mai@test.local');
+const member = await login('staff@test.local');
+const sale = await login('sale@test.local');
 
-test('chỉ email được chỉ định xem được; quản lý khác bị chặn và không thấy menu', async () => {
+test('mọi quản lý xem được; nhân viên, Sale bị chặn và không thấy menu', async () => {
   const { agent: guest } = await setup();
   assert.equal((await guest.get('/ads')).status, 302);
-  assert.equal((await boss.get('/ads')).status, 403);
-  assert.doesNotMatch((await boss.get('/today')).text, /href="\/ads"/);
-  assert.equal((await postForm(boss, '/ads/refresh', { range: '7d' }, { from: '/today' })).status, 403);
+  for (const agent of [member, sale]) {
+    assert.equal((await agent.get('/ads')).status, 403);
+    assert.doesNotMatch((await agent.get('/today')).text, /href="\/ads"/);
+    assert.equal((await postForm(agent, '/ads/refresh', { range: '7d' }, { from: '/today' })).status, 403);
+  }
 
-  // Email so không phân biệt hoa thường (Mai@Test.Local trong cấu hình)
+  // Quản lý nào cũng vào được (không chỉ tài khoản admin gốc)
   assert.match((await mai.get('/today')).text, /href="\/ads"/);
   assert.equal((await mai.get('/ads')).status, 200);
 });

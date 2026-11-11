@@ -1,4 +1,4 @@
-// Kết quả quảng cáo Facebook / TikTok. Chỉ người trong ADS_VIEWER_EMAILS (requireAdsAccess gắn trong modules/index.js).
+// Kết quả quảng cáo Facebook / TikTok. Chỉ quản lý (requireAdsAccess gắn trong modules/index.js).
 import { Router } from 'express';
 import * as controller from './ads.controller.js';
 

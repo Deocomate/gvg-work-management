@@ -1,4 +1,4 @@
-{{#> page-header title=title subtitle=(concat (formatDay range.from) " – " (formatDay range.to) " · Chỉ người được chỉ định xem được")}}
+{{#> page-header title=title subtitle=(concat (formatDay range.from) " – " (formatDay range.to) " · Chỉ quản lý xem được")}}
   <form method="post" action="/ads/refresh">
     {{> form/csrf}}
     <input type="hidden" name="range" value="{{range.key}}">

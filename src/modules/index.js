@@ -31,7 +31,7 @@ export const modules = [
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
   { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + Sale
   { path: '/plan', router: planRoutes, middleware: [requireAuth] }, // Idea bank + lịch quay/đăng; mọi người
-  { path: '/ads', router: adsRoutes, middleware: [requireAuth, requireAdsAccess] }, // chỉ email trong ADS_VIEWER_EMAILS
+  { path: '/ads', router: adsRoutes, middleware: [requireAuth, requireAdsAccess] }, // chỉ quản lý
   // [vibe:module-mounts]
 ];
 
