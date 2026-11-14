@@ -580,7 +580,7 @@
       const d = new Date(start);
       d.setUTCDate(start.getUTCDate() + i);
       const iso = d.toISOString().slice(0, 10);
-      if (i >= 35 && iso.slice(0, 7) !== ym) break; // bỏ hàng thứ 6 nếu toàn tháng sau
+      if (i % 7 === 0 && i >= 28 && iso.slice(0, 7) !== ym) break; // hàng mới bắt đầu bằng tháng sau → dừng (hàng cuối luôn đủ 7 ô)
       out.push(iso);
     }
     return out;
@@ -665,15 +665,40 @@
         sh.setAttribute('aria-hidden', 'true');
         b.append(sh);
       }
-      if (marked || ci.cls !== 'c-future') b.append(el('span', `attm-label ${marked ? '' : ci.cls}`, ci.text));
+      // Ngày đã chấm theo công: chỉ hình (nghĩa màu xem chú thích dưới bảng, trình đọc màn hình đọc aria-label).
+      // Theo giờ vẫn ghi số giờ; ngày chưa chấm / nghỉ ghi chữ vì không có hình.
+      if (marked ? p.kind !== 'month' : ci.cls !== 'c-future') b.append(el('span', `attm-label ${marked ? '' : ci.cls}`, ci.text));
       if (lockedOf(p.id, d)) b.append(el('span', 'attm-lock', '🔒'));
       b.setAttribute('aria-label', `${dayName(d)}: ${ci.label}${editable ? '' : ' (chỉ xem)'}`);
       b.title = ci.label;
       grid.append(b);
     }
     const wrap = el('div', 'border-t border-line p-2 sm:p-3');
-    wrap.append(grid);
+    wrap.append(grid, legendOf(p));
     root.append(wrap);
+  }
+
+  /** Chú thích dưới bảng: màu từng trạng thái (Đủ công = màu riêng của người đang xem). */
+  function legendOf(p) {
+    const box = el('div', 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 text-xs text-ink-soft');
+    box.setAttribute('aria-label', 'Chú thích bảng công');
+    const item = (color, label) => {
+      const it = el('span', 'inline-flex items-center gap-1.5');
+      const sh = el('span', 'att-shape sh7');
+      sh.style.background = color;
+      sh.style.width = sh.style.height = '14px';
+      it.append(sh, el('span', '', label));
+      box.append(it);
+    };
+    if (p.kind === 'month') {
+      item(p.color, 'Đủ công');
+      for (const [st, label] of [['half', 'Nửa ngày'], ['paid', 'Nghỉ phép có lương'], ['off', 'Nghỉ không lương']]) item(statusColor(st), label);
+    } else {
+      item(p.color, 'Có giờ làm (số giờ ghi trong ô)');
+      item(statusColor('half'), 'Đang làm / cần kiểm tra giờ');
+    }
+    box.append(el('span', 'text-ink-faint', 'Hình đổi theo ngày cho dễ phân biệt · 🔒 kỳ lương đã chốt'));
+    return box;
   }
 
   /** Vẽ lại riêng các ô (khi đang lưu) mà không đóng popover. */
