@@ -1,4 +1,5 @@
 <header class="app-header sticky z-40">
+  {{> holiday}}
 
   <div class="container-page flex h-14 items-center gap-2 sm:gap-6">
     {{!-- Logo và cụm bên phải cùng giãn đều (sm:flex-1) để menu nằm chính giữa header --}}
@@ -31,7 +32,6 @@
     </nav>
 
     <div class="flex shrink-0 items-center justify-end gap-2 sm:flex-1 sm:gap-4">
-      {{> holiday}}
       {{!-- Cài đặt: Tài khoản (mọi người) + Nhân viên, Hiệu suất (quản lý) --}}
       {{#if currentUser}}
         <a href="/account" class="btn-ghost btn-sm theme-toggle {{#if (or (isActive currentPath '/account') (isActive currentPath '/staff') (isActive currentPath '/performance'))}}nav-link-active{{/if}}" aria-label="Cài đặt" title="Cài đặt">

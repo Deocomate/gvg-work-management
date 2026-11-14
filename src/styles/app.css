@@ -373,14 +373,9 @@
   }
   .picker-chip-end { @apply ml-auto; }
 
-  /* Ngày lễ: nhãn nhỏ trên thanh menu (bản cũ là thẻ tròn treo + emoji rơi — đã bỏ để không làm rối dữ liệu) */
-  .holiday-pill {
-    @apply hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium whitespace-nowrap text-ink-soft lg:inline-flex;
-    border-color: color-mix(in srgb, var(--holiday-a) 45%, transparent);
-    background: color-mix(in srgb, var(--holiday-a) 10%, transparent);
-  }
+  /* Ngày lễ: thẻ tròn đếm ngược treo dưới menu (emoji rơi đã bỏ để không làm rối dữ liệu) */
   .holiday-sky, .holiday-hang { display: none; }
-  /* (cũ) Thẻ tròn đếm ngược treo dưới góc phải menu, đung đưa như đồ treo.
+  /* Thẻ tròn đếm ngược treo dưới góc phải menu, đung đưa như đồ treo.
      Nền chuyển từ màu lễ sang màu nền trang; tối và sáng pha khác nhau. */
   .holiday-tag {
     @apply pointer-events-none absolute top-full right-6 flex flex-col items-center select-none;
