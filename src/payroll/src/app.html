@@ -384,6 +384,9 @@ html.embed .login{margin-top:20px}
 /* ?embed=1&tabs=a,b: shown inside the Lịch công việc site (iframe). Only those tabs, no logo/theme button,
    and the theme follows the host site's own setting (localStorage 'theme', dark unless 'light'). */
 const EMBED=(()=>{const q=new URLSearchParams(location.search);return q.has('embed')?{tabs:(q.get('tabs')||'').split(',').filter(Boolean)}:null})();
+/* host pages for each tab (src/modules/payroll/payroll.controller.js). With one tab per page, the tab bar lives in the
+   host site; a button here that leads to another tab opens that host page instead. */
+const HOST_PATH={tong:'/luong/ky-luong',cc:'/luong/cham-cong',thuong:'/luong/thuong',hh:'/luong/hoa-hong',cd:'/luong/thiet-lap',luong:'/luong/cua-toi',tk:'/luong/tai-khoan'};
 const hostTheme=()=>{try{return localStorage.getItem('theme')==='light'?'light':'dark'}catch(e){return'dark'}};
 (function(){let t=null;try{t=localStorage.getItem('gvg-theme')}catch(e){}
   const mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');
@@ -516,6 +519,9 @@ function qrCanvas(text,px=6,margin=3){
 const S={db:null,user:null,dl:null,cfg:null,kw:{},ym:nowParts().ym,role:null,ownerKey:null,dk:{},dkRaw:{},cache:{},mdoc:null,
   tab:null,selStaff:null,modal:null,loginWho:null,keep:false,isOwnerAcct:false,loading:false,simRev:null,
   server:false,admin:false,accounts:{}};   // server: running on our own server (server/runtime.js), where everyone signs in with a username
+/* embedded pages share the pay period being viewed (sessionStorage, per browser tab). Not the hidden bridge frame. */
+function rememberYm(){if(EMBED)try{sessionStorage.setItem('gvg-ym',S.ym)}catch(e){}}
+if(EMBED&&!new URLSearchParams(location.search).has('bridge'))try{const v=sessionStorage.getItem('gvg-ym');if(/^\d{4}-\d\d$/.test(v||''))S.ym=v}catch(e){}
 
 /* ================= DB HELPERS ================= */
 async function dget(path){const s=await S.db.doc(path).get();return s.exists?clone(s.data()):null}
@@ -688,20 +694,36 @@ function render(){
   if(!S.db){app.innerHTML=noDbView();return}
   if(!S.cfg&&(!S.server||S.admin)){app.innerHTML=S.isOwnerAcct?setupView():'<div class="login"><div class="card"><h2>Chưa thiết lập</h2><p class="muted">Chủ cửa hàng cần mở trang này và thiết lập lần đầu.</p></div></div>';return}
   if(!S.role){app.innerHTML=S.admin?ownerGateView():loginView();const el=$('#user')||$('#pw');if(el&&(S.server||S.loginWho))el.focus();return}
-  if(EMBED){const ok=visibleTabs().map(t=>t[0]);if(!ok.length){app.innerHTML='<div class="login"><div class="card"><p class="muted">Mục này không dành cho tài khoản lương đang đăng nhập.</p></div></div>';return}if(!ok.includes(S.tab))S.tab=ok[0]}
+  if(EMBED){const ok=visibleTabs().map(t=>t[0]);if(!ok.includes(S.tab))S.tab=ok[0]}
   const v=S.loading?'<div class="center" style="padding:60px"><span class="spin"></span></div>':(S.role==='owner'?ownerView():staffView());
   // views with their own toolbar row embed ymSel() there; others get a right-aligned bar
   app.innerHTML=topBar()+'<div class="wrap">'+(v.includes('data-chg="ym"')?'':`<div class="ymbar">${ymSel()}</div>`)+v+'</div>';
   app.querySelectorAll('[data-qr]').forEach(el=>{try{el.replaceWith(qrCanvas(el.dataset.qr))}catch(e){el.textContent='QR lỗi'}});
+  hostBadge();
 }
 function noDbView(){return`<div class="login"><div class="card"><h2>Cần đăng nhập</h2><p class="muted">Trang chấm công lưu dữ liệu trên máy chủ, vì vậy cần mở bằng tài khoản Claude đã được chủ cửa hàng mời (quyền chỉnh sửa). Hãy đăng nhập rồi tải lại trang.</p></div></div>`}
 const OWNER_TABS=[['tong','Báo cáo lương'],['cc','Chấm công'],['thuong','Thưởng & khấu trừ'],['hh','Hoa hồng'],['cd','Cài đặt']];
 const STAFF_TABS=[['cc','Chấm công'],['luong','Lương của tôi'],['hh','Cách tính hoa hồng'],['tk','Tài khoản']];
 const ymSel=()=>`<select data-chg="ym" aria-label="Kỳ lương">${monthsList().map(m=>`<option value="${m}"${m===S.ym?' selected':''}>${ymLabel(m)}</option>`).join('')}</select>`;
-function visibleTabs(){const all=S.role==='owner'?OWNER_TABS:STAFF_TABS;return EMBED?all.filter(([k])=>EMBED.tabs.includes(k)):all}
+/* embedded: only the tabs the host page asked for; if none of them fits this login (e.g. a staff account on an owner page), all of its own */
+function visibleTabs(){const all=S.role==='owner'?OWNER_TABS:STAFF_TABS;if(!EMBED||!EMBED.tabs.length)return all;const f=all.filter(([k])=>EMBED.tabs.includes(k));return f.length?f:all}
+/* the host site draws the tab bar when this frame shows exactly the one tab it asked for */
+const hostTabs=()=>!!EMBED&&EMBED.tabs.length===1&&visibleTabs().length===1;
+function goTab(k){
+  if(EMBED&&!visibleTabs().some(t=>t[0]===k)&&HOST_PATH[k]){try{window.top.location.href=HOST_PATH[k];return}catch(e){}}
+  S.tab=k;S.simRev=null;render();window.scrollTo(0,0);if(S.tab==='tong'&&S.showYear)loadYear()}
+/* pending requests as a red count on the host's "Thưởng & khấu trừ" tab (same origin) */
+function hostBadge(){
+  if(!EMBED||BRIDGE||S.role!=='owner'||S.loading)return;
+  try{const a=window.parent.document.querySelector('nav[aria-label="Mục Lương"] a[href="/luong/thuong"]');if(!a)return;
+    const n=pendingReqs(staffIds()).length;let b=a.querySelector('.payroll-cnt');
+    if(!n){if(b)b.remove();return}
+    if(!b){b=window.parent.document.createElement('span');b.className='payroll-cnt ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-bad-500 px-1.5 text-[11px] font-semibold text-cream';a.appendChild(b)}
+    b.textContent=n;b.title=n+' yêu cầu chờ duyệt'}catch(e){}}
 function topBar(){
   const nm=S.sso&&S.ssoName?S.ssoName:S.admin?'Super admin':S.role==='owner'?'Chủ cửa hàng':staffMeta(S.role).name;
-  const tabs=visibleTabs();
+  if(hostTabs()&&S.sso)return'';
+  const tabs=hostTabs()?[]:visibleTabs();
   const pend=S.role==='owner'&&!S.loading?pendingReqs(staffIds()).length:0;
   return`<div class="top"><div class="in">
   <div class="brand"><img src="${logo()}" alt="${esc(S.cfg.company||'Gốm Vũ Gia')}"></div>
@@ -1222,13 +1244,8 @@ function ownerView(){
   const warnAcct=S.isOwnerAcct?'':'<div class="callout amber" style="margin-top:14px">Tài khoản Claude đang dùng không phải chủ trang — bạn xem được nhưng không lưu được thay đổi của chủ (doanh thu, chốt lương, thưởng, cài đặt).</div>';
   if(S.tab==='tong'){
     const Rs=ids.map(id=>calcPay(id));const tot=k=>Rs.reduce((a,r)=>a+(+r[k]||0),0);const rev=+S.mdoc.revenue||0;
-    body=`${warnAcct}<div class="card" style="margin-top:20px"><form id="revForm" class="row" style="align-items:flex-end">
-     <label class="f">Doanh thu thuần ${ymLabel(S.ym).toLowerCase()} (đ)<input type="text" inputmode="numeric" name="rev" value="${fmt(rev)}" style="width:200px"></label>
-     <label class="f">Công chuẩn tháng<input type="text" name="std" value="${S.mdoc.std?hrs(S.mdoc.std):''}" placeholder="${STD_MONTH} (mặc định)" style="width:130px"></label>
-     <button class="btn pri" type="submit">Cập nhật</button><div class="sp"></div>
-     <div class="small muted">Quỹ hoa hồng: <b class="num">${money(Rs[0]?Rs[0].cm.paid:0)}</b>${Rs[0]&&Rs[0].cm.capped?' (chạm trần)':''}</div></form>
-     <p class="small faint" style="margin-top:6px">Công chuẩn để trống = ${STD_MONTH} công/tháng. Nhập số khác nếu tháng có ngày lễ.</p></div>
-    <div class="sec"><div class="sec-h"><h2>Báo cáo lương ${ymLabel(S.ym).toLowerCase()}</h2><div class="sp"></div><button class="btn sm${S.showYear?' pri':''}" data-act="toggleYear">📊 ${S.showYear?'Ẩn tổng quan 12 tháng':'Tổng quan 12 tháng'}</button><button class="btn sm" data-act="exportCSV">⬇ Xuất CSV</button></div>
+    body=`${warnAcct}${revLine(Rs,rev)}
+    <div class="sec"><div class="sec-h"><h2>Báo cáo lương ${ymLabel(S.ym).toLowerCase()}</h2><div class="sp"></div><button class="btn sm${S.showYear?' pri':''}" data-act="toggleYear">📊 ${S.showYear?'Ẩn tổng quan 12 tháng':'Tổng quan 12 tháng'}</button>${Rs.some(R=>!R.locked)?'<button class="btn sm" data-act="lockAll">🔒 Chốt tất cả</button>':''}<button class="btn sm" data-act="exportCSV">⬇ Xuất CSV</button></div>
     <div class="tbl"><table><thead><tr><th>Nhân viên</th><th class="r">Công / giờ</th><th class="r">Lương công/giờ</th><th class="r">Tự túc ăn trưa</th><th class="r">Live</th><th class="r">Fanpage</th><th class="r">Hoa hồng</th><th class="r">Thưởng</th><th class="r">Khấu trừ</th><th class="r">Thực nhận</th><th>Tình trạng</th><th></th></tr></thead><tbody>
     ${Rs.map(R=>`<tr><td><b><span class="ysw" style="background:${TONE[toneOf(R.id)].brand}"></span> ${esc(R.name)}</b><div class="small muted">${esc(R.title||'')}</div></td>
      <td class="r num">${R.kind==='month'?hrs(R.cong)+' / '+hrs(R.std)+' công':hrs(R.hours)+' giờ'}</td><td class="r num">${fmt(R.base)}</td><td class="r num">${fmt(R.lunch)}</td><td class="r num">${fmt(R.liveD+R.liveN)}</td><td class="r num">${fmt(R.page)}</td><td class="r num">${fmt(R.comm)}</td><td class="r num">${fmt(R.bonus)}</td><td class="r num">${R.deduct?'−'+fmt(R.deduct):'0'}</td>
@@ -1264,6 +1281,23 @@ function ownerView(){
   }else if(S.tab==='hh'){body=commissionView(ids)}
   else body=warnAcct+settingsView(ids);
   return body;
+}
+/* one line above the report: this month's revenue (entered in revModal) and the commission fund it gives */
+function revLine(Rs,rev){
+  const std=S.mdoc.std?hrs(S.mdoc.std):STD_MONTH;
+  return`<div class="card row" style="margin-top:20px;padding:14px 18px"><div style="flex:1;min-width:0">${rev>0
+   ?`Doanh thu thuần ${ymLabel(S.ym).toLowerCase()}: <b class="num">${money(rev)}</b><div class="small muted">Quỹ hoa hồng ${money(Rs[0]?Rs[0].cm.paid:0)}${Rs[0]&&Rs[0].cm.capped?' (chạm trần)':''} · công chuẩn ${std}</div>`
+   :`<b>Chưa nhập doanh thu ${ymLabel(S.ym).toLowerCase()}</b><div class="small muted">Cần có để tính hoa hồng.</div>`}</div>
+   <button class="btn sm${rev>0?'':' pri'}" data-act="revModal">${rev>0?'Sửa':'Nhập doanh thu'}</button></div>`;
+}
+function revModal(){
+  const rev=+S.mdoc.revenue||0;
+  openModal(`<div class="modal-h"><h3>Doanh thu ${ymLabel(S.ym).toLowerCase()}</h3><div class="sp"></div><button class="btn sm ghost" data-act="close">✕</button></div>
+  <form id="revForm" class="grid">
+   <label class="f">Doanh thu thuần (đ)<input type="text" inputmode="numeric" name="rev" value="${rev?fmt(rev):''}" autofocus></label>
+   <label class="f">Công chuẩn tháng<input type="text" name="std" value="${S.mdoc.std?hrs(S.mdoc.std):''}" placeholder="${STD_MONTH} (mặc định)"></label>
+   <p class="small faint">Công chuẩn để trống = ${STD_MONTH} công/tháng. Nhập số khác nếu tháng có ngày lễ.</p>
+   <div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-act="close">Hủy</button><button class="btn pri" type="submit">Lưu</button></div></form>`);
 }
 function settingsView(ids){
   const c=S.cfg.comm,r=S.cfg.rates;
@@ -1377,9 +1411,14 @@ const ACT={
   backupAll:(el)=>busy(el,async()=>{const data=JSON.stringify(await collectBackup());const fn='gom-vu-gia-sao-luu-'+nowParts().ym+'.json';
     if(S.dl){try{await S.dl.save({filename:fn,data});toast('Đã xuất '+fn)}catch(e){if(e.code!=='declined')toast('Không xuất được: '+e.code,true)}}else toast('Trình xem này không hỗ trợ tải file',true)}),
   theme:()=>{const t=isDark()?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('gvg-theme',t)}catch(e){}render();renderModal()},
-  tab:el=>{S.tab=el.dataset.v;S.simRev=null;render();window.scrollTo(0,0);if(S.tab==='tong'&&S.showYear)loadYear()},
+  tab:el=>goTab(el.dataset.v),
+  revModal:()=>revModal(),
+  lockAll:(el)=>{const ids=staffIds().filter(id=>!calcPay(id).locked);if(!ids.length)return;
+    const warn=ids.filter(id=>calcPay(id).warn.length).map(id=>staffMeta(id).name);
+    if(warn.length&&el.dataset.confirm!=='1'){el.dataset.confirm='1';el.innerHTML='⚠ '+esc(warn.join(', '))+' còn cảnh báo, bấm lần nữa để vẫn chốt';return}
+    busy(el,async()=>{await saveMonthDoc({locked:Object.fromEntries(ids.map(id=>[id,true]))});toast('Đã chốt lương '+ids.length+' người')})},
   toggleYear:async()=>{S.showYear=!S.showYear;render();if(!S.showYear)return;await loadYear();const b=$('#yearBox');if(b)b.scrollIntoView({behavior:'smooth',block:'start'})},
-  yearMonth:el=>{S.ym=el.dataset.ym;S.simRev=null;window.scrollTo(0,0);loadMonth()},
+  yearMonth:el=>{S.ym=el.dataset.ym;S.simRev=null;rememberYm();window.scrollTo(0,0);loadMonth()},
   exportYearCSV:(el)=>busy(el,async()=>{const ids=staffIds(),rows=S.year.rows,T=yearTotals(ids,rows);
     const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
     const H=['Kỳ lương','Doanh thu',...ids.map(id=>staffMeta(id).name),'Tổng chi lương','Tình trạng'];
@@ -1426,7 +1465,7 @@ const ACT={
     <form id="resetForm" data-id="${id}" class="grid">${S.server?`<label class="f">Tên đăng nhập<input type="text" name="username" value="${esc(S.accounts[id]||id)}" autocapitalize="none" spellcheck="false" required></label>`:''}<label class="f">Mật khẩu mới<input type="text" name="p" required minlength="4"></label><p class="small muted">Báo mật khẩu mới cho nhân viên; họ có thể tự đổi trong mục Tài khoản.</p><div class="row" style="justify-content:flex-end"><button class="btn pri" type="submit">Đặt lại</button></div></form>`)}
 };
 const CHG={
-  ym:async el=>{S.ym=el.value;S.simRev=null;await loadMonth()},
+  ym:async el=>{S.ym=el.value;S.simRev=null;rememberYm();await loadMonth()},
   st:el=>{const{id,d}=el.dataset;const v=el.value;busy(null,()=>mutateDays(id,days=>{const o=days[d]||{};if(!v){const{st,...rest}=o;days[d]={...rest,...stamp(d)}}else days[d]={...o,st:v,lunch:!!o.lunch,...stamp(d)}}))},
   lunch:el=>{const{id,d}=el.dataset;busy(null,()=>mutateDays(id,days=>{const o=days[d]||{};days[d]={...o,lunch:el.checked,...stamp(d)}}))},
   pg:el=>{const{id,d}=el.dataset;busy(null,()=>mutateDays(id,days=>{const o=days[d]||{};days[d]={...o,pg:el.checked,...stamp(d)}}))},
@@ -1440,7 +1479,7 @@ const SUBMIT={
   dayForm:f=>saveDayForm(f),
   todayForm:f=>saveTodayForm(f),
   mdayForm:f=>saveMDayForm(f),
-  revForm:async f=>{const fd=new FormData(f);const std=parseNum(fd.get('std'));await saveMonthDoc({revenue:parseMoney(fd.get('rev')),std:std>0?std:null});toast('Đã cập nhật doanh thu')},
+  revForm:async f=>{const fd=new FormData(f);const std=parseNum(fd.get('std'));await saveMonthDoc({revenue:parseMoney(fd.get('rev')),std:std>0?std:null});closeModal();toast('Đã cập nhật doanh thu')},
   bankForm:async f=>{const fd=new FormData(f),id=f.dataset.id;const sp={bin:fd.get('bin'),acct:String(fd.get('acct')).replace(/\s/g,''),holder:String(fd.get('holder')).trim().toUpperCase()};await putEnc(P.sp(id),id,sp);S.cache[id].sp=sp;render();toast('Đã lưu tài khoản')},
   pwForm:async f=>{const fd=new FormData(f),id=f.dataset.id;const p1=fd.get('p1');if(p1.length<4)throw uerr('Tối thiểu 4 ký tự');if(p1!==fd.get('p2'))throw uerr('Hai lần nhập không khớp');await rewrapStaff(id,p1);f.reset();toast('Đã đổi mật khẩu')},
   resetForm:async f=>{const fd=new FormData(f),id=f.dataset.id,p=fd.get('p');if(p.length<4)throw uerr('Tối thiểu 4 ký tự');await rewrapStaff(id,p,fd.get('username'));closeModal();if(S.server){S.accounts=await S.user.accounts();render()}toast('Đã đặt lại mật khẩu cho '+staffMeta(id).name)},

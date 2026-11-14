@@ -1,4 +1,6 @@
-{{#> page-header title="Lương" subtitle="Chấm công, bảng lương, thưởng & khấu trừ"}}
-  <a href="/account/luong" class="btn-secondary">⚙ Cài đặt lương</a>
-{{/page-header}}
-{{> payroll-frame src=frameSrc title="Lương"}}
+{{#> page-header title=heading}}{{/page-header}}
+{{!-- Tab con của Lương (theo vai trò, xem payroll.controller.js). Mỗi tab nhúng đúng một tab của app lương. --}}
+<nav class="mb-5 flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Mục Lương">
+  {{#each tabs}}{{> nav-link href=this.href label=this.label active=(isActive @root.currentPath this.href)}}{{/each}}
+</nav>
+{{> payroll-frame src=frameSrc title=heading}}

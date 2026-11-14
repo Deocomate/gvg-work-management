@@ -17,21 +17,29 @@ const mounted = () => {
   return request.agent(app);
 };
 
-test('trang Lương và Cài đặt lương nằm trong khung app chính, nhúng app lương', async () => {
+test('trang Lương: mỗi tab một trang trong khung app chính, nhúng đúng một tab của app lương', async () => {
   const { agent } = await setup();
   assert.equal((await agent.get('/luong')).status, 302); // chưa đăng nhập app chính
   await loginAsAdmin(agent);
 
-  const page = await agent.get('/luong');
+  const root = await agent.get('/luong');
+  assert.equal(root.status, 302);
+  assert.equal(root.headers.location, '/luong/ky-luong'); // quản lý vào Kỳ lương
+
+  const page = await agent.get('/luong/ky-luong');
   assert.equal(page.status, 200);
   assert.match(page.text, /href="\/luong" class="nav-link nav-link-active"/);
-  assert.match(page.text, /<iframe src="\/luong\/app\/\?embed(=|&#x3D;)1&amp;tabs(=|&#x3D;)tong,cc,thuong,luong"/);
+  assert.match(page.text, /href="\/luong\/thiet-lap" class="nav-link "/);
+  assert.match(page.text, /<iframe src="\/luong\/app\/\?embed(=|&#x3D;)1&amp;tabs(=|&#x3D;)tong"/);
 
-  const settings = await agent.get('/account/luong');
-  assert.equal(settings.status, 200);
-  assert.match(settings.text, /href="\/account\/luong" class="nav-link nav-link-active"/);
-  assert.match(settings.text, /href="\/account" class="nav-link "/); // tab Tài khoản không sáng ở trang con
-  assert.match(settings.text, /tabs(=|&#x3D;)hh,cd,tk/);
+  const setting = await agent.get('/luong/thiet-lap');
+  assert.match(setting.text, /tabs(=|&#x3D;)cd"/);
+  assert.match(setting.text, /href="\/luong\/thiet-lap" class="nav-link nav-link-active"/);
+
+  // tab của nhân viên → về tab đầu; link cũ Cài đặt lương → Thiết lập
+  assert.equal((await agent.get('/luong/cua-toi')).headers.location, '/luong');
+  assert.equal((await agent.get('/account/luong')).headers.location, '/luong/thiet-lap');
+  assert.doesNotMatch((await agent.get('/account')).text, /Cài đặt lương/);
 });
 
 test('chưa cấu hình: /luong/app báo chưa bật, app chính vẫn chạy', async () => {

@@ -139,7 +139,7 @@
     const progress = selected <= today && monthStaff.length ? ` · đã chấm ${marked}/${monthStaff.length}` : ' · cả nhóm';
     head.append(el('p', 'text-xs font-semibold uppercase tracking-wide text-ink-faint', label + progress));
     const a = el('a', 'btn-ghost btn-sm ml-auto', 'Mở trang Lương →');
-    a.href = '/luong';
+    a.href = '/luong/cham-cong';
     head.append(a);
     box.append(head);
     if (selected > today) {
@@ -176,7 +176,7 @@
     } else if (!state.signedIn) {
       box.append(el('span', 'text-sm text-ink-soft', 'Chấm công: chưa đăng nhập phần Lương trên máy này.'));
       const a = el('a', 'btn-secondary btn-sm', 'Đăng nhập Lương');
-      a.href = '/luong';
+      a.href = '/luong/cham-cong';
       box.append(a, el('span', 'hint', 'Hoặc nhờ quản lý liên kết tài khoản lương ở trang Nhân viên để vào thẳng.'));
     } else if (state.role === 'owner' && mode === 'today') {
       ownerPanel(box);
@@ -184,7 +184,7 @@
       const who = state.role === 'owner' ? 'cả nhóm' : state.name;
       box.append(el('span', 'text-sm text-ink-soft', `Chấm công trên lịch: ${who}.`));
       const a = el('a', 'btn-ghost btn-sm', 'Mở trang Lương →');
-      a.href = '/luong';
+      a.href = '/luong/cham-cong';
       box.append(a, legend());
     } else {
       // Nhân viên, trang Hôm nay: chấm cho ngày đang chọn
@@ -201,7 +201,7 @@
       if (state.kind !== 'month') {
         box.append(el('span', 'text-sm text-ink-soft', cur ? `Đã ghi: ${cur.label}` : 'Chưa ghi giờ.'));
         const a = el('a', 'btn-secondary btn-sm', 'Ghi giờ làm ở trang Lương →');
-        a.href = '/luong';
+        a.href = '/luong/cham-cong';
         box.append(a);
       } else if (future) {
         box.append(el('span', 'text-sm text-ink-faint', 'Chưa tới ngày này.'));

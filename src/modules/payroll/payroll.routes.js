@@ -4,6 +4,7 @@ import { Router } from 'express';
 import * as controller from './payroll.controller.js';
 
 const router = Router();
-router.get('/', controller.page);
+router.get('/', controller.index);
+router.get('/:tab', controller.tab);
 
 export default router;
