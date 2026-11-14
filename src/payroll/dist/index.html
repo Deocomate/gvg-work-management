@@ -2740,9 +2740,9 @@ if(EMBED)window.addEventListener('storage',e=>{if(e.key==='theme'){document.docu
  * ?embed=1&bridge=1: a hidden frame on the host site's Hôm nay / Tháng pages. It signs in from the remembered login
  * (same as a normal visit), then answers postMessage requests from its parent page, same origin only:
  *   host → {gvg:'att',op:'get',months:['2026-11',…]}      bridge → {gvg:'att',op:'state',signedIn,role,name,kind,days,locked}
- *   host → {gvg:'att',op:'set',date:'2026-11-14',st:'work'} (monthly staff only; st '' clears)  bridge → state, or {op:'error',msg}
+ *   host → {gvg:'att',op:'set',date:'2026-11-14',st:'work'} (monthly-salary only; st '' clears; owner adds id = staff id)  bridge → state, or {op:'error',msg}
  * Same icons as the timekeeping calendar: one shape per day (sh = day % 8), colour by status (Đi làm = the person's tone).
- * days: staff → {date:{sh,st,label,color}}; owner → {date:{sh,people:[{letter,name,st,label,color}]}} (one icon per staff). */
+ * days: staff → {date:{sh,st,label,color}}; owner → {date:{sh,people:[{id,letter,name,st,label,color}]}} (one icon per staff) + staff:[{id,name,letter,color,kind}]. */
 const BRIDGE=!!EMBED&&new URLSearchParams(location.search).has('bridge');
 const BRIDGE_COLOR={half:'#D2B055',paid:'#836F9B',off:'#B3BAB6'};
 const bridgeColor=(id,st)=>st==='work'?TONE[toneOf(id)].dark:BRIDGE_COLOR[st];
@@ -2761,7 +2761,7 @@ function bridgeMonthDays(ym){
   for(let d=1;d<=n;d++){
     const date=ym+'-'+pad(d),sh=d%8;
     if(S.role==='owner'){
-      const people=ids.map(id=>{const m=bridgeMark(id,ym,d);const nm=staffMeta(id).name;return m&&{...m,name:nm,letter:nameLetter(nm)}}).filter(Boolean);
+      const people=ids.map(id=>{const m=bridgeMark(id,ym,d);const nm=staffMeta(id).name;return m&&{...m,id,name:nm,letter:nameLetter(nm)}}).filter(Boolean);
       if(people.length)out[date]={sh,people};
     }else{const m=bridgeMark(S.role,ym,d);if(m)out[date]={sh,...m}}
   }
@@ -2778,17 +2778,22 @@ async function bridgeState(months){
   const days={},locked={};let kind=S.role==='owner'?null:'month';
   for(const ym of months){S.ym=ym;await loadMonth();Object.assign(days,bridgeMonthDays(ym));
     if(S.role!=='owner'){locked[ym]=!canEditDays(S.role);kind=S.cache[S.role]?S.cache[S.role].sal.kind:kind}}
-  return{...base,name:S.sso&&S.ssoName?S.ssoName:S.role==='owner'?(S.admin?'Super admin':'Chủ cửa hàng'):staffMeta(S.role).name,kind,days,locked,statuses:STATUS_SHORT,legend:bridgeLegend()};
+  const staff=S.role==='owner'?staffIds().map(id=>{const nm=staffMeta(id).name,C=S.cache[id];return{id,name:nm,letter:nameLetter(nm),color:bridgeColor(id,'work'),kind:C?C.sal.kind:null}}):undefined;
+  return{...base,name:S.sso&&S.ssoName?S.ssoName:S.role==='owner'?(S.admin?'Super admin':'Chủ cửa hàng'):staffMeta(S.role).name,kind,days,locked,staff,statuses:STATUS_SHORT,legend:bridgeLegend()};
 }
-async function bridgeSet(date,st){
-  if(!S.role||S.role==='owner')throw uerr('Chỉ nhân viên tự chấm công ở đây');
+/* staff set their own day; the owner passes the staff id and may set anyone's (also after the period is closed) */
+async function bridgeSet(date,st,id){
+  if(!S.role)throw uerr('Chưa đăng nhập phần Lương');
+  const who=S.role==='owner'?id:S.role;
+  if(!who||!staffIds().includes(who))throw uerr('Không tìm thấy nhân viên');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||(st&&!STATUS[st]))throw uerr('Dữ liệu không hợp lệ');
   const ym=date.slice(0,7),dd=date.slice(8);
   if(dayState(ym,+dd)==='future')throw uerr('Chưa tới ngày này');
   S.ym=ym;await loadMonth();
-  if(S.cache[S.role].sal.kind!=='month')throw uerr('Lương giờ: ghi giờ làm ở trang Lương');
-  if(!canEditDays(S.role))throw uerr('Kỳ lương đã chốt');
-  await mutateDays(S.role,days=>{const o=days[dd]||{};if(st)days[dd]={...o,st,lunch:!!o.lunch,...stamp(dd)};else{const{st:_,...rest}=o;days[dd]={...rest,...stamp(dd)}}});
+  if(!S.cache[who])throw uerr('Không tải được chấm công của nhân viên này');
+  if(S.cache[who].sal.kind!=='month')throw uerr('Lương giờ: ghi giờ làm ở trang Lương');
+  if(!canEditDays(who))throw uerr('Kỳ lương đã chốt');
+  await mutateDays(who,days=>{const o=days[dd]||{};if(st)days[dd]={...o,st,lunch:!!o.lunch,...stamp(dd)};else{const{st:_,...rest}=o;days[dd]={...rest,...stamp(dd)}}});
 }
 let bridgeQ=Promise.resolve();
 function bridgeReady(){
@@ -2796,7 +2801,7 @@ function bridgeReady(){
     if(e.source!==parent||e.origin!==location.origin)return;const m=e.data||{};if(m.gvg!=='att')return;
     const months=(Array.isArray(m.months)?m.months:[]).filter(x=>/^\d{4}-\d{2}$/.test(x)).slice(0,3);
     bridgeQ=bridgeQ.then(async()=>{
-      try{if(m.op==='set')await bridgeSet(String(m.date||''),String(m.st||''));parent.postMessage(await bridgeState(months),location.origin)}
+      try{if(m.op==='set')await bridgeSet(String(m.date||''),String(m.st||''),m.id==null?'':String(m.id));parent.postMessage(await bridgeState(months),location.origin)}
       catch(err){parent.postMessage({gvg:'att',op:'error',msg:err.userMsg||err.message||'Lỗi'},location.origin)}
     });
   });

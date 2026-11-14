@@ -2,7 +2,7 @@
 // Dữ liệu lương mã hoá trên trình duyệt nên không đọc được từ server: trang này mở app lương trong một khung ẩn
 // (/luong/app/?embed=1&bridge=1), khung đó tự đăng nhập (tài khoản đã liên kết, hoặc "Ghi nhớ đăng nhập") rồi trả dữ liệu qua postMessage.
 // Icon giống lịch chấm công của app lương: mỗi ngày một hình, màu theo trạng thái.
-//   Nhân viên: 1 icon của chính mình.  Chủ cửa hàng: mỗi nhân viên 1 icon kèm chữ cái đầu tên (VD N, L, T).
+//   Nhân viên: 1 icon của chính mình.  Chủ cửa hàng: mỗi nhân viên 1 icon kèm chữ cái đầu tên (VD N, L, T); trang Hôm nay có khung chấm công hộ từng nhân viên.
 // HTML cần có: <div data-att-root data-mode="today|calendar" data-selected="YYYY-MM-DD"> + các ô <span data-att-day="YYYY-MM-DD">.
 (() => {
   const root = document.querySelector('[data-att-root]');
@@ -85,6 +85,64 @@
     return box;
   }
 
+  /** Nút trạng thái (Đi làm / Nửa buổi / Phép / Nghỉ KL) cho một người; id chỉ gửi khi chủ chấm hộ. */
+  function statusButtons(cur, disabled, id) {
+    const btns = el('div', 'flex flex-wrap gap-2');
+    const colors = Object.fromEntries((state.legend?.statuses || []).map((s) => [s.st, s.color]));
+    const d = +selected.slice(8);
+    for (const [st, label] of Object.entries(state.statuses || {})) {
+      const on = cur?.st === st;
+      const b = el('button', `btn-sm inline-flex items-center gap-1.5 ${on ? 'btn-primary' : 'btn-secondary'}`);
+      const dot = icon(d % 8, colors[st] || (id ? state.staff?.find((s) => s.id === id)?.color : null));
+      dot.style.width = dot.style.height = '14px';
+      b.append(dot, `${on ? '✓ ' : ''}${label}`);
+      b.type = 'button';
+      b.disabled = busy || disabled;
+      b.addEventListener('click', () => {
+        busy = true;
+        error = '';
+        paintRoot();
+        send({ op: 'set', date: selected, st: on ? '' : st, ...(id ? { id } : {}) });
+      });
+      btns.append(b);
+    }
+    return btns;
+  }
+
+  /** Chủ cửa hàng, trang Hôm nay: chấm công hộ từng nhân viên cho ngày đang chọn. */
+  function ownerPanel(box) {
+    const [y, m, d] = selected.split('-');
+    const head = el('div', 'flex w-full flex-wrap items-center gap-3');
+    head.append(el('p', 'text-xs font-semibold uppercase tracking-wide text-ink-faint', selected === today ? 'Chấm công hôm nay · cả nhóm' : `Chấm công ${d}/${m}/${y} · cả nhóm`));
+    const a = el('a', 'btn-ghost btn-sm', 'Mở trang Lương →');
+    a.href = '/luong';
+    head.append(a);
+    box.append(head);
+    if (selected > today) {
+      box.append(el('span', 'text-sm text-ink-faint', 'Chưa tới ngày này.'));
+      box.append(legend());
+      return;
+    }
+    const people = Object.fromEntries((state.days?.[selected]?.people || []).map((p) => [p.id, p]));
+    const list = el('div', 'flex w-full flex-col divide-y divide-line');
+    for (const s of state.staff || []) {
+      const row = el('div', 'flex flex-wrap items-center gap-2 py-2');
+      const name = el('div', 'flex min-w-40 items-center gap-2');
+      name.append(icon(7, s.color, s.letter), el('span', 'text-sm font-medium text-ink', s.name));
+      row.append(name);
+      const cur = people[s.id];
+      if (s.kind === 'month') {
+        row.append(statusButtons(cur, false, s.id));
+      } else {
+        row.append(el('span', 'text-sm text-ink-soft', cur ? `Đã ghi: ${cur.label}` : 'Chưa ghi giờ.'), el('span', 'hint', 'Lương giờ: sửa giờ ở trang Lương'));
+      }
+      list.append(row);
+    }
+    if (!state.staff?.length) list.append(el('span', 'text-sm text-ink-faint', 'Chưa có nhân viên trong phần Lương.'));
+    box.append(list);
+    if (selected < today) box.append(el('span', 'hint', 'Ngày đã qua: chủ sửa được cả khi kỳ lương đã chốt.'));
+  }
+
   function paintRoot() {
     root.replaceChildren();
     root.hidden = false;
@@ -97,6 +155,8 @@
       const a = el('a', 'btn-secondary btn-sm', 'Đăng nhập Lương');
       a.href = '/luong';
       box.append(a, el('span', 'hint', 'Hoặc nhờ quản lý liên kết tài khoản lương ở trang Nhân viên để vào thẳng.'));
+    } else if (state.role === 'owner' && mode === 'today') {
+      ownerPanel(box);
     } else if (state.role === 'owner' || mode === 'calendar') {
       const who = state.role === 'owner' ? 'cả nhóm' : state.name;
       box.append(el('span', 'text-sm text-ink-soft', `Chấm công trên lịch: ${who}.`));
@@ -123,25 +183,7 @@
       } else if (future) {
         box.append(el('span', 'text-sm text-ink-faint', 'Chưa tới ngày này.'));
       } else {
-        const btns = el('div', 'flex flex-wrap gap-2');
-        const colors = Object.fromEntries((state.legend?.statuses || []).map((s) => [s.st, s.color]));
-        for (const [st, label] of Object.entries(state.statuses || {})) {
-          const on = cur?.st === st;
-          const b = el('button', `btn-sm inline-flex items-center gap-1.5 ${on ? 'btn-primary' : 'btn-secondary'}`);
-          const dot = icon(+d % 8, colors[st]);
-          dot.style.width = dot.style.height = '14px';
-          b.append(dot, `${on ? '✓ ' : ''}${label}`);
-          b.type = 'button';
-          b.disabled = busy || locked;
-          b.addEventListener('click', () => {
-            busy = true;
-            error = '';
-            paintRoot();
-            send({ op: 'set', date: selected, st: on ? '' : st });
-          });
-          btns.append(b);
-        }
-        box.append(btns);
+        box.append(statusButtons(cur, locked));
         if (locked) box.append(el('span', 'badge-yellow', '🔒 Kỳ lương đã chốt'));
         if (selected < today && !cur) box.append(el('span', 'hint', 'Ngày đã qua: sẽ ghi là chấm bù.'));
       }
