@@ -41,7 +41,7 @@ function groupStatus(copies) {
 
 /**
  * Gộp các bản của một việc làm chung (cùng group_key) thành một mục — dùng khi xem cả nhóm.
- * Mục gộp giữ id của bản đầu tiên; assignee_name là tên mọi người (✓ cho ai đã xong khi chưa xong hết).
+ * Mục gộp giữ id của bản đầu tiên; assignee_name là tên mọi người (ghi "(xong)" cho ai đã xong khi chưa xong hết).
  */
 export function mergeGroups(tasks) {
   const groups = new Map();
@@ -59,7 +59,7 @@ export function mergeGroups(tasks) {
     if (!Array.isArray(item)) return item;
     if (item.length === 1) return item[0];
     const status = groupStatus(item);
-    const names = item.map((t) => (status !== 'done' && t.status === 'done' ? `${t.assignee_name} ✓` : t.assignee_name));
+    const names = item.map((t) => (status !== 'done' && t.status === 'done' ? `${t.assignee_name} (xong)` : t.assignee_name));
     return { ...item[0], status, assignee_name: names.join(', '), coworkers: null, isGroup: true };
   });
 }

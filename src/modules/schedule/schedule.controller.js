@@ -7,6 +7,8 @@ import * as service from './schedule.service.js';
 
 const statusInfo = Object.fromEntries(TASK_STATUSES.map((s) => [s.value, s]));
 const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+const WEEK_CELL_LIMIT = 4; // số việc tối đa mỗi ô lịch tuần (trang Hôm nay)
+const OVERDUE_VISIBLE = 3; // số việc tồn hiện sẵn, còn lại gập lại
 
 const decorate = (user) => (task) => ({
   ...task,
@@ -56,6 +58,7 @@ export async function today(req, res) {
     service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand }),
   ]);
   const withRights = decorate(req.user);
+  const overdue = day.overdue.map((t) => ({ ...withRights(t), shortDate: `${t.date.slice(8, 10)}/${t.date.slice(5, 7)}` }));
 
   res.render('schedule/today', {
     title: day.isToday ? 'Việc hôm nay' : 'Việc trong ngày',
@@ -64,10 +67,20 @@ export async function today(req, res) {
     date,
     week: {
       ...week,
-      days: week.days.map((d, i) => ({ ...d, weekdayLabel: WEEKDAY_LABELS[i], tasks: d.tasks.map(withStatus) })),
+      days: week.days.map((d, i) => ({
+        ...d,
+        weekdayLabel: WEEKDAY_LABELS[i],
+        tasks: d.tasks.map(withStatus),
+        // Máy tính: mỗi ô chỉ liệt kê vài việc cho lịch tuần gọn; còn lại ghi "+N việc"
+        shown: d.tasks.slice(0, WEEK_CELL_LIMIT).map(withStatus),
+        more: Math.max(0, d.tasks.length - WEEK_CELL_LIMIT),
+      })),
     },
     tasks: day.tasks.map(withRights),
-    overdue: day.overdue.map(withRights),
+    // Việc tồn: hiện vài việc đầu, còn lại gập trong "Xem thêm"
+    overdue,
+    overdueTop: overdue.slice(0, OVERDUE_VISIBLE),
+    overdueRest: overdue.slice(OVERDUE_VISIBLE),
     back: `/today?date=${date}${viewer.userQuery}`,
   });
 }

@@ -1,5 +1,5 @@
 {{!-- Lịch 7 ngày (T2–CN) của tuần đang xem; bấm một ngày để xem chi tiết bên dưới.
-      Máy tính: mỗi ô liệt kê việc; điện thoại: chỉ thứ, ngày và số việc cho gọn.
+      Máy tính: mỗi ô liệt kê vài việc đầu (shown) + "+N việc nữa" (more); điện thoại: chỉ thứ, ngày và số việc cho gọn.
       Dùng: {{> schedule/week-strip days=week.days selected=date}} --}}
 <div class="card mb-5 overflow-hidden">
   <div class="grid grid-cols-7">
@@ -15,10 +15,11 @@
         {{#if tasks.length}}
           <span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-bad-300{{else if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{tasks.length}} việc</span>
           <ul class="mt-1 hidden min-w-0 space-y-1.5 md:block">
-            {{#each tasks}}
+            {{#each shown}}
               <li class="text-sm leading-snug break-words{{#if (eq status 'done')}} text-ink-faint line-through{{else if (eq status 'doing')}} text-sun-300{{else}} text-ink{{/if}}"
                   title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="text-xs tabular-nums opacity-60">{{start_time}}</span> {{/if}}<span class="font-medium">{{title}}</span>{{#if brandInfo}} <span class="{{brandInfo.badge}} px-1.5 py-0 text-[10px]" title="{{brandInfo.label}}">{{brandInfo.short}}</span>{{/if}}</li>
             {{/each}}
+            {{#if more}}<li class="text-xs font-medium text-ink-faint">+{{more}} việc nữa</li>{{/if}}
           </ul>
         {{/if}}
       </a>

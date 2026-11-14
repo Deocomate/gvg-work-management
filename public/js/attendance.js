@@ -27,6 +27,7 @@
   let state = null;
   let busy = false;
   let error = '';
+  let expanded = false; // chủ bấm "Sửa" để mở khung chấm công đã thu gọn
 
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -109,12 +110,35 @@
     return btns;
   }
 
-  /** Chủ cửa hàng, trang Hôm nay: chấm công hộ từng nhân viên cho ngày đang chọn. */
+  /** Chủ cửa hàng, trang Hôm nay: chấm công hộ từng nhân viên cho ngày đang chọn.
+   *  Đã chấm đủ mọi người (lương tháng) thì thu lại một dòng; bấm "Sửa" để mở lại các nút. */
   function ownerPanel(box) {
     const [y, m, d] = selected.split('-');
+    const people = Object.fromEntries((state.days?.[selected]?.people || []).map((p) => [p.id, p]));
+    const monthStaff = (state.staff || []).filter((s) => s.kind === 'month');
+    const marked = monthStaff.filter((s) => people[s.id]).length;
+    const label = selected === today ? 'Chấm công hôm nay' : `Chấm công ${d}/${m}/${y}`;
+
+    if (selected <= today && monthStaff.length && marked === monthStaff.length && !expanded) {
+      const line = el('div', 'flex w-full flex-wrap items-center gap-x-3 gap-y-2');
+      line.append(el('span', 'text-sm text-ink-soft', `${label}: đã chấm ${marked}/${monthStaff.length}`));
+      const icons = el('span', 'flex flex-wrap gap-0.5');
+      for (const p of Object.values(people)) icons.append(icon(state.days[selected].sh, p.color, p.letter, `${p.name}: ${p.label}`));
+      const edit = el('button', 'btn-ghost btn-sm ml-auto', 'Sửa');
+      edit.type = 'button';
+      edit.addEventListener('click', () => {
+        expanded = true;
+        paintRoot();
+      });
+      line.append(icons, edit);
+      box.append(line);
+      return;
+    }
+
     const head = el('div', 'flex w-full flex-wrap items-center gap-3');
-    head.append(el('p', 'text-xs font-semibold uppercase tracking-wide text-ink-faint', selected === today ? 'Chấm công hôm nay · cả nhóm' : `Chấm công ${d}/${m}/${y} · cả nhóm`));
-    const a = el('a', 'btn-ghost btn-sm', 'Mở trang Lương →');
+    const progress = selected <= today && monthStaff.length ? ` · đã chấm ${marked}/${monthStaff.length}` : ' · cả nhóm';
+    head.append(el('p', 'text-xs font-semibold uppercase tracking-wide text-ink-faint', label + progress));
+    const a = el('a', 'btn-ghost btn-sm ml-auto', 'Mở trang Lương →');
     a.href = '/luong';
     head.append(a);
     box.append(head);
@@ -123,7 +147,6 @@
       box.append(legend());
       return;
     }
-    const people = Object.fromEntries((state.days?.[selected]?.people || []).map((p) => [p.id, p]));
     const list = el('div', 'flex w-full flex-col divide-y divide-line');
     for (const s of state.staff || []) {
       const row = el('div', 'flex flex-wrap items-center gap-2 py-2');

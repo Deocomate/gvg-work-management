@@ -19,6 +19,13 @@ document.addEventListener('change', (event) => {
   if (event.target.matches('[data-autosubmit]')) event.target.form?.requestSubmit();
 });
 
+// <details class="menu"> -> bấm ra ngoài thì đóng menu.
+document.addEventListener('click', (event) => {
+  for (const menu of document.querySelectorAll('details.menu[open]')) {
+    if (!menu.contains(event.target)) menu.open = false;
+  }
+});
+
 // <a data-back> -> quay lại trang trước.
 document.addEventListener('click', (event) => {
   if (event.target.closest('[data-back]')) {
@@ -64,7 +71,7 @@ document.addEventListener('click', async (event) => {
   const label = button.textContent;
   try {
     await navigator.clipboard.writeText(source.innerText.trim());
-    button.textContent = '✓ Đã chép';
+    button.textContent = 'Đã chép';
   } catch {
     button.textContent = 'Không chép được';
   }

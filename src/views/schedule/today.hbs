@@ -1,6 +1,11 @@
 {{#> page-header title=title subtitle=(formatWeekday date)}}
-  <a href="/today/sheet?date={{date}}" class="btn-secondary" title="Phiếu công việc trong ngày để in hoặc gửi cho mọi người">🖨 Xuất phiếu</a>
-  <a href="/today/sheet?date={{date}}&range=week" class="btn-secondary" title="Phiếu công việc cả tuần (T2–CN) để in hoặc gửi cho mọi người">🗓 Phiếu tuần</a>
+  <details class="menu">
+    <summary class="btn-secondary cursor-pointer" title="Phiếu công việc để in hoặc gửi cho mọi người">🖨 Xuất phiếu ▾</summary>
+    <div class="menu-list">
+      <a href="/today/sheet?date={{date}}">Phiếu trong ngày</a>
+      <a href="/today/sheet?date={{date}}&range=week">Phiếu cả tuần (T2–CN)</a>
+    </div>
+  </details>
   <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
 {{/page-header}}
 
@@ -17,37 +22,63 @@
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>
 
-{{> schedule/week-strip days=week.days selected=date}}
-{{> payroll-attendance mode="today" day=date}}
-
-{{#if summary.total}}
-  <div class="card card-body mb-5">
-    <div class="flex flex-wrap items-baseline justify-between gap-2">
-      <p class="text-sm text-ink-soft">Đã xong <span class="text-2xl font-semibold text-ink">{{summary.done}}</span>/{{summary.total}} việc</p>
-      <div class="flex flex-wrap gap-2 text-xs">
-        {{#if summary.doing}}<span class="badge-yellow">{{summary.doing}} đang làm</span>{{/if}}
-        {{#if summary.late}}<span class="badge-red">{{summary.late}} trễ</span>{{/if}}
-      </div>
-    </div>
-    <div class="mt-3 h-2 overflow-hidden rounded-full bg-canvas" role="progressbar" aria-valuenow="{{summary.percent}}" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến độ trong ngày">
-      <div class="h-full rounded-full bg-linear-to-r from-brand-500 to-pine-400 transition-[width] duration-500" style="width: {{summary.percent}}%"></div>
-    </div>
-  </div>
-{{/if}}
-
+{{!-- Điện thoại: việc tồn nằm cuối trang nên nhắc một dòng ở trên để không bị quên --}}
 {{#if overdue.length}}
-  <section class="mb-6 rounded-xl border border-sun-400/30 bg-sun-400/5 p-4">
-    <h2 class="text-sm font-semibold text-sun-300">Còn {{overdue.length}} việc chưa xong từ những ngày trước</h2>
-    <ol class="mt-3 space-y-3">
-      {{#each overdue}}{{> schedule/task-item this back=../back showAssignee=../showAssignee showDate=true}}{{/each}}
-    </ol>
-  </section>
+  <a href="#overdue" class="mb-4 flex items-center justify-between gap-2 rounded-xl border border-sun-400/30 bg-sun-400/5 px-4 py-2.5 text-sm font-medium text-sun-300 lg:hidden">
+    <span>Còn {{overdue.length}} việc tồn từ những ngày trước</span><span aria-hidden="true">↓</span>
+  </a>
 {{/if}}
 
-{{#if tasks.length}}
-  <ol class="space-y-3">
-    {{#each tasks}}{{> schedule/task-item this back=../back showAssignee=../showAssignee}}{{/each}}
-  </ol>
-{{else}}
-  {{> empty-state title="Không có việc nào trong ngày này" text="Thêm việc để cả nhóm biết cần làm gì." actionHref=(concat "/tasks/new?date=" date) actionLabel="+ Thêm việc"}}
-{{/if}}
+{{> schedule/week-strip days=week.days selected=date}}
+
+{{!-- Màn rộng: việc trong ngày bên trái, chấm công + việc tồn bên phải. Điện thoại: xếp chồng theo thứ tự đó. --}}
+<div class="grid items-start gap-5{{#if (or overdue.length payrollEnabled)}} lg:grid-cols-[minmax(0,1fr)_24rem]{{/if}}">
+  <section aria-labelledby="day-tasks" class="min-w-0">
+    <div class="mb-3">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="day-tasks" class="text-lg font-semibold text-ink">{{#if isToday}}Hôm nay{{else}}{{formatWeekday date}}{{/if}}</h2>
+        {{#if summary.total}}
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            {{#if summary.doing}}<span class="badge-yellow">{{summary.doing}} đang làm</span>{{/if}}
+            {{#if summary.late}}<span class="badge-red">{{summary.late}} trễ</span>{{/if}}
+            <p class="text-sm text-ink-soft">Đã xong <span class="font-semibold text-ink">{{summary.done}}</span>/{{summary.total}} việc</p>
+          </div>
+        {{/if}}
+      </div>
+      {{#if summary.total}}
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-canvas" role="progressbar" aria-valuenow="{{summary.percent}}" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến độ trong ngày">
+          <div class="h-full rounded-full bg-linear-to-r from-brand-500 to-pine-400 transition-[width] duration-500" style="width: {{summary.percent}}%"></div>
+        </div>
+      {{/if}}
+    </div>
+
+    {{#if tasks.length}}
+      <ol class="space-y-3">
+        {{#each tasks}}{{> schedule/task-item this back=../back showAssignee=../showAssignee}}{{/each}}
+      </ol>
+    {{else}}
+      {{> empty-state title="Không có việc nào trong ngày này" text="Thêm việc để cả nhóm biết cần làm gì." actionHref=(concat "/tasks/new?date=" date) actionLabel="+ Thêm việc"}}
+    {{/if}}
+  </section>
+
+  <aside class="min-w-0 space-y-5">
+    {{> payroll-attendance mode="today" day=date class="mb-0"}}
+
+    {{#if overdue.length}}
+      <section id="overdue" class="scroll-mt-24 rounded-xl border border-sun-400/30 bg-sun-400/5 p-4">
+        <h2 class="text-sm font-semibold text-sun-300">Còn {{overdue.length}} việc chưa xong từ những ngày trước</h2>
+        <ol class="mt-2 divide-y divide-line">
+          {{#each overdueTop}}{{> schedule/task-row this back=../back showAssignee=../showAssignee}}{{/each}}
+        </ol>
+        {{#if overdueRest.length}}
+          <details class="group">
+            <summary class="btn-ghost btn-sm mt-1 cursor-pointer list-none group-open:hidden">Xem thêm {{overdueRest.length}} việc</summary>
+            <ol class="divide-y divide-line border-t border-line">
+              {{#each overdueRest}}{{> schedule/task-row this back=../back showAssignee=../showAssignee}}{{/each}}
+            </ol>
+          </details>
+        {{/if}}
+      </section>
+    {{/if}}
+  </aside>
+</div>

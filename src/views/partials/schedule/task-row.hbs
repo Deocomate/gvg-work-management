@@ -1,0 +1,35 @@
+{{!-- Một việc dạng một dòng (danh sách việc tồn trên trang Hôm nay). Bấm tên để mở ghi chú, link, nút Sửa.
+      Dùng: {{> schedule/task-row this back=../back showAssignee=../showAssignee}} --}}
+<li class="flex items-start gap-2 py-2">
+  <details class="task-fold min-w-0 flex-1">
+    <summary>
+      <span class="w-11 shrink-0 text-xs font-semibold tabular-nums text-sun-300" title="{{formatWeekday date}}">{{shortDate}}</span>
+      <span class="min-w-0 flex-1">
+        <span class="text-sm font-medium break-words text-ink">{{title}}</span>
+        {{#if brandInfo}} <span class="{{brandInfo.badge}} px-1.5 py-0 text-[10px]" title="{{brandInfo.label}}">{{brandInfo.short}}</span>{{/if}}
+        {{#if (eq status 'doing')}} <span class="badge-yellow px-1.5 py-0 text-[10px]">Đang làm</span>{{/if}}
+        {{#if (or showAssignee coworkers)}}<span class="block text-xs text-ink-faint">{{assignee_name}}{{#if coworkers}}, {{coworkers}}{{/if}}</span>{{/if}}
+      </span>
+    </summary>
+    <div class="mt-1.5 ml-13 space-y-2 text-sm">
+      {{#if note}}<p class="whitespace-pre-line text-ink-soft">{{note}}</p>{{/if}}
+      {{#if facilities}}<p class="whitespace-pre-line text-ink-soft"><span class="text-xs font-semibold text-ink-faint">Cơ sở vật chất:</span> {{facilities}}</p>{{/if}}
+      {{#if linkList.length}}
+        <ul class="flex flex-wrap gap-2" aria-label="Link liên quan">
+          {{#each linkList}}
+            <li class="min-w-0 max-w-full"><a href="{{url}}" target="_blank" rel="noopener noreferrer" title="{{url}}" class="block truncate rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-bloom-300 transition hover:border-bloom-400/60">🔗 {{label}} ↗</a></li>
+          {{/each}}
+        </ul>
+      {{/if}}
+      <div class="flex flex-wrap gap-2">
+        {{#if (and canStatus (eq status 'todo'))}}{{> schedule/status-button id=id status="doing" label="Bắt đầu" class="btn-secondary btn-sm" back=back group=isGroup}}{{/if}}
+        {{#if plan_id}}
+          <a href="/plan/{{plan_id}}?back={{urlEncode back}}" class="btn-ghost btn-sm">Xem ở Plan</a>
+        {{else if canEdit}}
+          <a href="/tasks/{{id}}/edit?back={{urlEncode back}}" class="btn-ghost btn-sm">Sửa</a>
+        {{/if}}
+      </div>
+    </div>
+  </details>
+  {{#if canStatus}}{{> schedule/status-button id=id status="done" label="Xong" class="btn-success btn-sm shrink-0" back=back group=isGroup}}{{/if}}
+</li>

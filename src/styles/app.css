@@ -525,6 +525,18 @@
   .plan-fold[open] > summary::after { transform: rotate(90deg); }
   .plan-fold > summary span { @apply text-xs font-normal text-ink-faint; }
   .plan-fold-body { @apply space-y-4 border-t border-line px-4 py-4; }
+
+  /* Trang Hôm nay: dòng việc tồn bấm để mở chi tiết */
+  .task-fold > summary { @apply flex cursor-pointer list-none items-start gap-2 rounded-lg px-1 py-0.5 transition hover:bg-white/4 light:hover:bg-brand-500/5; }
+  .task-fold > summary::-webkit-details-marker { display: none; }
+  .ml-13 { margin-left: 3.25rem; }
+
+  /* Nút có menu thả xuống (<details class="menu">) — app.js đóng khi bấm ra ngoài */
+  .menu { @apply relative; }
+  .menu > summary { @apply list-none; }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu-list { @apply absolute right-0 z-20 mt-1 flex min-w-52 flex-col rounded-xl border border-line bg-raised p-1 shadow-lg; }
+  .menu-list a { @apply rounded-lg px-3 py-2 text-sm text-ink transition hover:bg-white/6 light:hover:bg-brand-500/8; }
   .plan-day-add {
     @apply flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-ink-faint opacity-60 transition hover:bg-pine-500/40 hover:text-ink hover:opacity-100;
   }

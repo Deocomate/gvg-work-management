@@ -2,7 +2,7 @@
 // - Plan -> lịch: việc "🎬 Quay: …" (ngày quay, khung giờ, địa điểm, CSVC) giao cho người quay,
 //   "📤 Đăng: …" (ngày đăng, cả ngày) giao cho người đăng; chưa chọn thì giao cho người phụ trách.
 //   Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo; bỏ ngày, không còn ai làm hoặc chuyển "Bỏ" thì việc bị xoá.
-// - Lịch -> Plan: tick ✓ Xong việc đăng -> Plan "Đã xong"; mở lại việc đăng -> lùi về "Đã chọn".
+// - Lịch -> Plan: bấm Xong việc đăng -> Plan "Đã xong"; mở lại việc đăng -> lùi về "Đã chọn".
 //   Việc quay tick xong/mở lại tuỳ người làm (Plan không còn bước "Đã quay").
 // Việc lấy từ Plan chỉ sửa ở Plan (tasks.service chặn sửa/xoá trực tiếp).
 import * as tasksRepo from '#modules/tasks/tasks.repo.js';
@@ -102,7 +102,7 @@ export async function syncPlans(ids) {
 
 export const removePlanTasks = (planId) => tasksRepo.removeForPlan(planId);
 
-/** Lịch -> Plan: người làm tick ✓ Xong / Mở lại việc đăng thì Plan thành "Đã xong" / lùi về "Đã chọn". */
+/** Lịch -> Plan: người làm bấm Xong / Mở lại việc đăng thì Plan thành "Đã xong" / lùi về "Đã chọn". */
 export async function applyTaskStatus(task, status) {
   if (!task.plan_id || task.plan_kind !== 'post') return;
   const plan = await repo.findById(task.plan_id);
