@@ -1,0 +1,31 @@
+{{> subnav/settings}}
+{{#> page-header title="Tài khoản" subtitle="Thông tin chung của bạn trong app"}}{{/page-header}}
+
+<div class="grid max-w-4xl gap-6 lg:grid-cols-2">
+  <form method="post" action="/account" class="card card-body space-y-5" novalidate>
+    {{> form/csrf}}
+    <h2 class="text-lg font-semibold text-ink">Thông tin chung</h2>
+    {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+      <dt class="text-ink-faint">Email đăng nhập</dt><dd class="break-all text-ink">{{account.email}}</dd>
+      <dt class="text-ink-faint">Vai trò</dt><dd><span class="{{account.roleInfo.badge}}">{{account.roleInfo.label}}</span></dd>
+      <dt class="text-ink-faint">Ngày tạo</dt><dd class="text-ink">{{formatDay account.created_at}}</dd>
+    </dl>
+
+    {{> form/field name="name" label="Họ tên" value=values.name error=errors.name required=true}}
+    {{> form/field name="phone" label="Số điện thoại" type="tel" value=values.phone error=errors.phone placeholder="VD: 0912 345 678"}}
+    <p class="hint">Muốn đổi email hoặc vai trò, hãy nhờ quản lý sửa ở trang Nhân viên.</p>
+
+    <div class="pt-2"><button type="submit" class="btn-primary">Lưu thông tin</button></div>
+  </form>
+
+  <form method="post" action="/account/password" class="card card-body space-y-5" novalidate>
+    {{> form/csrf}}
+    <h2 class="text-lg font-semibold text-ink">Đổi mật khẩu</h2>
+    {{> form/field name="current_password" label="Mật khẩu hiện tại" type="password" error=errors.current_password required=true}}
+    {{> form/field name="new_password" label="Mật khẩu mới" type="password" error=errors.new_password required=true hint="Tối thiểu 8 ký tự"}}
+    {{> form/field name="confirm_password" label="Nhập lại mật khẩu mới" type="password" error=errors.confirm_password required=true}}
+    <div class="pt-2"><button type="submit" class="btn-secondary">Đổi mật khẩu</button></div>
+  </form>
+</div>

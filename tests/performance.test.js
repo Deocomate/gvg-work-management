@@ -24,7 +24,9 @@ test('chỉ quản trị viên xem được bảng hiệu suất; nhân viên b�
   const page = await admin.get('/performance');
   assert.equal(page.status, 200);
   assert.match(page.text, /Hiệu suất tuần/);
-  assert.match((await admin.get('/today')).text, /href="\/performance"/);
+  // Cài đặt (icon) -> /account, trong đó quản lý có tab Nhân viên + Hiệu suất
+  assert.match((await admin.get('/today')).text, /href="\/account"[^>]*aria-label="Cài đặt"/);
+  assert.match((await admin.get('/staff')).text, /href="\/performance"/);
 });
 
 test('bảng hiện từng người với số việc và tỷ lệ hoàn thành của tuần', async () => {

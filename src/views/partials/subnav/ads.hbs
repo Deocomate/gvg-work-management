@@ -1,0 +1,5 @@
+{{!-- Tab con của mục Quảng cáo: Hiệu quả quảng cáo (chỉ quản lý) + Data khách hàng (quản lý + Sale) --}}
+<nav class="mb-5 flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Mục Quảng cáo">
+  {{#if canViewAds}}{{> nav-link href="/ads" label="Hiệu quả quảng cáo"}}{{/if}}
+  {{> nav-link href="/customers" label="Data khách hàng"}}
+</nav>

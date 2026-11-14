@@ -21,7 +21,9 @@ const idOf = async (name) => {
 };
 
 test('menu Data khách hàng: quản lý và Trang thấy, nhân viên thường không thấy và bị chặn', async () => {
-  assert.match((await admin.get('/links')).text, /href="\/customers"/);
+  // Quản lý: menu Quảng cáo -> /ads, trong đó có tab Data khách hàng. Sale: menu Quảng cáo trỏ thẳng /customers.
+  assert.match((await admin.get('/links')).text, /href="\/ads"/);
+  assert.match((await admin.get('/ads')).text, /href="\/customers"/);
   assert.match((await trang.get('/links')).text, /href="\/customers"/);
   assert.doesNotMatch((await mai.get('/links')).text, /href="\/customers"/);
 

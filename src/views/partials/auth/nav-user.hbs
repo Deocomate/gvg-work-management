@@ -1,11 +1,5 @@
 {{#if currentUser}}
   <div class="flex shrink-0 items-center gap-3 text-sm">
-    {{!-- Chỉ hiện icon; tên người dùng nằm trong tooltip --}}
-    <span class="hidden p-1.5 text-ink-soft sm:inline-flex" role="img" aria-label="{{currentUser.name}}" title="{{currentUser.name}}">
-      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
-      </svg>
-    </span>
     <form method="post" action="/logout">
       {{> form/csrf}}
       <button type="submit" class="btn-ghost btn-sm" aria-label="Đăng xuất" title="Đăng xuất">
