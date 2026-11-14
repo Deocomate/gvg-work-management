@@ -23,7 +23,7 @@ test('mở app chưa đăng nhập -> trang đăng nhập; đăng nhập rồi -
   const res = await guest.get('/').redirects(5);
   assert.match(res.text, /Đăng nhập/);
   const home = await hoa.get('/').redirects(5);
-  assert.match(home.text, /Việc hôm nay/);
+  assert.match(home.text, /<h1[^>]*>Lịch làm việc<\/h1>/);
 });
 
 test('ngày chưa có việc hiện trạng thái rỗng; ngày sai định dạng quay về hôm nay', async () => {
@@ -31,7 +31,7 @@ test('ngày chưa có việc hiện trạng thái rỗng; ngày sai định dạ
   assert.match(empty.text, /Không có việc nào trong ngày này/);
   const bad = await hoa.get('/today?date=2026-02-31');
   assert.equal(bad.status, 200);
-  assert.match(bad.text, /Việc hôm nay/);
+  assert.match(bad.text, /Lịch làm việc/);
 });
 
 test('dòng thời gian: việc cả ngày trước, rồi theo giờ; có tiến độ', async () => {
@@ -53,7 +53,7 @@ test('menu hiện số việc chưa xong hôm nay', async () => {
 test('việc hôm qua chưa xong được nhắc ở "Hôm nay"', async () => {
   await assign({ title: 'Việc tồn hôm qua', date: addDays(today, -1) });
   const html = (await hoa.get('/today')).text;
-  assert.match(html, /Còn 1 việc chưa xong từ những ngày trước/);
+  assert.match(html, /Quá hạn · 1 việc cần chú ý/);
   assert.match(html, /Việc tồn hôm qua/);
 });
 
@@ -91,13 +91,14 @@ test('quản lý mặc định thấy việc cả nhóm (khớp phiếu công vi
 test('trang Hôm nay có lịch cả tuần (T2–CN); bấm ngày khác vẫn thấy cả tuần, ngày đó được chọn', async () => {
   const html = (await hoa.get('/today')).text;
   assert.match(html, /T2[\s\S]*T3[\s\S]*T4[\s\S]*T5[\s\S]*T6[\s\S]*T7[\s\S]*CN/);
-  assert.match(html, /08:00<\/span> <span class="font-medium">Họp sáng/);
-  assert.match(html, new RegExp(`href="/today\\?date=${today}"[^>]*aria-current="date"`));
+  // ô tuần: tên + giờ (+ loại việc, trạng thái); bấm ngày → chi tiết ngày bên dưới
+  assert.match(html, /class="wk-task"[^>]*title="Họp sáng · 08:00/);
+  assert.match(html, new RegExp(`href="/today\\?date=${today}#day-tasks"[^>]*aria-current="date"`));
   // Chọn một ngày khác trong tuần: lịch tuần vẫn hiện việc hôm nay, chi tiết là ngày được chọn
   const other = weekDays(today).find((d) => d !== today);
   const otherHtml = (await hoa.get(`/today?date=${other}`)).text;
   assert.match(otherHtml, /Họp sáng/);
-  assert.match(otherHtml, new RegExp(`href="/today\\?date=${other}"[^>]*aria-current="date"`));
+  assert.match(otherHtml, new RegExp(`href="/today\\?date=${other}#day-tasks"[^>]*aria-current="date"`));
   // Nút tuần sau nhảy 7 ngày
   assert.ok(html.includes(`href="/today?date=${addDays(today, 7)}"`));
   const later = (await hoa.get(`/today?date=${addDays(today, 30)}`)).text;

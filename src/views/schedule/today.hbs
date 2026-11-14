@@ -1,42 +1,51 @@
-{{#> page-header title=title subtitle=(formatWeekday date)}}
+{{#> page-header title=title subtitle=(concat "Tuần " week.label)}}
   <details class="menu">
-    <summary class="btn-secondary cursor-pointer" title="Phiếu công việc để in hoặc gửi cho mọi người">🖨 Xuất phiếu ▾</summary>
+    <summary class="btn-secondary cursor-pointer" title="Phiếu công việc để in hoặc gửi cho mọi người">Xuất phiếu ▾</summary>
     <div class="menu-list">
-      <a href="/today/sheet?date={{date}}">Phiếu trong ngày</a>
-      <a href="/today/sheet?date={{date}}&range=week">Phiếu cả tuần (T2–CN)</a>
+      <a href="/today/sheet?date={{date}}">Phiếu ngày {{formatDay date}}</a>
+      <a href="/today/sheet?date={{date}}&range=week">Phiếu tuần (T2–CN)</a>
     </div>
   </details>
   <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
 {{/page-header}}
 
-{{!-- Chọn tuần/ngày (và nhân viên nếu là quản lý) --}}
-<form method="get" action="/today" class="mb-5 flex flex-wrap items-center gap-2">
-  <a href="/today?date={{week.prev}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần trước" title="Tuần trước">‹</a>
-  <input type="date" name="date" value="{{date}}" class="input w-auto" aria-label="Chọn ngày" data-autosubmit>
-  <a href="/today?date={{week.next}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần sau" title="Tuần sau">›</a>
-  {{#unless isToday}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về hôm nay</a>{{/unless}}
-  <select name="brand" class="input w-auto min-w-40" aria-label="Lọc theo brand" data-autosubmit>
-    {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
-  </select>
-  {{> schedule/staff-filter}}
+{{!-- Thanh công cụ: tuần đang xem, chuyển tuần, chọn ngày; lọc người làm (lịch việc + bảng công) và brand (chỉ lịch việc) --}}
+<form method="get" action="/today" class="toolbar mb-4" aria-label="Chọn tuần và lọc">
+  <div class="flex items-center gap-1">
+    <a href="/today?date={{week.prev}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần trước" title="Tuần trước">‹</a>
+    <span class="min-w-32 px-1 text-center text-sm font-semibold tabular-nums text-ink">{{week.label}}</span>
+    <a href="/today?date={{week.next}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần sau" title="Tuần sau">›</a>
+  </div>
+  {{#unless week.isThisWeek}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về tuần này</a>{{else}}{{#unless isToday}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về hôm nay</a>{{/unless}}{{/unless}}
+  <label class="sr-only" for="pick-date">Chọn ngày</label>
+  <input id="pick-date" type="date" name="date" value="{{date}}" class="input w-auto" data-autosubmit>
+  <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
+    {{> schedule/staff-filter}}
+    <select name="brand" class="input w-auto min-w-36" aria-label="Lọc brand (chỉ lọc công việc)" title="Chỉ lọc công việc, không ảnh hưởng bảng công" data-autosubmit>
+      {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
+    </select>
+  </div>
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>
 
-{{!-- Điện thoại: việc tồn nằm cuối trang nên nhắc một dòng ở trên để không bị quên --}}
+{{!-- Bảng chấm công tuần (public/js/attendance.js): hàng = nhân viên, cột = T2–CN; bấm ô để chấm công / nhập giờ --}}
+{{> payroll-attendance mode="week" day=date days=att.days focus=att.focus filterName=att.filterName}}
+
+{{!-- Điện thoại: việc quá hạn nằm cuối trang nên nhắc một dòng ở trên để không bị quên --}}
 {{#if overdue.length}}
-  <a href="#overdue" class="mb-4 flex items-center justify-between gap-2 rounded-xl border border-sun-400/30 bg-sun-400/5 px-4 py-2.5 text-sm font-medium text-sun-300 lg:hidden">
-    <span>Còn {{overdue.length}} việc tồn từ những ngày trước</span><span aria-hidden="true">↓</span>
+  <a href="#overdue" class="mb-4 flex items-center justify-between gap-2 rounded-xl border border-sun-400/40 bg-surface px-4 py-2.5 text-sm font-medium text-sun-300 lg:hidden">
+    <span>Quá hạn: {{overdue.length}} việc từ những ngày trước</span><span aria-hidden="true">↓</span>
   </a>
 {{/if}}
 
 {{> schedule/week-strip days=week.days selected=date}}
 
-{{!-- Màn rộng: việc trong ngày bên trái, chấm công + việc tồn bên phải. Điện thoại: xếp chồng theo thứ tự đó. --}}
-<div class="grid items-start gap-5{{#if (or overdue.length payrollEnabled)}} lg:grid-cols-[minmax(0,1fr)_24rem]{{/if}}">
-  <section aria-labelledby="day-tasks" class="min-w-0">
+{{!-- Màn rộng: việc của ngày đang chọn bên trái, việc quá hạn bên phải. Điện thoại: xếp chồng. --}}
+<div class="grid items-start gap-5{{#if overdue.length}} lg:grid-cols-[minmax(0,1fr)_22rem]{{/if}}">
+  <section id="day-tasks" aria-labelledby="day-tasks-h" class="min-w-0 scroll-mt-24">
     <div class="mb-3">
       <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="day-tasks" class="text-lg font-semibold text-ink">{{#if isToday}}Hôm nay{{else}}{{formatWeekday date}}{{/if}}</h2>
+        <h2 id="day-tasks-h" class="text-lg font-semibold text-ink">Việc {{formatWeekday date}}{{#if isToday}} <span class="text-sm font-medium text-brand-300">· hôm nay</span>{{/if}}</h2>
         {{#if summary.total}}
           <div class="flex flex-wrap items-center gap-2 text-xs">
             {{#if summary.doing}}<span class="badge-yellow">{{summary.doing}} đang làm</span>{{/if}}
@@ -47,38 +56,46 @@
       </div>
       {{#if summary.total}}
         <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-canvas" role="progressbar" aria-valuenow="{{summary.percent}}" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến độ trong ngày">
-          <div class="h-full rounded-full bg-linear-to-r from-brand-500 to-pine-400 transition-[width] duration-500" style="width: {{summary.percent}}%"></div>
+          <div class="h-full rounded-full bg-pine-400" style="width: {{summary.percent}}%"></div>
         </div>
       {{/if}}
     </div>
 
     {{#if tasks.length}}
-      <ol class="space-y-3">
-        {{#each tasks}}{{> schedule/task-item this back=../back showAssignee=../showAssignee}}{{/each}}
-      </ol>
+      {{#if activeTasks.length}}
+        <ol class="space-y-3">
+          {{#each activeTasks}}{{> schedule/task-item this back=../back showAssignee=../showAssignee}}{{/each}}
+        </ol>
+      {{else}}
+        <p class="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-soft">Đã xong hết việc của ngày này.</p>
+      {{/if}}
+      {{#if doneTasks.length}}
+        <details class="group mt-3" data-keep-open{{#unless activeTasks.length}} open{{/unless}}>
+          <summary class="btn-ghost btn-sm cursor-pointer list-none">Đã xong ({{doneTasks.length}}) <span class="group-open:hidden" aria-hidden="true">▾</span><span class="hidden group-open:inline" aria-hidden="true">▴</span></summary>
+          <ol class="mt-2 space-y-3">
+            {{#each doneTasks}}{{> schedule/task-item this back=../back showAssignee=../showAssignee}}{{/each}}
+          </ol>
+        </details>
+      {{/if}}
     {{else}}
       {{> empty-state title="Không có việc nào trong ngày này" text="Thêm việc để cả nhóm biết cần làm gì." actionHref=(concat "/tasks/new?date=" date) actionLabel="+ Thêm việc"}}
     {{/if}}
   </section>
 
-  <aside class="min-w-0 space-y-5">
-    {{> payroll-attendance mode="today" day=date class="mb-0"}}
-
-    {{#if overdue.length}}
-      <section id="overdue" class="scroll-mt-24 rounded-xl border border-sun-400/30 bg-sun-400/5 p-4">
-        <h2 class="text-sm font-semibold text-sun-300">Còn {{overdue.length}} việc chưa xong từ những ngày trước</h2>
-        <ol class="mt-2 divide-y divide-line">
-          {{#each overdueTop}}{{> schedule/task-row this back=../back showAssignee=../showAssignee}}{{/each}}
-        </ol>
-        {{#if overdueRest.length}}
-          <details class="group">
-            <summary class="btn-ghost btn-sm mt-1 cursor-pointer list-none group-open:hidden">Xem thêm {{overdueRest.length}} việc</summary>
-            <ol class="divide-y divide-line border-t border-line">
-              {{#each overdueRest}}{{> schedule/task-row this back=../back showAssignee=../showAssignee}}{{/each}}
-            </ol>
-          </details>
-        {{/if}}
-      </section>
-    {{/if}}
-  </aside>
+  {{#if overdue.length}}
+    <aside id="overdue" class="min-w-0 scroll-mt-24 rounded-xl border border-sun-400/40 bg-surface p-4" aria-labelledby="overdue-h">
+      <h2 id="overdue-h" class="text-sm font-semibold text-sun-300">Quá hạn · {{overdue.length}} việc cần chú ý</h2>
+      <ol class="mt-2 divide-y divide-line">
+        {{#each overdueTop}}{{> schedule/task-row this back=../back showAssignee=../showAssignee}}{{/each}}
+      </ol>
+      {{#if overdueRest.length}}
+        <details class="group">
+          <summary class="btn-ghost btn-sm mt-1 cursor-pointer list-none group-open:hidden">Xem tất cả ({{overdue.length}})</summary>
+          <ol class="divide-y divide-line border-t border-line">
+            {{#each overdueRest}}{{> schedule/task-row this back=../back showAssignee=../showAssignee}}{{/each}}
+          </ol>
+        </details>
+      {{/if}}
+    </aside>
+  {{/if}}
 </div>

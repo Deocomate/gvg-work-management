@@ -1,9 +1,5 @@
 <header class="app-header sticky z-40">
-  {{#if holiday}}
-    {{!-- Đồ trang trí treo lủng lẳng dưới thanh menu trong dịp lễ --}}
-    <span class="holiday-hang holiday-hang-left" aria-hidden="true">{{holiday.icons.[0]}}</span>
-  {{/if}}
-  {{> holiday}}
+
   <div class="container-page flex h-14 items-center gap-2 sm:gap-6">
     {{!-- Logo và cụm bên phải cùng giãn đều (sm:flex-1) để menu nằm chính giữa header --}}
     <div class="flex shrink-0 sm:flex-1">
@@ -17,9 +13,10 @@
     {{!-- min-w-0 + sm:flex-initial: màn vừa (tablet) menu tự co lại và cuộn ngang, không đẩy tràn cả trang --}}
     <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:flex-initial [&::-webkit-scrollbar]:hidden max-xl:[mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)] max-xl:pr-6" aria-label="Điều hướng chính">
       {{#if currentUser}}
-        {{> nav-link href="/today" label="Hôm nay" count=todayUnfinished}}
+        {{!-- Trang chính: lịch tuần + bảng chấm công (Tháng là chế độ xem liên quan) --}}
+        {{> nav-link href="/today" label="Lịch làm việc" count=todayUnfinished}}
         {{> nav-link href="/calendar" label="Tháng"}}
-        {{> nav-link href="/plan" label="Plan"}}
+        {{> nav-link href="/plan" label="Nội dung"}}
         {{> nav-link href="/links" label="Tài liệu"}}
         {{!-- Quảng cáo gồm 2 tab: Hiệu quả quảng cáo (quản lý) + Data khách hàng (quản lý + Sale). Sale vào thẳng Data khách hàng. --}}
         {{#if canViewAds}}
@@ -33,7 +30,8 @@
       {{!-- [vibe:nav-links] Thêm link module mới: {{> nav-link href="/tasks" label="Công việc"}} --}}
     </nav>
 
-    <div class="flex shrink-0 items-center justify-end gap-2 sm:flex-1 sm:gap-6">
+    <div class="flex shrink-0 items-center justify-end gap-2 sm:flex-1 sm:gap-4">
+      {{> holiday}}
       {{!-- Cài đặt: Tài khoản (mọi người) + Nhân viên, Hiệu suất (quản lý) --}}
       {{#if currentUser}}
         <a href="/account" class="btn-ghost btn-sm theme-toggle {{#if (or (isActive currentPath '/account') (isActive currentPath '/staff') (isActive currentPath '/performance'))}}nav-link-active{{/if}}" aria-label="Cài đặt" title="Cài đặt">

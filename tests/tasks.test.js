@@ -27,7 +27,7 @@ const assign = (agent, data) =>
   postForm(agent, '/tasks', { date: today, priority: 'normal', repeat: 'none', ...data }, { from: '/tasks/new' });
 const taskIdOn = async (agent, url, title) => {
   const html = (await agent.get(url)).text;
-  const item = html.split('<li class="card').slice(1).find((part) => part.includes(title));
+  const item = html.split('<li id="task-').slice(1).find((part) => part.includes(title));
   return item.match(/\/tasks\/(\d+)\/(?:edit|status)/)[1];
 };
 
@@ -65,8 +65,8 @@ test('giao một việc cho nhiều người: mỗi người một bản, hiện
   const lanCopy = await taskIdOn(lan, '/today', 'Quay quảng cáo');
   await postForm(lan, `/tasks/${lanCopy}/status`, { status: 'done' }, { from: '/today' });
   const minhPage = (await admin.get(`/today?user=${minhId}`)).text;
-  const minhItem = minhPage.split('<li class="card').find((p) => p.includes('Quay quảng cáo'));
-  assert.doesNotMatch(minhItem, /line-through/);
+  const minhItem = minhPage.split('<li id="task-').find((p) => p.includes('Quay quảng cáo'));
+  assert.doesNotMatch(minhItem.slice(0, 300), /opacity-75/); // việc xong chỉ làm mờ, không gạch ngang
 
   // Phiếu công việc hiện người làm cùng và đồ cần chuẩn bị
   const sheet = (await admin.get('/today/sheet')).text;
@@ -101,8 +101,8 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
   const copies = (html) => html.match(/>Dựng phim bản 2<\/h3>/g)?.length ?? 0;
   assert.equal(copies(all), 1); // xem cả nhóm: việc làm chung gộp thành một mục
   assert.doesNotMatch(all, />Dựng phim<\/h3>/);
-  const minhItem = (await admin.get(`/today?date=${day}&user=${minhId}`)).text.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
-  assert.match(minhItem, /line-through/); // Minh vẫn "Đã xong"
+  const minhItem = (await admin.get(`/today?date=${day}&user=${minhId}`)).text.split('<li id="task-').slice(1).find((p) => p.includes('Dựng phim bản 2'));
+  assert.match(minhItem.slice(0, 300), /opacity-75/); // Minh vẫn "Đã xong"
   assert.match(minhItem, /Máy dựng/);
   assert.match(minhItem, /Phụ trách: <span[^>]*>Lê Minh, (Trần Lan, Đỗ Hà|Đỗ Hà, Trần Lan)/);
 
@@ -125,7 +125,7 @@ test('sửa việc làm chung: tick sẵn cả nhóm; đổi tên áp dụng cho
   );
   const left = (await admin.get(`/today?date=${day}`)).text;
   assert.equal(copies(left), 1);
-  const haItem = left.split('<li class="card').slice(1).find((p) => p.includes('Dựng phim bản 2'));
+  const haItem = left.split('<li id="task-').slice(1).find((p) => p.includes('Dựng phim bản 2'));
   assert.match(haItem, /Đỗ Hà/);
   assert.doesNotMatch(haItem, /Phụ trách: <span[^>]*>Đỗ Hà,/);
 });
@@ -138,7 +138,7 @@ test('giao nhiều người: chưa chọn ai -> báo lỗi; nhân viên gửi nh
   await assign(lan, { title: 'Việc tự thêm nhiều id', assignee_id: [lanId, minhId] });
   assert.match((await lan.get('/today')).text, /Việc tự thêm nhiều id/);
   assert.doesNotMatch((await admin.get(`/today?user=${minhId}`)).text, /Việc tự thêm nhiều id/);
-  const item = (await lan.get('/today')).text.split('<li class="card').find((p) => p.includes('Việc tự thêm nhiều id'));
+  const item = (await lan.get('/today')).text.split('<li id="task-').find((p) => p.includes('Việc tự thêm nhiều id'));
   assert.doesNotMatch(item, /Phụ trách/);
 });
 
@@ -327,7 +327,7 @@ test('dữ liệu người dùng được escape (chống XSS)', async () => {
 test('quản lý xem cả nhóm: việc làm chung gộp một mục; phiếu công việc vẫn tách từng người', async () => {
   const day = addDays(today, 5);
   await assign(admin, { title: 'Chụp ảnh sản phẩm', assignee_id: [lanId, minhId], date: day });
-  const itemsOf = (html) => html.split('<li class="card').slice(1).filter((p) => p.includes('>Chụp ảnh sản phẩm</h3>'));
+  const itemsOf = (html) => html.split('<li id="task-').slice(1).filter((p) => p.includes('>Chụp ảnh sản phẩm</h3>'));
 
   const team = itemsOf((await admin.get(`/today?date=${day}`)).text);
   assert.equal(team.length, 1);
@@ -338,7 +338,7 @@ test('quản lý xem cả nhóm: việc làm chung gộp một mục; phiếu c�
   const lanCopy = await taskIdOn(lan, `/today?date=${day}`, 'Chụp ảnh sản phẩm');
   await postForm(lan, `/tasks/${lanCopy}/status`, { status: 'done' }, { from: '/today' });
   const mixed = itemsOf((await admin.get(`/today?date=${day}`)).text)[0];
-  assert.doesNotMatch(mixed, /line-through/);
+  assert.doesNotMatch(mixed.slice(0, 300), /opacity-75/);
   assert.match(mixed, /Trần Lan \(xong\), Lê Minh/);
 
   // Bấm "Xong" trên mục gộp -> xong cho cả nhóm
@@ -346,7 +346,7 @@ test('quản lý xem cả nhóm: việc làm chung gộp một mục; phiếu c�
   const groupId = mixed.match(/\/tasks\/(\d+)\/status/)[1];
   await postForm(admin, `/tasks/${groupId}/status`, { status: 'done', group: '1' }, { from: '/today' });
   const minhItem = itemsOf((await admin.get(`/today?date=${day}&user=${minhId}`)).text)[0];
-  assert.match(minhItem, /line-through/);
+  assert.match(minhItem.slice(0, 300), /opacity-75/);
 
   // Phiếu công việc: mỗi người một dòng
   const sheet = (await admin.get(`/today/sheet?date=${day}`)).text;

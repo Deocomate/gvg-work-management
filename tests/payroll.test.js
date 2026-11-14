@@ -24,7 +24,7 @@ test('trang Lương: mỗi tab một trang trong khung app chính, nhúng đúng
 
   const root = await agent.get('/luong');
   assert.equal(root.status, 302);
-  assert.equal(root.headers.location, '/luong/ky-luong'); // quản lý vào Kỳ lương
+  assert.equal(root.headers.location, '/luong/ky-luong'); // quản lý vào Bảng lương
 
   const page = await agent.get('/luong/ky-luong');
   assert.equal(page.status, 200);
@@ -36,6 +36,11 @@ test('trang Lương: mỗi tab một trang trong khung app chính, nhúng đúng
   assert.match(setting.text, /tabs(=|&#x3D;)cd"/);
   assert.match(setting.text, /href="\/luong\/thiet-lap" class="nav-link nav-link-active"/);
 
+  // Báo cáo 12 tháng là tab riêng; không còn tab nhập chấm công trong Lương
+  assert.match((await agent.get('/luong/bao-cao')).text, /tabs(=|&#x3D;)bao"/);
+  assert.doesNotMatch(page.text, /href="\/luong\/cham-cong"/);
+  // link chấm công cũ → bảng công trên trang Lịch làm việc
+  assert.equal((await agent.get('/luong/cham-cong')).headers.location, '/today#att-week');
   // tab của nhân viên → về tab đầu; link cũ Cài đặt lương → Thiết lập
   assert.equal((await agent.get('/luong/cua-toi')).headers.location, '/luong');
   assert.equal((await agent.get('/account/luong')).headers.location, '/luong/thiet-lap');
@@ -105,8 +110,10 @@ test('lịch tuần và lịch tháng có chỗ chấm công khi phần Lương 
   assert.doesNotMatch((await agent.get('/today')).text, /data-att-root/); // chưa bật thì không có gì
   app.locals.payrollEnabled = true;
   const today = await agent.get('/today');
-  assert.match(today.text, /data-att-root data-mode="today" data-selected="\d{4}-\d{2}-\d{2}"/);
-  assert.equal((today.text.match(/data-att-day="/g) || []).length, 7);
+  assert.match(today.text, /data-att-root data-mode="week" data-selected="\d{4}-\d{2}-\d{2}"/);
+  // bảng công tuần: đủ 7 ngày T2–CN, chấm công / nhập giờ ngay trên trang này
+  assert.match(today.text, /data-days="(\d{4}-\d{2}-\d{2},){6}\d{4}-\d{2}-\d{2}"/);
+  assert.match(today.text, /Bảng công tuần/);
   assert.match(today.text, /\/js\/attendance\.js/);
   const cal = await agent.get('/calendar');
   assert.match(cal.text, /data-att-root data-mode="calendar"/);

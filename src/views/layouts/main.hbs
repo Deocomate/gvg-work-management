@@ -12,13 +12,10 @@
   <script src="/js/theme.js?v={{assetVersion}}"></script>
   <script src="/js/app.js?v={{assetVersion}}" defer></script>
   <script src="/js/pickers.js?v={{assetVersion}}" defer></script>
-  {{#if holiday}}<script src="/js/holiday.js?v={{assetVersion}}" defer></script>{{/if}}
+
 </head>
 <body class="flex min-h-screen flex-col font-sans text-ink antialiased">
-  {{#if holiday}}
-    {{!-- Lớp hiệu ứng rơi nằm sau nội dung, không chặn chuột (public/js/holiday.js) --}}
-    <div class="holiday-sky" data-holiday-sky="{{#each holiday.icons}}{{this}} {{/each}}" aria-hidden="true"></div>
-  {{/if}}
+  {{!-- Ngày lễ chỉ còn nhãn nhỏ đếm ngược trên thanh menu (partials/holiday) — bỏ emoji rơi quanh dữ liệu --}}
   {{> nav}}
 
   <main class="container-page flex-1 py-8">

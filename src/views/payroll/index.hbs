@@ -1,6 +1,16 @@
-{{#> page-header title=heading}}{{/page-header}}
-{{!-- Tab con của Lương (theo vai trò, xem payroll.controller.js). Mỗi tab nhúng đúng một tab của app lương. --}}
-<nav class="mb-5 flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Mục Lương">
-  {{#each tabs}}{{> nav-link href=this.href label=this.label active=(isActive @root.currentPath this.href)}}{{/each}}
-</nav>
-{{> payroll-frame src=frameSrc title=heading}}
+{{#> page-header title=heading subtitle="Kỳ lương chọn ở ô tháng bên dưới · công và giờ lấy từ bảng công trên trang Lịch làm việc"}}
+  <a href="/today#att-week" class="btn-secondary">Xem công</a>
+{{/page-header}}
+{{!-- Tab con của Lương (theo vai trò, xem payroll.controller.js). Mỗi tab nhúng đúng một tab của app lương.
+      Hoa hồng và Cài đặt là thao tác phụ, nằm bên phải. --}}
+<div class="mb-5 flex flex-wrap items-center gap-2">
+  <nav class="flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Mục Lương">
+    {{#each tabs}}{{> nav-link href=this.href label=this.label active=(isActive @root.currentPath this.href)}}{{/each}}
+  </nav>
+  {{#if extraTabs.length}}
+    <nav class="ml-auto flex gap-1" aria-label="Thiết lập lương">
+      {{#each extraTabs}}{{> nav-link href=this.href label=this.label active=(isActive @root.currentPath this.href)}}{{/each}}
+    </nav>
+  {{/if}}
+</div>
+{{> payroll-frame src=frameSrc title=current}}

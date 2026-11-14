@@ -34,7 +34,7 @@ test('bảng hiện từng người với số việc và tỷ lệ hoàn thành
     await postForm(admin, '/tasks', { title, assignee_id: vyId, date: today, repeat: 'none' }, { from: '/tasks/new' });
   }
   const html = (await vy.get('/today')).text;
-  const id = html.split('<li class="card').slice(1).find((p) => p.includes('Viết bài')).match(/\/tasks\/(\d+)\/status/)[1];
+  const id = html.split('<li id="task-').slice(1).find((p) => p.includes('Viết bài')).match(/\/tasks\/(\d+)\/status/)[1];
   await postForm(vy, `/tasks/${id}/status`, { status: 'done' }, { from: '/today' });
 
   const page = (await admin.get('/performance')).text;

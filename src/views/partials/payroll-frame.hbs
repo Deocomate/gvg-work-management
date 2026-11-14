@@ -1,2 +1,4 @@
-{{!-- Khung nhúng app lương. Dùng: {{> payroll-frame src=frameSrc title="..."}}. Cao vừa màn hình, app lương tự cuộn bên trong. --}}
-<iframe src="{{src}}" title="{{title}}" class="block h-[calc(100dvh-11rem)] min-h-[560px] w-full rounded-2xl border-0 bg-transparent" allow="clipboard-write"></iframe>
+{{!-- Khung nhúng app lương. Dùng: {{> payroll-frame src=frameSrc title="..."}}.
+      public/js/payroll-frame.js cho khung cao bằng nội dung (chỉ còn một thanh cuộn của trang); tắt JS thì khung cao vừa màn hình và tự cuộn. --}}
+<iframe src="{{src}}" title="{{title}}" data-payroll-frame class="block h-[calc(100dvh-11rem)] min-h-[560px] w-full rounded-2xl border-0 bg-transparent" allow="clipboard-write"></iframe>
+<script src="/js/payroll-frame.js?v={{@root.assetVersion}}" defer></script>

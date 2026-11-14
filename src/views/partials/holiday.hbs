@@ -1,10 +1,7 @@
-{{!-- Thẻ tròn đếm ngược ngày lễ, treo dưới góc phải thanh menu (src/lib/holidays.js). --}}
+{{!-- Ngày lễ: nhãn nhỏ đếm ngược trên thanh menu (src/lib/holidays.js). --}}
 {{#if holiday}}
-  <div class="holiday-tag" role="note" aria-label="{{holiday.message}}" title="{{holiday.message}}">
-    <span class="holiday-tag-disc" aria-hidden="true">
-      <span class="holiday-tag-icon">{{holiday.icons.[0]}}</span>
-      {{#if holiday.tag.count}}<span class="holiday-tag-count">{{holiday.tag.count}}</span>{{/if}}
-      <span class="holiday-tag-label">{{holiday.tag.label}}</span>
-    </span>
-  </div>
+  <span class="holiday-pill" role="note" title="{{holiday.message}}">
+    <span aria-hidden="true">{{holiday.icons.[0]}}</span>
+    <span>{{holiday.name}}{{#if holiday.tag.count}} · còn {{holiday.tag.count}} ngày{{/if}}</span>
+  </span>
 {{/if}}

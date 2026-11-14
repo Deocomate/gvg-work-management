@@ -1,5 +1,5 @@
 {{!-- Một việc trên dòng thời gian. Dùng: {{> schedule/task-item this back=../back showAssignee=../showAssignee showDate=false}} --}}
-<li class="card flex gap-3 p-4 transition hover:border-line-strong sm:gap-4{{#if isNow}} ring-2 ring-bloom-400/70{{/if}}">
+<li id="task-{{id}}" class="card flex scroll-mt-24 gap-3 p-4 transition hover:border-line-strong sm:gap-4{{#if (eq status 'done')}} opacity-75{{/if}}{{#if isNow}} ring-2 ring-bloom-400/70{{/if}}">
   <div class="w-14 shrink-0 pt-0.5 text-right text-sm tabular-nums sm:w-16">
     {{#if start_time}}
       <div class="font-semibold text-ink">{{start_time}}</div>
@@ -11,7 +11,7 @@
 
   <div class="min-w-0 flex-1 border-l-4 pl-3 sm:pl-4 {{statusInfo.bar}}">
     <div class="flex flex-wrap items-center gap-2">
-      <h3 class="font-medium {{#if (eq status 'done')}}text-ink-faint line-through{{else}}text-ink{{/if}}">{{title}}</h3>
+      <h3 class="font-medium {{#if (eq status 'done')}}text-ink-soft{{else}}text-ink{{/if}}">{{title}}</h3>
       {{#if brandInfo}}<span class="{{brandInfo.badge}}">{{brandInfo.label}}</span>{{/if}}
       <span class="{{statusInfo.badge}}">{{statusInfo.label}}</span>
       {{#if isHigh}}<span class="badge-red">Quan trọng</span>{{/if}}

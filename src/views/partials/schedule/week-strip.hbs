@@ -1,28 +1,40 @@
-{{!-- Lịch 7 ngày (T2–CN) của tuần đang xem; bấm một ngày để xem chi tiết bên dưới.
-      Máy tính: mỗi ô liệt kê vài việc đầu (shown) + "+N việc nữa" (more); điện thoại: chỉ thứ, ngày và số việc cho gọn.
+{{!-- Lịch việc 7 ngày (T2–CN) của tuần đang xem — vùng nội dung chính của trang Lịch làm việc.
+      Máy tính: mỗi ô liệt kê vài việc đầu (shown: tên tối đa 2 dòng, giờ, loại việc, brand, người làm, trạng thái) + "+N việc khác".
+      Bấm tên ngày → chọn ngày (chi tiết bên dưới); bấm một việc → mở đầy đủ việc đó trong chi tiết ngày.
+      Điện thoại: chỉ thứ, ngày và số việc; bấm để xem danh sách bên dưới.
       Dùng: {{> schedule/week-strip days=week.days selected=date}} --}}
-<div class="card mb-5 overflow-hidden">
+<section class="card mb-5 overflow-hidden" aria-label="Lịch việc trong tuần">
   <div class="grid grid-cols-7">
     {{#each days}}
-      <a href="/today?date={{date}}{{@root.userQuery}}"
-         class="flex min-w-0 flex-col items-center gap-1 border-r border-line p-2 transition last:border-r-0 hover:bg-pine-500/20 md:min-h-40 md:items-stretch md:p-3{{#if (eq date ../selected)}} bg-pine-500/25{{/if}}"
-         {{#if (eq date ../selected)}}aria-current="date"{{/if}} aria-label="{{formatWeekday date}}: {{tasks.length}} việc">
-        <div class="flex flex-col items-center gap-1 md:flex-row md:justify-between">
+      <div class="wk-day{{#if isToday}} is-today{{/if}}{{#if isSelected}} is-selected{{/if}}{{#if isPast}} is-past{{/if}}">
+        <a href="/today?date={{date}}{{@root.userQuery}}#day-tasks" class="wk-head"
+           {{#if isSelected}}aria-current="date"{{/if}} aria-label="{{formatWeekday date}}{{#if isToday}} (hôm nay){{/if}}: {{tasks.length}} việc">
           <span class="text-[11px] font-semibold text-ink-faint">{{weekdayLabel}}</span>
-          <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-sm font-semibold tabular-nums{{#if isToday}} bg-brand-500 text-cream{{else if isPast}} text-ink-faint{{else}} text-ink{{/if}}">{{dayLabel}}</span>
-        </div>
-        {{#if @root.payrollEnabled}}<span data-att-day="{{date}}" class="flex min-w-0 justify-center md:justify-start" hidden></span>{{/if}}
+          <span class="wk-num">{{dayLabel}}</span>
+          {{#if isToday}}<span class="hidden text-[10px] font-semibold text-brand-300 md:inline">Hôm nay</span>{{/if}}
+          {{#if tasks.length}}<span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-bad-300{{else if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{tasks.length}} việc</span>{{/if}}
+        </a>
         {{#if tasks.length}}
-          <span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-bad-300{{else if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{tasks.length}} việc</span>
-          <ul class="mt-1 hidden min-w-0 space-y-1.5 md:block">
+          <ul class="hidden min-w-0 space-y-1.5 px-1.5 pb-2 md:block">
             {{#each shown}}
-              <li class="text-sm leading-snug break-words{{#if (eq status 'done')}} text-ink-faint line-through{{else if (eq status 'doing')}} text-sun-300{{else}} text-ink{{/if}}"
-                  title="{{title}}{{#if @root.showAssignee}} — {{assignee_name}}{{/if}}">{{#if start_time}}<span class="text-xs tabular-nums opacity-60">{{start_time}}</span> {{/if}}<span class="font-medium">{{title}}</span>{{#if brandInfo}} <span class="{{brandInfo.badge}} px-1.5 py-0 text-[10px]" title="{{brandInfo.label}}">{{brandInfo.short}}</span>{{/if}}</li>
+              <li>
+                <a href="/today?date={{../date}}{{@root.userQuery}}#task-{{id}}" class="wk-task{{#if (eq status 'done')}} is-done{{/if}}"
+                   title="{{title}}{{#if start_time}} · {{start_time}}{{/if}}{{#if who}} · {{who}}{{/if}} · {{statusInfo.label}}">
+                  <span class="line-clamp-2 text-[13px] font-medium leading-snug break-words text-ink">{{shortTitle}}</span>
+                  <span class="mt-1 flex flex-wrap items-center gap-1 text-[10px] leading-none">
+                    {{#if start_time}}<span class="tabular-nums text-ink-soft">{{start_time}}</span>{{/if}}
+                    <span class="kind {{kind.badge}}">{{kind.label}}</span>
+                    {{#if brandInfo}}<span class="{{brandInfo.badge}} px-1.5 py-0 text-[10px]" title="{{brandInfo.label}}">{{brandInfo.short}}</span>{{/if}}
+                    {{#if (and @root.showAssignee who)}}<span class="max-w-full truncate text-ink-soft">{{who}}</span>{{/if}}
+                    <span class="st-dot st-{{status}}">{{statusInfo.label}}</span>
+                  </span>
+                </a>
+              </li>
             {{/each}}
-            {{#if more}}<li class="text-xs font-medium text-ink-faint">+{{more}} việc nữa</li>{{/if}}
+            {{#if more}}<li><a href="/today?date={{date}}{{@root.userQuery}}#day-tasks" class="block rounded-md px-1.5 py-1 text-xs font-medium text-brand-300 hover:bg-raised">+{{more}} việc khác</a></li>{{/if}}
           </ul>
         {{/if}}
-      </a>
+      </div>
     {{/each}}
   </div>
-</div>
+</section>

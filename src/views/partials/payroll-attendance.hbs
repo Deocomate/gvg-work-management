@@ -1,7 +1,15 @@
-{{!-- Khung chấm công trên lịch (public/js/attendance.js). Chỉ hiện khi phần Lương đã bật.
-      Dùng: {{> payroll-attendance mode="today" day=date}} hoặc mode="calendar"; class tuỳ chọn (mặc định mb-5).
-      Các ô ngày cần thêm: <span data-att-day="YYYY-MM-DD" hidden></span> --}}
+{{!-- Chấm công trên lịch (public/js/attendance.js). Chỉ hiện khi phần Lương đã bật.
+      Trang Lịch làm việc: {{> payroll-attendance mode="week" day=date days="7 ngày, dấu phẩy" focus=... filterName=...}} → bảng công tuần, nhập ngay tại đây.
+      Lịch tháng:          {{> payroll-attendance mode="calendar"}} + các ô <span data-att-day="YYYY-MM-DD" hidden></span> (chỉ xem icon). --}}
 {{#if @root.payrollEnabled}}
-  <div data-att-root data-mode="{{mode}}" data-selected="{{day}}" class="{{#if class}}{{class}}{{else}}mb-5{{/if}}" hidden></div>
+  <section id="att-week" data-att-root data-mode="{{mode}}" data-selected="{{day}}" data-today="{{@root.today}}" data-days="{{days}}"
+           data-focus="{{focus}}" data-filter-name="{{filterName}}" class="{{#if (eq mode 'week')}}att-card{{else}}mb-5{{/if}}"
+           {{#unless (eq mode 'week')}}hidden{{/unless}}>
+    {{#if (eq mode 'week')}}
+      {{!-- Chỗ giữ sẵn khi JS chưa chạy xong: bảng công không làm trang nhảy mạnh --}}
+      <div class="att-head"><div><h2 class="text-sm font-semibold text-ink">Bảng công tuần</h2><p class="text-xs text-ink-soft">Đang tải chấm công…</p></div></div>
+      <noscript><p class="px-4 pb-3 text-sm text-ink-faint">Cần bật JavaScript để chấm công.</p></noscript>
+    {{/if}}
+  </section>
   <script src="/js/attendance.js?v={{@root.assetVersion}}" defer></script>
 {{/if}}

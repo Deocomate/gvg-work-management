@@ -41,6 +41,22 @@
         "PAYROLL_DB_FILE": "data/payroll-preview-sso.db"
       },
       "port": 3012
+    },
+    {
+      "name": "lich-cong-viec-ui-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "src/server.js"
+      ],
+      "env": {
+        "PORT": "3013",
+        "DATABASE_URL": "file:data/ui-test.db",
+        "SESSION_SECRET": "ui-test-session-secret-0123456789abcdef",
+        "ADMIN_EMAIL": "preview@test.local",
+        "ADMIN_PASSWORD": "preview-pass-123",
+        "PAYROLL_DB_FILE": "data/payroll-ui-test.db"
+      },
+      "port": 3013
     }
   ]
 }
