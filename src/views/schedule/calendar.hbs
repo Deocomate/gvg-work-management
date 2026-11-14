@@ -1,18 +1,28 @@
-{{#> page-header title=monthLabel subtitle="Bấm vào một ngày để xem chi tiết"}}
-  <a href="/tasks/new?back={{urlEncode (concat '/calendar?month=' month userQuery)}}" class="btn-primary">+ Thêm việc</a>
+{{#> page-header title=monthLabel subtitle=subtitle}}
+  {{#if (ne view 'cong')}}<a href="/tasks/new?back={{urlEncode (concat '/calendar?month=' month userQuery)}}" class="btn-primary">+ Thêm việc</a>{{/if}}
 {{/page-header}}
 
-<form method="get" action="/calendar" class="mb-5 flex flex-wrap items-center gap-2">
+{{!-- Hai tab: Lịch việc (việc theo ngày) · Bảng công (chấm công cả tháng, mỗi nhân viên một tab) --}}
+{{#if payrollEnabled}}
+  <nav class="mb-4 flex gap-1" aria-label="Chế độ xem tháng">
+    {{> nav-link href=(concat "/calendar?month=" month userQuery) label="Lịch việc" active=(ne view 'cong')}}
+    {{> nav-link href=(concat "/calendar?month=" month "&view=cong" userQuery) label="Bảng công" active=(eq view 'cong')}}
+  </nav>
+{{/if}}
+
+<form method="get" action="/calendar" class="toolbar mb-5">
   <input type="hidden" name="month" value="{{month}}">
-  <a href="/calendar?month={{prev}}{{userQuery}}" class="btn-secondary btn-sm">‹ Tháng trước</a>
-  {{#if (ne month thisMonth)}}<a href="/calendar?month={{thisMonth}}{{userQuery}}" class="btn-ghost btn-sm">Tháng này</a>{{/if}}
-  <a href="/calendar?month={{next}}{{userQuery}}" class="btn-secondary btn-sm">Tháng sau ›</a>
-  {{> schedule/staff-filter}}
+  {{#if (eq view 'cong')}}<input type="hidden" name="view" value="cong">{{/if}}
+  <a href="/calendar?month={{prev}}{{viewQuery}}{{userQuery}}" class="btn-secondary btn-sm">‹ Tháng trước</a>
+  {{#if (ne month thisMonth)}}<a href="/calendar?month={{thisMonth}}{{viewQuery}}{{userQuery}}" class="btn-ghost btn-sm">Tháng này</a>{{/if}}
+  <a href="/calendar?month={{next}}{{viewQuery}}{{userQuery}}" class="btn-secondary btn-sm">Tháng sau ›</a>
+  {{#if (ne view 'cong')}}<div class="sm:ml-auto">{{> schedule/staff-filter}}</div>{{/if}}
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>
 
-{{> payroll-attendance mode="calendar"}}
-
+{{#if (eq view 'cong')}}
+  {{> payroll-attendance mode="month" month=month day=today focus=attFocus}}
+{{else}}
 <div class="card overflow-hidden">
   <div class="grid grid-cols-7 border-b border-line bg-raised text-center text-xs font-semibold text-ink-faint">
     {{#each weekdayLabels}}<div class="py-2">{{this}}</div>{{/each}}
@@ -27,7 +37,6 @@
             <span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium{{#if isToday}} bg-brand-500 text-cream{{/if}}">{{day}}</span>
             {{#if hasLate}}<span class="h-2 w-2 rounded-full bg-bad-400" title="{{unfinished}} việc chưa xong"></span>{{/if}}
           </div>
-          {{#if @root.payrollEnabled}}<span data-att-day="{{date}}" class="mt-1 flex min-w-0" hidden></span>{{/if}}
           {{#if total}}
             <p class="mt-1 text-center text-[11px] font-medium sm:hidden {{#if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{total}} việc</p>
             <ul class="mt-1 hidden space-y-1 sm:block">
@@ -48,3 +57,4 @@
   <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-sun-400/15 ring-1 ring-sun-400/40"></span> Đang làm</span>
   <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-ok-400/25 ring-1 ring-ok-400/50"></span> Đã xong</span>
 </p>
+{{/if}}

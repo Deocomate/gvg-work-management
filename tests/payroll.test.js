@@ -115,9 +115,14 @@ test('lịch tuần và lịch tháng có chỗ chấm công khi phần Lương 
   assert.match(today.text, /data-days="(\d{4}-\d{2}-\d{2},){6}\d{4}-\d{2}-\d{2}"/);
   assert.match(today.text, /Bảng công tuần/);
   assert.match(today.text, /\/js\/attendance\.js/);
+  // Trang Tháng: tab Lịch việc (mặc định) và tab Bảng công (lưới tháng, mỗi nhân viên một tab)
   const cal = await agent.get('/calendar');
-  assert.match(cal.text, /data-att-root data-mode="calendar"/);
-  assert.ok((cal.text.match(/data-att-day="/g) || []).length >= 28);
+  assert.doesNotMatch(cal.text, /data-att-root/);
+  assert.match(cal.text, /href="\/calendar\?month(=|&#x3D;)\d{4}-\d{2}&amp;view(=|&#x3D;)cong/);
+  const cong = await agent.get('/calendar?view=cong&month=2026-11');
+  assert.match(cong.text, /data-att-root data-mode="month"/);
+  assert.match(cong.text, /data-month="2026-11"/);
+  assert.match(cong.text, /Bảng công tháng/);
 });
 
 test('đăng nhập chung: tài khoản lịch đã liên kết vào Lương không cần mật khẩu lương', async () => {

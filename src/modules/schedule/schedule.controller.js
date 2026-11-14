@@ -1,5 +1,6 @@
 // Màn hình "Hôm nay" và "Lịch". Chỉ đọc dữ liệu; thao tác thật nằm ở module tasks.
 import { BRANDS, NO_BRAND, brandInfo, parseBrandFilter } from '#lib/brands.js';
+import { todayISO } from '#lib/dates.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { TASK_STATUSES } from '#modules/tasks/tasks.schema.js';
 import { canChangeStatus, canEdit, isManager, taskLinks } from '#modules/tasks/tasks.service.js';
@@ -165,9 +166,17 @@ export async function calendar(req, res) {
   const viewer = await viewerContext(req);
   const data = await service.getMonth({ month, assigneeId: viewer.assigneeId });
   const [year, monthNumber] = month.split('-');
+  // Hai tab của trang Tháng: lịch việc (mặc định) và bảng công tháng (?view=cong, mỗi nhân viên một tab)
+  const view = req.query.view === 'cong' && req.app.locals.payrollEnabled ? 'cong' : 'viec';
+  const viewQuery = view === 'cong' ? '&view=cong' : '';
 
   res.render('schedule/calendar', {
-    title: 'Lịch công việc',
+    title: view === 'cong' ? 'Bảng công tháng' : 'Lịch công việc',
+    subtitle: view === 'cong' ? 'Bảng công: chọn người, bấm một ngày để chấm công / nhập giờ' : 'Bấm vào một ngày để xem chi tiết',
+    view,
+    viewQuery,
+    today: todayISO(),
+    attFocus: String(req.query.att || '').slice(0, 40),
     ...viewer,
     ...data,
     month,

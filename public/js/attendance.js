@@ -1,13 +1,13 @@
-// Chấm công trên trang Lịch làm việc (bảng công tuần) và lịch tháng (icon trên từng ô ngày).
+// Chấm công trên trang Lịch làm việc (bảng công tuần) và trang Tháng › Bảng công (lưới tháng, mỗi người một tab).
 // Dữ liệu lương mã hoá trên trình duyệt nên server không đọc được: trang này mở app lương trong một khung ẩn
 // (/luong/app/?embed=1&bridge=1). Khung đó tự đăng nhập (Quản lý = chủ cửa hàng qua tài khoản lịch; nhân viên =
 // "Ghi nhớ đăng nhập"), rồi đọc/ghi CÙNG bản ghi chấm công với bảng lương, theo cùng quy tắc (bridgeDaySet trong app.html).
 // Không có nơi nhập chấm công thứ hai: trang Lương chỉ hiện tổng công/giờ và nút "Xem công" dẫn về đây.
 //
-// HTML: <section data-att-root data-mode="week|calendar" data-selected="YYYY-MM-DD" data-today="YYYY-MM-DD"
-//        data-days="7 ngày, cách nhau dấu phẩy" data-focus="id nhân viên" data-filter-name="tên người đang lọc">
-//   week     : bảng hàng = nhân viên, cột = T2–CN; bấm ô mở popover (máy tính) / bottom sheet (điện thoại) để chấm / nhập giờ.
-//   calendar : các ô <span data-att-day="YYYY-MM-DD"> trên lịch tháng nhận icon chấm công (chỉ xem).
+// HTML: <section data-att-root data-mode="week|month" data-selected="YYYY-MM-DD" data-today="YYYY-MM-DD"
+//        data-days="7 ngày, cách nhau dấu phẩy" data-month="YYYY-MM" data-focus="id nhân viên" data-filter-name="tên người đang lọc">
+//   week  : bảng hàng = nhân viên, cột = T2–CN; bấm ô mở popover (máy tính) / bottom sheet (điện thoại) để chấm / nhập giờ.
+//   month : tab từng người + lưới cả tháng (hình chấm công như app lương cũ); bấm ô = cùng popover.
 (() => {
   const root = document.querySelector('[data-att-root]');
   if (!root) return;
@@ -18,8 +18,7 @@
   const today = root.dataset.today || localToday;
   const selected = root.dataset.selected || today;
   const weekDates = (root.dataset.days || '').split(',').filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
-  const cells = [...document.querySelectorAll('[data-att-day]')];
-  const months = [...new Set([...weekDates, ...cells.map((c) => c.dataset.attDay)].map((d) => d.slice(0, 7)))].sort();
+  const months = mode === 'month' ? [root.dataset.month] : [...new Set(weekDates.map((d) => d.slice(0, 7)))].sort();
   const focusId = root.dataset.focus || '';
   const filterName = root.dataset.filterName || '';
 
@@ -266,6 +265,9 @@
       cfg.title = 'Cấu hình chung: ngày làm, khung giờ, ca chuẩn, hình thức lương của từng người (một nơi duy nhất)';
       extras.push(cfg);
     }
+    const monthLink = el('a', 'btn-ghost btn-sm', 'Xem cả tháng');
+    monthLink.href = `/calendar?view=cong&month=${selected.slice(0, 7)}`;
+    extras.push(monthLink);
     const toggle = button('btn-secondary btn-sm', collapsed ? 'Mở bảng công' : 'Thu gọn', () => {
       collapsed = !collapsed;
       try {
@@ -738,60 +740,139 @@
     toastTimer = setTimeout(() => toastEl?.remove(), onUndo ? 8000 : 4000);
   }
 
-  // ---------- lịch tháng: icon trên từng ô (chỉ xem) ----------
-  function icon(sh, color, letter, title) {
-    const shape = el('span', `att-shape sh${sh}`);
-    shape.style.background = color;
-    if (!letter) {
-      if (title) shape.title = title;
-      return shape;
+  // ---------- bảng công tháng (trang Tháng › Bảng công): mỗi người một tab, lưới cả tháng ----------
+  // Cùng hình như lịch chấm công cũ của app lương: mỗi ngày một hình (ngày % 8), màu theo trạng thái
+  // (Đủ công = màu riêng của người đó). Luôn kèm chữ trong ô để không chỉ dựa vào màu. Bấm ô = cùng popover như bảng tuần.
+  let monthStaff = '';
+  try {
+    monthStaff = focusId || localStorage.getItem('att-month-staff') || '';
+  } catch {}
+  const statusColor = (st) => state?.legend?.statuses?.find((s) => s.st === st)?.color;
+  function monthGridDates(ym) {
+    const [y, m] = ym.split('-').map(Number);
+    const first = new Date(Date.UTC(y, m - 1, 1));
+    const start = new Date(first);
+    start.setUTCDate(1 - ((first.getUTCDay() + 6) % 7)); // về Thứ Hai
+    const out = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setUTCDate(start.getUTCDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      if (i >= 35 && iso.slice(0, 7) !== ym) break; // bỏ hàng thứ 6 nếu toàn tháng sau
+      out.push(iso);
     }
-    const wrap = el('span', 'att-icon');
-    wrap.title = title || '';
-    wrap.append(shape, el('b', '', letter));
-    return wrap;
+    return out;
   }
-  function paintCalendar() {
-    for (const cell of cells) {
-      const info = state?.signedIn ? state.days?.[cell.dataset.attDay] : null;
-      cell.replaceChildren();
-      cell.hidden = !info;
-      if (!info) continue;
-      if (state.role === 'owner') {
-        cell.classList.add('flex-wrap', 'gap-0.5');
-        for (const p of info.people) cell.append(icon(info.sh, p.color, p.letter, `${p.name}: ${p.label}`));
-      } else {
-        cell.classList.add('items-center', 'gap-1');
-        cell.append(icon(info.sh, info.color, null, `Chấm công: ${info.label}`));
-      }
-    }
+  function paintMonth() {
+    const ym = root.dataset.month;
     root.hidden = false;
     root.replaceChildren();
-    const box = el('div', 'card card-body flex flex-wrap items-center gap-3');
-    if (!state) box.append(el('span', 'text-sm text-ink-faint', loadError || 'Đang tải chấm công…'));
-    else if (!state.signedIn) box.append(el('span', 'text-sm text-ink-soft', 'Chấm công: chưa đăng nhập phần Lương trên máy này.'));
-    else {
-      box.append(el('span', 'text-sm text-ink-soft', `Icon chấm công trên lịch: ${state.role === 'owner' ? 'cả nhóm' : state.name}. Chấm công và nhập giờ ở bảng công trên trang Lịch làm việc.`));
-      const a = el('a', 'btn-secondary btn-sm', 'Mở bảng công →');
-      a.href = '/today#att-week';
-      box.append(a);
-      const legend = el('div', 'flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint');
-      for (const p of state.legend?.people || []) {
-        const item = el('span', 'inline-flex items-center gap-1');
-        item.append(icon(7, p.color, p.letter), el('span', '', p.name));
-        legend.append(item);
-      }
-      for (const s of state.legend?.statuses || []) {
-        if (!s.color) continue;
-        const item = el('span', 'inline-flex items-center gap-1');
-        const shape = icon(7, s.color);
-        shape.style.width = shape.style.height = '12px';
-        item.append(shape, el('span', '', s.label));
-        legend.append(item);
-      }
-      box.append(legend);
+    root.className = 'att-card';
+    if (!state) {
+      headBar(root, loadError || 'Đang tải chấm công…');
+      const ph = el('div', 'att-scroll');
+      ph.style.minHeight = '24rem';
+      root.append(ph);
+      return;
     }
-    root.append(box);
+    if (!state.signedIn) {
+      const a = el('a', 'btn-secondary btn-sm', 'Đăng nhập Lương');
+      a.href = '/luong';
+      headBar(root, 'Cần đăng nhập phần Lương một lần trên máy này (chọn "Ghi nhớ đăng nhập") để chấm công tại đây.', [a]);
+      return;
+    }
+    const list = people();
+    if (!list.length) {
+      headBar(root, isOwner() ? 'Chưa có nhân viên nào trong phần Lương. Thêm ở Lương › Cài đặt.' : 'Chưa có hồ sơ tính công.');
+      return;
+    }
+    const p = list.find((x) => x.id === monthStaff) || list[0];
+
+    // Tab từng người (chủ thấy cả nhóm, nhân viên chỉ thấy mình)
+    const head = el('div', 'att-head');
+    const tabs = el('div', 'flex flex-wrap gap-2');
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Chọn nhân viên');
+    for (const x of list) {
+      const t = button(`attm-tab${x.id === p.id ? ' is-on' : ''}`, null, () => {
+        monthStaff = x.id;
+        try {
+          localStorage.setItem('att-month-staff', x.id);
+        } catch {}
+        paint();
+        root.querySelector('.attm-tab.is-on')?.focus();
+      });
+      t.setAttribute('role', 'tab');
+      t.setAttribute('aria-selected', String(x.id === p.id));
+      const dot = el('span', 'h-2.5 w-2.5 shrink-0 rounded-full');
+      dot.style.background = x.color;
+      t.append(dot, el('span', '', x.name));
+      tabs.append(t);
+    }
+    head.append(tabs);
+
+    // Tổng tháng của người đang xem
+    const dates = monthGridDates(ym);
+    const inMonth = dates.filter((d) => d.startsWith(ym));
+    let cong = 0;
+    let hours = 0;
+    let missing = 0;
+    let check = 0;
+    for (const d of inMonth) {
+      const rec = recOf(p.id, d);
+      if (p.kind === 'month') cong += CONG[rec?.st] || 0;
+      else {
+        hours += hoursOf(rec);
+        if ((rec?.open && d !== today) || rec?.bad || rec?.auto) check += 1;
+      }
+      if (d <= today && expected(p, d) && !isMarked(p, rec)) missing += 1;
+    }
+    const sum = [p.kind === 'month' ? `${fmtCong(cong)} trong tháng` : `${fmtH(hours)} trong tháng`];
+    if (missing) sum.push(`${missing} ngày ${p.kind === 'month' ? 'chưa chấm' : 'chưa ghi giờ'}`);
+    if (check) sum.push(`${check} ngày cần kiểm tra giờ`);
+    if (lockedOf(p.id, `${ym}-01`)) sum.push('🔒 kỳ lương đã chốt');
+    const info = el('p', 'w-full text-xs text-ink-soft', `${p.name} · ${p.kind === 'month' ? 'tính theo công' : 'tính theo giờ'} · ${sum.join(' · ')}`);
+    head.append(info);
+    root.append(head);
+
+    // Lưới tháng T2–CN
+    const grid = el('div', 'attm-grid');
+    grid.setAttribute('role', 'grid');
+    grid.setAttribute('aria-label', `Bảng công tháng của ${p.name}`);
+    for (const w of ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']) grid.append(el('div', `attm-wd${w === 'CN' ? ' is-sun' : ''}`, w));
+    for (const d of dates) {
+      const out = !d.startsWith(ym);
+      const dn = Number(d.slice(8));
+      const sun = dow(d) === 0;
+      if (out) {
+        grid.append(el('div', 'attm-cell is-out', String(dn)));
+        continue;
+      }
+      const rec = recOf(p.id, d);
+      const ci = cellInfo(p, d);
+      const editable = canEdit(p, d);
+      const b = button(`attm-cell${d === today ? ' is-today' : ''}${d === selected ? ' is-selected' : ''}${busyCells.has(`${p.id}|${d}`) ? ' c-busy' : ''}`, null, () => openEditor(p, d, b));
+      b.dataset.cell = `${p.id}|${d}`;
+      b.disabled = d > today || (!editable && !rec);
+      const num = el('span', `attm-num${sun ? ' is-sun' : ''}`, String(dn));
+      b.append(num);
+      const marked = isMarked(p, rec);
+      if (marked) {
+        const color = p.kind === 'month' ? (rec.st === 'work' ? p.color : statusColor(rec.st) || p.color) : ci.cls === 'c-work' ? p.color : statusColor('half');
+        const sh = el('span', `att-shape sh${dn % 8}`);
+        sh.style.background = color;
+        sh.setAttribute('aria-hidden', 'true');
+        b.append(sh);
+      }
+      if (marked || ci.cls !== 'c-future') b.append(el('span', `attm-label ${marked ? '' : ci.cls}`, ci.text));
+      if (lockedOf(p.id, d)) b.append(el('span', 'attm-lock', '🔒'));
+      b.setAttribute('aria-label', `${dayName(d)}: ${ci.label}${editable ? '' : ' (chỉ xem)'}`);
+      b.title = ci.label;
+      grid.append(b);
+    }
+    const wrap = el('div', 'border-t border-line p-2 sm:p-3');
+    wrap.append(grid);
+    root.append(wrap);
   }
 
   /** Vẽ lại riêng các ô (khi đang lưu) mà không đóng popover. */
@@ -799,8 +880,9 @@
     for (const b of root.querySelectorAll('[data-cell]')) b.classList.toggle('c-busy', busyCells.has(b.dataset.cell));
   }
   function paint() {
-    if (mode === 'calendar') paintCalendar();
-    else if (!pop) paintWeek();
+    if (pop) return; // đang mở popover: vẽ lại sau khi đóng
+    if (mode === 'month') paintMonth();
+    else paintWeek();
   }
 
   paint();
