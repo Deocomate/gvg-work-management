@@ -1,8 +1,8 @@
 // Gắn app Chấm công & tính lương (src/payroll, CommonJS) vào đường dẫn /luong/app.
 // App này có đăng nhập, mã hoá và header bảo mật riêng nên được gắn TRƯỚC helmet/session/csrf của app chính.
 // Dữ liệu nằm ở file SQLite riêng (mặc định data/payroll.db), không đụng DB lịch công việc.
-// Đăng nhập chung: người có users.payroll_who (liên kết ở trang Nhân viên) vào Lương bằng chính phiên đăng nhập lịch
-// công việc (xem ssoUser trong app.js và /api/me, /api/my-key trong src/payroll/server/app.js).
+// Một tài khoản cho mọi việc: Quản lý vào Lương bằng chính phiên đăng nhập lịch công việc, với quyền chủ cửa hàng
+// (xem ssoUser trong app.js và /api/me trong src/payroll/server/app.js).
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,7 +28,7 @@ export function payrollConfigProblem({ adminUsername, adminPassword, sessionSecr
   return null;
 }
 
-// Mỗi file DB mở một lần, dùng chung cho router và trang Nhân viên.
+// Mỗi file DB mở một lần.
 const stores = new Map();
 function openPayrollStore(dbFile) {
   if (!stores.has(dbFile)) {
@@ -40,19 +40,6 @@ function openPayrollStore(dbFile) {
     stores.set(dbFile, p);
   }
   return stores.get(dbFile);
-}
-
-/**
- * Các tài khoản lương để liên kết với tài khoản lịch công việc: [{ value, label }].
- * 'admin' = chủ cửa hàng (toàn quyền), rồi từng nhân viên trong app lương (tên không mã hoá).
- * Phần Lương chưa bật -> [] (ẩn ô liên kết).
- */
-export async function payrollAccountOptions(options = config.payroll) {
-  if (payrollConfigProblem(options)) return [];
-  const store = await openPayrollStore(options.dbFile);
-  const cfg = await store.getDoc('cfg/main');
-  const staff = (cfg?.staff || []).map((s) => ({ value: s.id, label: `Nhân viên lương: ${s.name}${s.title ? ` · ${s.title}` : ''}` }));
-  return [{ value: 'admin', label: 'Chủ cửa hàng (toàn quyền lương)' }, ...staff];
 }
 
 /**

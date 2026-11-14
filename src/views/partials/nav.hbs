@@ -27,7 +27,7 @@
         {{else if (eq currentUser.role 'sale')}}
           {{> nav-link href="/customers" label="Quảng cáo"}}
         {{/if}}
-        {{!-- Chấm công & tính lương: app riêng ở /luong, đăng nhập bằng tài khoản lương riêng --}}
+        {{!-- Chấm công & tính lương: app riêng ở /luong, vào bằng chính tài khoản lịch công việc --}}
         {{> nav-link href="/luong" label="Lương"}}
       {{/if}}
       {{!-- [vibe:nav-links] Thêm link module mới: {{> nav-link href="/tasks" label="Công việc"}} --}}

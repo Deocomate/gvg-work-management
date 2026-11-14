@@ -12,9 +12,6 @@
   </div>
   <div class="grid gap-5 sm:grid-cols-2">
     {{> form/field name="phone" label="Số điện thoại" type="tel" value=values.phone error=errors.phone placeholder="VD: 0912 345 678"}}
-    {{#if payrollOptions.length}}
-      {{> form/select name="payroll_who" label="Tài khoản lương" options=payrollOptions value=values.payroll_who error=errors.payroll_who placeholder="Không liên kết" hint="Liên kết thì người này vào Lương & chấm công bằng chính tài khoản này, không cần mật khẩu lương riêng."}}
-    {{/if}}
   </div>
   <div class="grid gap-5 sm:grid-cols-2">
     {{#if staff}}

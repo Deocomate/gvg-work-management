@@ -120,11 +120,6 @@ test('đăng nhập chung: tài khoản lịch đã liên kết vào Lương kh�
   const cfg = { company: 'Test', staff: [{ id: 'nv1', name: 'An', title: 'Sale', wA: { iv: iv.toString('base64'), ct: ct.toString('base64') } }] };
   assert.equal((await owner.put('/luong/app/api/doc?path=cfg%2Fmain').send(cfg)).status, 204);
 
-  // danh sách để liên kết ở trang Nhân viên
-  const { payrollAccountOptions } = await import('../src/modules/payroll/payroll.mount.js');
-  const options = await payrollAccountOptions(OPTIONS);
-  assert.deepEqual(options.map((o) => o.value), ['admin', 'nv1']);
-
   // người dùng lịch liên kết nv1: không cookie lương, vẫn là nv1 và lấy được đúng khoá của mình
   const app = express();
   app.use(PAYROLL_PATH, payrollRouter(OPTIONS, { ssoUser: async () => ({ who: 'nv1', name: 'An' }) }));

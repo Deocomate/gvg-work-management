@@ -56,12 +56,11 @@ export function createApp() {
     httpOnly: true,
     secure: config.isProd,
   });
-  // Đăng nhập chung: vào Lương bằng phiên đăng nhập lịch công việc. Có liên kết tài khoản lương (trang Nhân viên)
-  // thì theo liên kết; Quản lý chưa liên kết = chủ cửa hàng (toàn quyền lương).
+  // Một tài khoản cho mọi việc: vào Lương bằng chính phiên đăng nhập lịch công việc, Quản lý = chủ cửa hàng (toàn quyền lương).
   const ssoUser = async (req, res) => {
     await new Promise((resolve, reject) => session(req, res, (err) => (err ? reject(err) : resolve())));
     const user = req.session?.userId ? await findUserById(req.session.userId) : null;
-    const who = user?.payroll_who || (user?.role === 'admin' ? 'admin' : null);
+    const who = user?.role === 'admin' ? 'admin' : null;
     return who ? { who, name: user.name } : null;
   };
   app.use(PAYROLL_PATH, payrollRouter(config.payroll, { ssoUser }));

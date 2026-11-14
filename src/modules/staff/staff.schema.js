@@ -25,8 +25,6 @@ const base = {
       .refine((v) => /^\d{9,15}$/.test(v.replace(/\D/g, '')), 'Số điện thoại cần 9–15 chữ số')
       .optional(),
   ),
-  // Tài khoản Lương liên kết: '' = không, 'admin' = chủ cửa hàng, 'nv1'… = nhân viên lương
-  payroll_who: z.preprocess(emptyToUndefined, z.string().regex(/^(admin|nv\d+)$/, 'Tài khoản lương không hợp lệ').optional()),
   role: z.enum(
     ROLES.map((r) => r.value),
     { error: 'Vai trò không hợp lệ' },
