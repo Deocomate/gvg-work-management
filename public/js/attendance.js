@@ -95,7 +95,7 @@
       const b = el('button', `btn-sm inline-flex items-center gap-1.5 ${on ? 'btn-primary' : 'btn-secondary'}`);
       const dot = icon(d % 8, colors[st] || (id ? state.staff?.find((s) => s.id === id)?.color : null));
       dot.style.width = dot.style.height = '14px';
-      b.append(dot, `${on ? '✓ ' : ''}${label}`);
+      b.append(dot, label);
       b.type = 'button';
       b.disabled = busy || disabled;
       b.addEventListener('click', () => {
