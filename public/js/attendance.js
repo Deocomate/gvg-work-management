@@ -811,28 +811,7 @@
     }
     head.append(tabs);
 
-    // Tổng tháng của người đang xem
     const dates = monthGridDates(ym);
-    const inMonth = dates.filter((d) => d.startsWith(ym));
-    let cong = 0;
-    let hours = 0;
-    let missing = 0;
-    let check = 0;
-    for (const d of inMonth) {
-      const rec = recOf(p.id, d);
-      if (p.kind === 'month') cong += CONG[rec?.st] || 0;
-      else {
-        hours += hoursOf(rec);
-        if ((rec?.open && d !== today) || rec?.bad || rec?.auto) check += 1;
-      }
-      if (d <= today && expected(p, d) && !isMarked(p, rec)) missing += 1;
-    }
-    const sum = [p.kind === 'month' ? `${fmtCong(cong)} trong tháng` : `${fmtH(hours)} trong tháng`];
-    if (missing) sum.push(`${missing} ngày ${p.kind === 'month' ? 'chưa chấm' : 'chưa ghi giờ'}`);
-    if (check) sum.push(`${check} ngày cần kiểm tra giờ`);
-    if (lockedOf(p.id, `${ym}-01`)) sum.push('🔒 kỳ lương đã chốt');
-    const info = el('p', 'w-full text-xs text-ink-soft', `${p.name} · ${p.kind === 'month' ? 'tính theo công' : 'tính theo giờ'} · ${sum.join(' · ')}`);
-    head.append(info);
     root.append(head);
 
     // Lưới tháng T2–CN
