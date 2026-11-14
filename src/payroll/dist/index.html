@@ -1968,18 +1968,20 @@ function setupView(){
     {name:'Chi',title:'Sales',kind:'hour',monthly:0,hourly:50000,page:1000000,share:40,lunch:false,live:true}];
   return`<div class="wrap" style="max-width:860px"><div style="margin:36px 0 18px" class="brand"><img src="${logo()}" alt="" style="height:52px"><div class="sub"><b>Thiết lập lần đầu</b>Thông số mẫu — chỉnh theo cửa hàng của bạn.</div></div>
   <form id="setupForm" class="grid">
-  <div class="card"><h3>1. Mật khẩu chủ cửa hàng</h3><p class="small muted">Dùng để xem báo cáo của cả 3 người, đặt lại mật khẩu nhân viên. ${S.server?'Nếu quên, super admin đặt lại được.':'<b>Hãy ghi nhớ</b> — nếu quên, dữ liệu đã mã hóa không thể mở lại.'}</p>
+  ${S.sso?`<div class="card"><h3>1. Cửa hàng</h3><p class="small muted">Mọi người vào Lương bằng tài khoản lịch công việc, không cần mật khẩu riêng. Liên kết nhân viên ở Cài đặt › Nhân viên.</p>
+   <div class="grid g3"><label class="f">Tên cửa hàng<input type="text" name="company" value="Gốm Vũ Gia"></label>
+   <input type="hidden" name="uo" value="chu"></div></div>`:`<div class="card"><h3>1. Mật khẩu chủ cửa hàng</h3><p class="small muted">Dùng để xem báo cáo của cả 3 người, đặt lại mật khẩu nhân viên. ${S.server?'Nếu quên, super admin đặt lại được.':'<b>Hãy ghi nhớ</b> — nếu quên, dữ liệu đã mã hóa không thể mở lại.'}</p>
    <div class="grid g3"><label class="f">Tên cửa hàng<input type="text" name="company" value="Gốm Vũ Gia"></label>
    ${S.server?'<label class="f">Tên đăng nhập của chủ<input type="text" name="uo" value="chu" autocapitalize="none" spellcheck="false" required></label>':''}
    <label class="f">Mật khẩu chủ<input type="password" name="opw" autocomplete="new-password" required minlength="6"></label>
-   <label class="f">Nhập lại<input type="password" name="opw2" autocomplete="new-password" required></label></div></div>
+   <label class="f">Nhập lại<input type="password" name="opw2" autocomplete="new-password" required></label></div></div>`}
   ${def.map((d,i)=>`<div class="card"><h3>${i+2}. Nhân viên ${i+1}</h3>
    <div class="grid g4" style="margin-top:10px">
    <label class="f">Tên<input type="text" name="name${i}" value="${d.name}" required></label>
    <label class="f">Vị trí<input type="text" name="title${i}" value="${d.title}"></label>
    <label class="f">Hình thức<select name="kind${i}"><option value="month"${d.kind==='month'?' selected':''}>${KIND.month}</option><option value="hour"${d.kind==='hour'?' selected':''}>${KIND.hour}</option></select></label>
-   ${S.server?`<label class="f">Tên đăng nhập<input type="text" name="u${i}" value="nv${i+1}" autocapitalize="none" spellcheck="false" required></label>`:''}
-   <label class="f">Mật khẩu ban đầu<input type="text" name="pw${i}" value="" placeholder="tối thiểu 4 ký tự" required minlength="4"></label>
+   ${S.sso?`<input type="hidden" name="u${i}" value="nv${i+1}">`:`${S.server?`<label class="f">Tên đăng nhập<input type="text" name="u${i}" value="nv${i+1}" autocapitalize="none" spellcheck="false" required></label>`:''}
+   <label class="f">Mật khẩu ban đầu<input type="text" name="pw${i}" value="" placeholder="tối thiểu 4 ký tự" required minlength="4"></label>`}
    <label class="f">Lương tháng (đ)<input type="text" inputmode="numeric" name="monthly${i}" value="${fmt(d.monthly)}"></label>
    <label class="f">Lương giờ (đ/giờ)<input type="text" inputmode="numeric" name="hourly${i}" value="${fmt(d.hourly)}"></label>
    <label class="f">Phụ cấp Fanpage (đ/tháng)<input type="text" inputmode="numeric" name="page${i}" value="${fmt(d.page)}"></label>
@@ -1991,7 +1993,11 @@ function setupView(){
   </form></div>`;
 }
 async function doSetup(form){
-  const f=new FormData(form);const g=k=>String(f.get(k)||'').trim();
+  const f=new FormData(form);
+  /* signed in through the work calendar: nobody types a payroll password, so each account gets a random one
+   * (owner reads data through the recovery key, staff through /api/my-key; passwords can be set later in Cài đặt) */
+  if(S.sso)for(const k of['opw','pw0','pw1','pw2']){const p=b64(rand(18));f.set(k,p);if(k==='opw')f.set('opw2',p)}
+  const g=k=>String(f.get(k)||'').trim();
   if(g('opw').length<6)throw uerr('Mật khẩu chủ tối thiểu 6 ký tự');
   if(g('opw')!==g('opw2'))throw uerr('Hai lần nhập mật khẩu chủ không khớp');
   const oSalt=b64(rand(16));const oKey=await kdf(g('opw'),oSalt);

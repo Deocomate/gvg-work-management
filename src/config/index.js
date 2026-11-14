@@ -1,6 +1,8 @@
 // Đọc cấu hình từ biến môi trường ở MỘT chỗ duy nhất.
 // Code khác chỉ import `config`, không đọc process.env trực tiếp.
 
+import crypto from 'node:crypto';
+
 const env = process.env;
 const DEV_SECRET = 'dev-only-secret-change-me';
 
@@ -41,12 +43,18 @@ export const config = Object.freeze({
       advertiserIds: list(env.TIKTOK_ADVERTISER_IDS),
     }),
   }),
-  // Chấm công & tính lương (/luong): app riêng có đăng nhập + mã hoá riêng (src/payroll).
-  // Thiếu mật khẩu hoặc secret thì trang /luong chỉ báo "chưa cấu hình".
+  // Chấm công & tính lương (/luong): app riêng có mã hoá riêng (src/payroll).
+  // Vào bằng tài khoản lịch công việc (Quản lý = chủ cửa hàng). PAYROLL_ADMIN_PASSWORD không bắt buộc:
+  // chỉ cần khi muốn đăng nhập riêng bằng tên "admin". Secret: PAYROLL_SESSION_SECRET, không có thì suy ra
+  // từ SESSION_SECRET (khi đó KHÔNG được đổi SESSION_SECRET nữa, vì nó tạo khoá khôi phục dữ liệu lương).
   payroll: Object.freeze({
     adminUsername: env.PAYROLL_ADMIN_USERNAME || 'admin',
     adminPassword: env.PAYROLL_ADMIN_PASSWORD || undefined,
-    sessionSecret: env.PAYROLL_SESSION_SECRET || undefined,
+    sessionSecret:
+      env.PAYROLL_SESSION_SECRET ||
+      (nodeEnv === 'test'
+        ? undefined
+        : crypto.createHmac('sha256', env.SESSION_SECRET ?? DEV_SECRET).update('payroll-secret').digest('hex')),
     dbFile: env.PAYROLL_DB_FILE || 'data/payroll.db',
   }),
   // [vibe:config]

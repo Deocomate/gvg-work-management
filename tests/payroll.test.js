@@ -41,6 +41,25 @@ test('chưa cấu hình: /luong/app báo chưa bật, app chính vẫn chạy', 
   assert.match(res.text, /Tính lương chưa bật/);
 });
 
+test('không đặt mật khẩu lương: vẫn bật, chủ vào bằng tài khoản lịch, không đăng nhập "admin" bằng mật khẩu được', async () => {
+  const { payrollConfigProblem } = await import('../src/modules/payroll/payroll.mount.js');
+  const noPass = { ...OPTIONS, adminPassword: undefined };
+  assert.equal(payrollConfigProblem(noPass), null);
+
+  const app = express();
+  app.use(PAYROLL_PATH, payrollRouter(noPass, { ssoUser: async () => ({ who: 'admin', name: 'Chủ' }) }));
+  const owner = request.agent(app);
+  assert.deepEqual((await owner.get('/luong/app/api/me')).body, { who: 'admin', sso: true, name: 'Chủ' });
+  assert.equal((await owner.get('/luong/app/api/recovery-key')).status, 200);
+
+  const plain = express();
+  plain.use(PAYROLL_PATH, payrollRouter(noPass));
+  const guest = request.agent(plain);
+  const { salt } = (await guest.post('/luong/app/api/salt').send({ username: 'admin' })).body;
+  const proof = passwordProof('', salt);
+  assert.equal((await guest.post('/luong/app/api/login').send({ username: 'admin', proof })).status, 403);
+});
+
 test('/luong/app chuyển sang /luong/app/, nạp runtime dưới /luong/app, cho nhúng cùng nguồn', async () => {
   const agent = mounted();
   const redirect = await agent.get('/luong/app');

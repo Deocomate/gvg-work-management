@@ -3,6 +3,7 @@
 // Dữ liệu nằm ở file SQLite riêng (mặc định data/payroll.db), không đụng DB lịch công việc.
 // Đăng nhập chung: người có users.payroll_who (liên kết ở trang Nhân viên) vào Lương bằng chính phiên đăng nhập lịch
 // công việc (xem ssoUser trong app.js và /api/me, /api/my-key trong src/payroll/server/app.js).
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -20,9 +21,9 @@ const payrollServer = () => require(path.join(PAYROLL_DIR, 'server', 'app.js'));
 /** Lý do chưa chạy được (chuỗi), hoặc null nếu cấu hình đủ. */
 export function payrollConfigProblem({ adminUsername, adminPassword, sessionSecret } = config.payroll) {
   const { USERNAME } = payrollServer();
-  if (!adminPassword || !sessionSecret) return 'Chưa đặt PAYROLL_ADMIN_PASSWORD và PAYROLL_SESSION_SECRET.';
+  if (!sessionSecret) return 'Chưa đặt PAYROLL_SESSION_SECRET.';
   if (!USERNAME.test(adminUsername.trim().toLowerCase())) return 'PAYROLL_ADMIN_USERNAME chỉ gồm chữ không dấu, số, dấu . _ @ -.';
-  if (adminPassword.length < 12) return 'PAYROLL_ADMIN_PASSWORD phải có ít nhất 12 ký tự.';
+  if (adminPassword && adminPassword.length < 12) return 'PAYROLL_ADMIN_PASSWORD phải có ít nhất 12 ký tự.';
   if (sessionSecret.length < 32) return 'PAYROLL_SESSION_SECRET phải có ít nhất 32 ký tự.';
   return null;
 }
@@ -84,7 +85,8 @@ export function payrollRouter(options = config.payroll, { ssoUser } = {}) {
         store: await openPayrollStore(options.dbFile),
         secret: options.sessionSecret,
         adminUsername: options.adminUsername,
-        adminPassword: options.adminPassword,
+        // Không đặt mật khẩu: tắt đăng nhập riêng bằng "admin" (mật khẩu ngẫu nhiên không ai biết); chủ vào bằng tài khoản lịch.
+        adminPassword: options.adminPassword || crypto.randomBytes(32).toString('hex'),
         distFile: path.join(PAYROLL_DIR, 'dist', 'index.html'),
         trustProxy: true,
         basePath: PAYROLL_PATH,

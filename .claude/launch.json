@@ -25,6 +25,22 @@
         "PAYROLL_DB_FILE": "data/payroll-preview.db"
       },
       "port": 3011
+    },
+    {
+      "name": "lich-cong-viec-sso",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "src/server.js"
+      ],
+      "env": {
+        "PORT": "3012",
+        "DATABASE_URL": "file:data/preview-sso.db",
+        "SESSION_SECRET": "preview-sso-session-secret-0123456789",
+        "ADMIN_EMAIL": "preview@test.local",
+        "ADMIN_PASSWORD": "preview-pass-123",
+        "PAYROLL_DB_FILE": "data/payroll-preview-sso.db"
+      },
+      "port": 3012
     }
   ]
 }

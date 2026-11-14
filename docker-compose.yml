@@ -30,7 +30,8 @@ services:
       - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
       - TIKTOK_ADVERTISER_IDS=${TIKTOK_ADVERTISER_IDS:-}
       - ADS_CACHE_MINUTES=${ADS_CACHE_MINUTES:-15}
-      # Tính lương (/luong): đặt mật khẩu super admin (>= 12 ký tự) trong tab Environment Variables.
+      # Tính lương (/luong): vào bằng tài khoản lịch công việc (Quản lý = chủ cửa hàng), không cần mật khẩu riêng.
+      # PAYROLL_ADMIN_PASSWORD (không bắt buộc, >= 12 ký tự) chỉ để đăng nhập riêng bằng tên "admin".
       # Secret do Coolify tự sinh và giữ nguyên; nên chép lại một bản ở nơi an toàn (dùng để khôi phục dữ liệu lương).
       - PAYROLL_ADMIN_USERNAME=${PAYROLL_ADMIN_USERNAME:-admin}
       - PAYROLL_ADMIN_PASSWORD=${PAYROLL_ADMIN_PASSWORD:-}
