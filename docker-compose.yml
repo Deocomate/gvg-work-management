@@ -30,6 +30,12 @@ services:
       - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
       - TIKTOK_ADVERTISER_IDS=${TIKTOK_ADVERTISER_IDS:-}
       - ADS_CACHE_MINUTES=${ADS_CACHE_MINUTES:-15}
+      # Tính lương (/luong): đặt mật khẩu super admin (>= 12 ký tự) trong tab Environment Variables.
+      # Secret do Coolify tự sinh và giữ nguyên; nên chép lại một bản ở nơi an toàn (dùng để khôi phục dữ liệu lương).
+      - PAYROLL_ADMIN_USERNAME=${PAYROLL_ADMIN_USERNAME:-admin}
+      - PAYROLL_ADMIN_PASSWORD=${PAYROLL_ADMIN_PASSWORD:-}
+      - PAYROLL_SESSION_SECRET=${SERVICE_PASSWORD_64_PAYROLL}
+      - PAYROLL_DB_FILE=data/payroll.db
     volumes:
       # Dữ liệu SQLite: giữ lại qua các lần deploy / khởi động lại
       - app-data:/app/data

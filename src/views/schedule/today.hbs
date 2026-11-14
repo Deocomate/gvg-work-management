@@ -18,6 +18,7 @@
 </form>
 
 {{> schedule/week-strip days=week.days selected=date}}
+{{> payroll-attendance mode="today" day=date}}
 
 {{#if summary.total}}
   <div class="card card-body mb-5">

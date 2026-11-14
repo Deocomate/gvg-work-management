@@ -1,6 +1,6 @@
 import { get, run } from '#db';
 
-const PUBLIC_COLUMNS = 'id, email, name, role, created_at';
+const PUBLIC_COLUMNS = 'id, email, name, role, payroll_who, created_at';
 
 export const findById = (id) => get(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = ?`, [id]);
 

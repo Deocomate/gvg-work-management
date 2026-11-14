@@ -20,6 +20,7 @@ import planRoutes from './plan/plan.routes.js';
 import adsRoutes from './ads/ads.routes.js';
 import accountRoutes from './account/account.routes.js';
 import { requireAdsAccess } from './ads/ads.service.js';
+import payrollRoutes from './payroll/payroll.routes.js';
 // [vibe:module-imports]
 
 export const modules = [
@@ -34,6 +35,7 @@ export const modules = [
   { path: '/plan', router: planRoutes, middleware: [requireAuth] }, // Idea bank + lịch quay/đăng; mọi người
   { path: '/ads', router: adsRoutes, middleware: [requireAuth, requireAdsAccess] }, // chỉ quản lý
   { path: '/account', router: accountRoutes, middleware: [requireAuth] }, // Cài đặt > Tài khoản: mọi người
+  { path: '/luong', router: payrollRoutes, middleware: [requireAuth] }, // Lương (nhúng app lương ở /luong/app); mọi người
   // [vibe:module-mounts]
 ];
 

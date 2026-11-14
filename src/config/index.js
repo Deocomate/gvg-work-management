@@ -41,6 +41,14 @@ export const config = Object.freeze({
       advertiserIds: list(env.TIKTOK_ADVERTISER_IDS),
     }),
   }),
+  // Chấm công & tính lương (/luong): app riêng có đăng nhập + mã hoá riêng (src/payroll).
+  // Thiếu mật khẩu hoặc secret thì trang /luong chỉ báo "chưa cấu hình".
+  payroll: Object.freeze({
+    adminUsername: env.PAYROLL_ADMIN_USERNAME || 'admin',
+    adminPassword: env.PAYROLL_ADMIN_PASSWORD || undefined,
+    sessionSecret: env.PAYROLL_SESSION_SECRET || undefined,
+    dbFile: env.PAYROLL_DB_FILE || 'data/payroll.db',
+  }),
   // [vibe:config]
 });
 

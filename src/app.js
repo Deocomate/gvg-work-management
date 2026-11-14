@@ -16,7 +16,9 @@ import { locals } from '#middleware/locals.js';
 import { errorHandler, notFoundHandler } from '#middleware/errors.js';
 import { registerModules } from '#modules/index.js';
 import { loadUser } from '#middleware/auth.js';
+import { findUserById } from '#modules/auth/auth.service.js';
 import { taskBadge } from '#middleware/task-badge.js';
+import { PAYROLL_PATH, payrollConfigProblem, payrollRouter } from '#modules/payroll/payroll.mount.js';
 // [vibe:app-imports]
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -45,6 +47,24 @@ export function createApp() {
   app.set('view engine', 'hbs');
   app.set('views', VIEWS);
 
+  // Chấm công & tính lương: app riêng (đăng nhập, mã hoá, header bảo mật riêng) nên gắn trước helmet/session/csrf.
+  const session = cookieSession({
+    name: 'sid',
+    keys: [config.sessionSecret],
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    httpOnly: true,
+    secure: config.isProd,
+  });
+  // Đăng nhập chung: người đang đăng nhập lịch công việc + đã liên kết tài khoản lương (trang Nhân viên) thì vào Lương luôn.
+  const ssoUser = async (req, res) => {
+    await new Promise((resolve, reject) => session(req, res, (err) => (err ? reject(err) : resolve())));
+    const user = req.session?.userId ? await findUserById(req.session.userId) : null;
+    return user?.payroll_who ? { who: user.payroll_who, name: user.name } : null;
+  };
+  app.use(PAYROLL_PATH, payrollRouter(config.payroll, { ssoUser }));
+  app.locals.payrollEnabled = !payrollConfigProblem(); // hiện chấm công trên lịch tuần/tháng
+
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -60,16 +80,7 @@ export function createApp() {
   );
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(express.json({ limit: '1mb' }));
-  app.use(
-    cookieSession({
-      name: 'sid',
-      keys: [config.sessionSecret],
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-      httpOnly: true,
-      secure: config.isProd,
-    }),
-  );
+  app.use(session);
 
   app.get('/healthz', (req, res) => res.json({ ok: true }));
 

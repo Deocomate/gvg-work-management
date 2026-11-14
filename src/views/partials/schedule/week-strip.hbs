@@ -11,6 +11,7 @@
           <span class="text-[11px] font-semibold text-ink-faint">{{weekdayLabel}}</span>
           <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-sm font-semibold tabular-nums{{#if isToday}} bg-brand-500 text-cream{{else if isPast}} text-ink-faint{{else}} text-ink{{/if}}">{{dayLabel}}</span>
         </div>
+        {{#if @root.payrollEnabled}}<span data-att-day="{{date}}" class="flex min-w-0 justify-center md:justify-start" hidden></span>{{/if}}
         {{#if tasks.length}}
           <span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-bad-300{{else if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{tasks.length}} việc</span>
           <ul class="mt-1 hidden min-w-0 space-y-1.5 md:block">

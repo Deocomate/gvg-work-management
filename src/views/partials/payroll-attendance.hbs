@@ -1,0 +1,7 @@
+{{!-- Khung chấm công trên lịch (public/js/attendance.js). Chỉ hiện khi phần Lương đã bật.
+      Dùng: {{> payroll-attendance mode="today" day=date}} hoặc mode="calendar".
+      Các ô ngày cần thêm: <span data-att-day="YYYY-MM-DD" hidden></span> --}}
+{{#if @root.payrollEnabled}}
+  <div data-att-root data-mode="{{mode}}" data-selected="{{day}}" class="mb-5" hidden></div>
+  <script src="/js/attendance.js?v={{@root.assetVersion}}" defer></script>
+{{/if}}

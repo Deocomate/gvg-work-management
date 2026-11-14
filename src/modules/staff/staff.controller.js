@@ -1,28 +1,37 @@
 // Trang quản lý nhân viên: danh sách, thêm, sửa, xoá tài khoản.
 import { ROLES } from './staff.schema.js';
 import * as service from './staff.service.js';
+import { payrollAccountOptions } from '#modules/payroll/payroll.mount.js';
 
 const roleInfo = Object.fromEntries(ROLES.map((r) => [r.value, r]));
 
-const renderForm = (res, { staff = null, values = {}, errors = {}, status = 200 }) =>
+const renderForm = async (res, { staff = null, values = {}, errors = {}, status = 200 }) =>
   res.status(status).render('staff/form', {
     title: staff ? 'Sửa nhân viên' : 'Thêm nhân viên',
     staff,
     values,
     errors,
     roleOptions: ROLES,
+    payrollOptions: await payrollAccountOptions(),
   });
 
 export async function index(req, res) {
-  const users = await service.listStaff();
+  const [users, payrollOptions] = await Promise.all([service.listStaff(), payrollAccountOptions()]);
+  const payrollLabel = Object.fromEntries(payrollOptions.map((o) => [o.value, o.label]));
   res.render('staff/index', {
     title: 'Nhân viên',
-    users: users.map((u) => ({ ...u, roleInfo: roleInfo[u.role], isMe: u.id === req.user.id })),
+    showPayroll: payrollOptions.length > 0,
+    users: users.map((u) => ({
+      ...u,
+      roleInfo: roleInfo[u.role],
+      isMe: u.id === req.user.id,
+      payrollLabel: u.payroll_who ? payrollLabel[u.payroll_who] || u.payroll_who : null,
+    })),
   });
 }
 
 export function newForm(req, res) {
-  renderForm(res, { values: { role: 'member' } });
+  return renderForm(res, { values: { role: 'member' } });
 }
 
 export async function create(req, res) {
@@ -34,7 +43,7 @@ export async function create(req, res) {
 
 export async function editForm(req, res) {
   const staff = await service.getStaff(req.params.id);
-  renderForm(res, { staff, values: staff });
+  return renderForm(res, { staff, values: staff });
 }
 
 export async function update(req, res) {

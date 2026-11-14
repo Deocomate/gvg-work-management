@@ -1,7 +1,7 @@
 // Quản lý tài khoản (bảng users). Tạo tài khoản dùng chung auth.repo.create.
 import { all, get, run } from '#db';
 
-const PUBLIC_COLUMNS = 'id, email, name, phone, role, created_at';
+const PUBLIC_COLUMNS = 'id, email, name, phone, role, payroll_who, created_at';
 
 export const listAll = () =>
   all(`SELECT ${PUBLIC_COLUMNS} FROM users ORDER BY role = 'admin' DESC, name COLLATE NOCASE`);
@@ -23,6 +23,16 @@ export async function update(id, { name, email, phone = null, role }) {
     [name, email, phone, role, id],
   );
   return findById(id);
+}
+
+/** Tài khoản Lương liên kết ('admin', 'nv1'… hoặc null). */
+export const setPayrollWho = (id, who) =>
+  run(`UPDATE users SET payroll_who = ?, updated_at = datetime('now') WHERE id = ?`, [who || null, id]);
+
+/** Người khác đã liên kết tài khoản lương này chưa ('admin' dùng chung được). */
+export async function payrollWhoTaken(who, exceptId = 0) {
+  if (!who || who === 'admin') return false;
+  return Boolean(await get('SELECT 1 FROM users WHERE payroll_who = ? AND id <> ?', [who, exceptId]));
 }
 
 export const updatePassword = (id, passwordHash) =>
