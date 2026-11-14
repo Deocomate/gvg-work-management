@@ -717,3 +717,12 @@
   .attm-label.c-rest { @apply bg-transparent text-ink-faint; }
   .attm-lock { @apply absolute top-1.5 right-1.5 text-[10px] opacity-70; }
 }
+
+/* Thanh công cụ trang Lịch làm việc: luôn một dòng; hai ô lọc chia phần còn lại và co lại khi màn hẹp */
+@layer components {
+  .toolbar-row { @apply flex-nowrap; }
+  .toolbar-filters { @apply ml-auto flex min-w-0 flex-1 items-center justify-end gap-2; }
+  /* !important: thắng class min-w-40 / sm:ml-auto của ô chọn nhân viên dùng chung (staff-filter) */
+  .toolbar-filters > * { flex: 1 1 0 !important; min-width: 0 !important; max-width: 12rem; margin-left: 0 !important; }
+  .toolbar-filters .picker-trigger { min-width: 0; }
+}

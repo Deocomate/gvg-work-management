@@ -10,18 +10,19 @@
 {{/page-header}}
 
 {{!-- Thanh công cụ: tuần đang xem, chuyển tuần, chọn ngày; lọc người làm (lịch việc + bảng công) và brand (chỉ lịch việc) --}}
-<form method="get" action="/today" class="toolbar mb-4 min-[860px]:flex-nowrap" aria-label="Chọn tuần và lọc">
-  <div class="flex items-center gap-1">
+{{!-- Luôn một dòng: ô lọc co lại khi màn hẹp; điện thoại ẩn ô chọn ngày (bấm ngày trên lịch tuần để chọn) --}}
+<form method="get" action="/today" class="toolbar toolbar-row mb-4" aria-label="Chọn tuần và lọc">
+  <div class="flex shrink-0 items-center gap-1">
     <a href="/today?date={{week.prev}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần trước" title="Tuần trước">‹</a>
-    <span class="min-w-32 px-1 text-center text-sm font-semibold tabular-nums text-ink">{{week.label}}</span>
+    <span class="hidden px-1 text-center text-sm font-semibold whitespace-nowrap tabular-nums text-ink sm:inline">{{week.label}}</span>
     <a href="/today?date={{week.next}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần sau" title="Tuần sau">›</a>
   </div>
-  {{#unless week.isThisWeek}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về tuần này</a>{{else}}{{#unless isToday}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về hôm nay</a>{{/unless}}{{/unless}}
+  {{#unless week.isThisWeek}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm shrink-0 whitespace-nowrap">Về tuần này</a>{{else}}{{#unless isToday}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm shrink-0 whitespace-nowrap">Về hôm nay</a>{{/unless}}{{/unless}}
   <label class="sr-only" for="pick-date">Chọn ngày</label>
-  <input id="pick-date" type="date" name="date" value="{{date}}" class="input w-auto" data-autosubmit>
-  <div class="flex flex-wrap items-center gap-2 min-[860px]:ml-auto min-[860px]:flex-nowrap">
+  <input id="pick-date" type="date" name="date" value="{{date}}" class="input hidden w-auto shrink-0 sm:block" data-autosubmit>
+  <div class="toolbar-filters">
     {{> schedule/staff-filter}}
-    <select name="brand" class="input w-auto min-w-32" aria-label="Lọc brand (chỉ lọc công việc)" data-autosubmit>
+    <select name="brand" class="input w-full" aria-label="Lọc brand (chỉ lọc công việc)" data-autosubmit>
       {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
     </select>
   </div>
