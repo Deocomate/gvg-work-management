@@ -1,26 +1,22 @@
-// Chấm công trên trang Lịch làm việc (bảng công tuần) và trang Tháng › Bảng công (lưới tháng, mỗi người một tab).
+// Chấm công ở trang Tháng › Bảng công (/calendar?view=cong): mỗi nhân viên một tab, lưới cả tháng.
 // Dữ liệu lương mã hoá trên trình duyệt nên server không đọc được: trang này mở app lương trong một khung ẩn
 // (/luong/app/?embed=1&bridge=1). Khung đó tự đăng nhập (Quản lý = chủ cửa hàng qua tài khoản lịch; nhân viên =
 // "Ghi nhớ đăng nhập"), rồi đọc/ghi CÙNG bản ghi chấm công với bảng lương, theo cùng quy tắc (bridgeDaySet trong app.html).
 // Không có nơi nhập chấm công thứ hai: trang Lương chỉ hiện tổng công/giờ và nút "Xem công" dẫn về đây.
 //
-// HTML: <section data-att-root data-mode="week|month" data-selected="YYYY-MM-DD" data-today="YYYY-MM-DD"
-//        data-days="7 ngày, cách nhau dấu phẩy" data-month="YYYY-MM" data-focus="id nhân viên" data-filter-name="tên người đang lọc">
-//   week  : bảng hàng = nhân viên, cột = T2–CN; bấm ô mở popover (máy tính) / bottom sheet (điện thoại) để chấm / nhập giờ.
-//   month : tab từng người + lưới cả tháng (hình chấm công như app lương cũ); bấm ô = cùng popover.
+// HTML: <section data-att-root data-selected="YYYY-MM-DD" data-today="YYYY-MM-DD" data-month="YYYY-MM" data-focus="id nhân viên">
+//   Tab từng người + lưới cả tháng (hình chấm công như app lương cũ); bấm ô mở popover (máy tính) / bottom sheet
+//   (điện thoại) để chấm công hoặc nhập giờ.
 (() => {
   const root = document.querySelector('[data-att-root]');
   if (!root) return;
-  const mode = root.dataset.mode;
   const pad = (n) => String(n).padStart(2, '0');
   const now = new Date();
   const localToday = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const today = root.dataset.today || localToday;
   const selected = root.dataset.selected || today;
-  const weekDates = (root.dataset.days || '').split(',').filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
-  const months = mode === 'month' ? [root.dataset.month] : [...new Set(weekDates.map((d) => d.slice(0, 7)))].sort();
+  const months = [root.dataset.month];
   const focusId = root.dataset.focus || '';
-  const filterName = root.dataset.filterName || '';
 
   const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
   const WEEKDAY_LONG = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -32,7 +28,6 @@
     ['off', 'Nghỉ không lương', '0 công'],
   ];
   const CELL_TEXT = { work: 'Đủ công', half: 'Nửa ngày', paid: 'Phép', off: 'Nghỉ KL' };
-  const CONG = { work: 1, paid: 1, half: 0.5, off: 0 };
 
   const dow = (iso) => new Date(`${iso}T00:00:00Z`).getUTCDay();
   const ddmm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
@@ -50,8 +45,6 @@
     if (short) return M ? `${H}g${pad(M)}` : `${H}g`;
     return `${H} giờ${M ? ` ${M} phút` : ''}`;
   };
-  const fmtCong = (n) => `${String(Math.round(n * 10) / 10).replace('.', ',')} công`;
-  const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/\s+/g, ' ').trim();
   const money = (n) => `${Math.round(+n || 0).toLocaleString('vi-VN')} đ`;
 
   const el = (tag, cls, text) => {
@@ -167,187 +160,16 @@
     return { cls: 'c-none', text: 'Chưa ghi giờ', label: 'Chưa ghi giờ làm' };
   }
 
-  /** Lọc người làm (chọn ở thanh công cụ) áp dụng cho bảng công: khớp theo tên với danh sách tính công. */
-  function visiblePeople() {
-    const all = people();
-    if (!filterName || !isOwner()) return { list: all, note: '' };
-    const f = norm(filterName);
-    const hit = all.filter((p) => {
-      const n = norm(p.name);
-      return n === f || f.endsWith(` ${n}`) || n.endsWith(` ${f}`);
-    });
-    if (hit.length) return { list: hit, note: `Đang lọc: ${filterName}` };
-    return { list: all, note: `${filterName} không có trong danh sách tính công — đang hiện cả nhóm` };
-  }
-
-  /** Tổng kết ngày đang chọn, nói rõ nghĩa (không báo "đủ" khi người theo giờ chưa ghi giờ). */
-  function summary(list) {
-    const label = selected === today ? 'Hôm nay' : dayName(selected);
-    if (!list.length) return `${label}: chưa có ai trong danh sách tính công`;
-    if (selected > today) return `${label}: chưa tới ngày`;
-    let marked = 0;
-    let none = 0;
-    let noHours = 0;
-    let check = 0;
-    let expectedCount = 0;
-    for (const p of list) {
-      const rec = recOf(p.id, selected);
-      const exp = expected(p, selected);
-      if (exp) expectedCount += 1;
-      if (p.kind === 'hour' && (rec?.open || rec?.bad || rec?.auto) && !(rec?.open && selected === today)) check += 1;
-      if (isMarked(p, rec)) marked += 1;
-      else if (exp) p.kind === 'month' ? (none += 1) : (noHours += 1);
-    }
-    const parts = [];
-    if (marked) parts.push(`${marked} người đã chấm`);
-    if (none) parts.push(`${none} người chưa chấm`);
-    if (noHours) parts.push(`${noHours} người chưa ghi giờ`);
-    if (check) parts.push(`${check} người cần kiểm tra giờ`);
-    if (!none && !noHours && !check && marked && marked >= expectedCount) return `${label}: đã chấm đủ ${marked} người`;
-    if (!parts.length) return `${label}: nghỉ theo lịch`;
-    return `${label}: ${parts.join(' · ')}`;
-  }
-
-  function weekTotal(p) {
-    let cong = 0;
-    let h = 0;
-    for (const d of weekDates) {
-      const rec = recOf(p.id, d);
-      if (p.kind === 'month') cong += CONG[rec?.st] || 0;
-      else h += hoursOf(rec);
-    }
-    return p.kind === 'month' ? fmtCong(cong) : fmtH(h, true);
-  }
-
-  // ---------- vẽ bảng công tuần ----------
-  let collapsed = false;
-  try {
-    collapsed = localStorage.getItem('att-week-collapsed') === '1';
-  } catch {}
-  let scrolledToFocus = false;
   const busyCells = new Set(); // "id|date" đang lưu
 
   function headBar(card, text, extra = []) {
     const head = el('div', 'att-head');
     const title = el('div', 'min-w-0 flex-1');
-    title.append(el('h2', 'text-sm font-semibold text-ink', 'Bảng công tuần'));
+    title.append(el('h2', 'text-sm font-semibold text-ink', 'Bảng công tháng'));
     if (text) title.append(el('p', 'text-xs text-ink-soft', text));
     head.append(title, ...extra);
     card.append(head);
     return head;
-  }
-
-  function paintWeek() {
-    root.hidden = false;
-    root.replaceChildren();
-    root.className = 'att-card';
-    root.setAttribute('aria-label', 'Bảng chấm công tuần');
-
-    if (!state) {
-      headBar(root, loadError || 'Đang tải chấm công…');
-      const ph = el('div', 'att-scroll');
-      ph.style.minHeight = collapsed ? '0' : '7.5rem';
-      root.append(ph);
-      return;
-    }
-    if (!state.signedIn) {
-      const a = el('a', 'btn-secondary btn-sm', 'Đăng nhập Lương');
-      a.href = '/luong';
-      headBar(root, 'Cần đăng nhập phần Lương một lần trên máy này (chọn "Ghi nhớ đăng nhập") để chấm công tại đây.', [a]);
-      return;
-    }
-
-    const { list, note } = visiblePeople();
-    const extras = [];
-    if (isOwner()) {
-      const cfg = el('a', 'btn-ghost btn-sm', 'Lịch làm việc & ca');
-      cfg.href = '/luong/thiet-lap';
-      cfg.title = 'Cấu hình chung: ngày làm, khung giờ, ca chuẩn, hình thức lương của từng người (một nơi duy nhất)';
-      extras.push(cfg);
-    }
-    const monthLink = el('a', 'btn-ghost btn-sm', 'Xem cả tháng');
-    monthLink.href = `/calendar?view=cong&month=${selected.slice(0, 7)}`;
-    extras.push(monthLink);
-    const toggle = button('btn-secondary btn-sm', collapsed ? 'Mở bảng công' : 'Thu gọn', () => {
-      collapsed = !collapsed;
-      try {
-        localStorage.setItem('att-week-collapsed', collapsed ? '1' : '0');
-      } catch {}
-      paint();
-    });
-    toggle.setAttribute('aria-expanded', String(!collapsed));
-    toggle.setAttribute('aria-controls', 'att-week-table');
-    extras.push(toggle);
-    headBar(root, summary(list) + (note ? ` · ${note}` : ''), extras);
-    if (collapsed) return;
-
-    const wrap = el('div', 'att-scroll');
-    wrap.id = 'att-week-table';
-    const table = el('table', 'att-table');
-    const thead = el('thead');
-    const hr = el('tr');
-    const th0 = el('th', 'att-name', 'Nhân viên');
-    th0.scope = 'col';
-    hr.append(th0);
-    for (const d of weekDates) {
-      const th = el('th', `${d === today ? 'is-today' : ''}${d === selected ? ' is-selected' : ''}`);
-      th.scope = 'col';
-      th.append(el('span', 'block', d === today ? `${WEEKDAY[dow(d)]} · Hôm nay` : WEEKDAY[dow(d)]), el('span', 'block font-normal tabular-nums', ddmm(d)));
-      hr.append(th);
-    }
-    const thT = el('th', 'att-total', 'Tuần');
-    thT.scope = 'col';
-    hr.append(thT);
-    thead.append(hr);
-    table.append(thead);
-
-    const tbody = el('tbody');
-    for (const p of list) {
-      const tr = el('tr', p.id === focusId ? 'is-focus' : '');
-      tr.dataset.attRow = p.id;
-      const name = el('th', 'att-name');
-      name.scope = 'row';
-      const nm = el('div', 'flex min-w-0 items-center gap-2');
-      const dot = el('span', 'h-2.5 w-2.5 shrink-0 rounded-full');
-      dot.style.background = p.color;
-      const txt = el('span', 'min-w-0');
-      txt.append(el('span', 'block truncate text-sm font-medium text-ink', p.name), el('span', 'block text-[10px] font-normal text-ink-faint', p.kind === 'month' ? 'theo công' : 'theo giờ'));
-      nm.append(dot, txt);
-      name.append(nm);
-      tr.append(name);
-      for (const d of weekDates) {
-        const td = el('td', d === today ? 'is-today' : '');
-        const info = cellInfo(p, d);
-        const locked = lockedOf(p.id, d);
-        const b = button(`att-cell ${info.cls}${busyCells.has(`${p.id}|${d}`) ? ' c-busy' : ''}`, null, () => openEditor(p, d, b));
-        b.append(el('span', '', info.text));
-        if (locked) b.append(el('span', 'opacity-70', '🔒'));
-        const editable = canEdit(p, d);
-        b.disabled = d > today || (!editable && !recOf(p.id, d));
-        b.setAttribute('aria-label', `${p.name}, ${dayName(d)}: ${info.label}${locked ? ', kỳ lương đã chốt' : ''}${editable ? '' : ' (chỉ xem)'}`);
-        b.title = info.label + (locked ? ' · Kỳ lương đã chốt' : '');
-        b.dataset.cell = `${p.id}|${d}`;
-        td.append(b);
-        tr.append(td);
-      }
-      tr.append(el('td', 'att-total', weekTotal(p)));
-      tbody.append(tr);
-    }
-    if (!list.length) {
-      const tr = el('tr');
-      const td = el('td', 'px-4 py-3 text-sm text-ink-faint', isOwner() ? 'Chưa có nhân viên nào trong phần Lương. Thêm ở Lương › Cài đặt.' : 'Chưa có hồ sơ tính công.');
-      td.colSpan = weekDates.length + 2;
-      tr.append(td);
-      tbody.append(tr);
-    }
-    table.append(tbody);
-    wrap.append(table);
-    root.append(wrap);
-
-    if (!scrolledToFocus && (focusId || location.hash === '#att-week')) {
-      scrolledToFocus = true;
-      requestAnimationFrame(() => root.scrollIntoView({ block: 'start' }));
-    }
   }
 
   // ---------- popover / bottom sheet ----------
@@ -860,8 +682,7 @@
   }
   function paint() {
     if (pop) return; // đang mở popover: vẽ lại sau khi đóng
-    if (mode === 'month') paintMonth();
-    else paintWeek();
+    paintMonth();
   }
 
   paint();

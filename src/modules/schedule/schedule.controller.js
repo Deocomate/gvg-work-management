@@ -102,11 +102,6 @@ export async function today(req, res) {
   const first = days[0].date;
   const last = days[6].date;
   const isThisWeek = first <= day.today && day.today <= last;
-  // Lọc người làm cũng áp dụng cho bảng công: tên người đang xem (bảng công tự khớp với tên trong phần Lương)
-  const filterName = viewer.manager && viewer.assigneeId
-    ? viewer.staffOptions.find((o) => o.value === viewer.assigneeId)?.label ?? ''
-    : '';
-
   res.render('schedule/today', {
     title: 'Lịch làm việc',
     ...viewer,
@@ -121,11 +116,6 @@ export async function today(req, res) {
     overdue,
     overdueTop: overdue.slice(0, OVERDUE_VISIBLE),
     overdueRest: overdue.slice(OVERDUE_VISIBLE),
-    att: {
-      days: days.map((d) => d.date).join(','),
-      focus: String(req.query.att || '').slice(0, 40),
-      filterName,
-    },
     back: `/today?date=${date}${viewer.userQuery}`,
   });
 }

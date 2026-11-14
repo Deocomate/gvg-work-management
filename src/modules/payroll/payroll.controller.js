@@ -2,7 +2,7 @@
 // (lõi ở /luong/app, xem payroll.mount.js) bằng iframe ?embed=1&tabs=<khoá tab>. Thanh tab nằm ở app chính.
 //   Quản lý (chủ cửa hàng): Bảng lương · Khoản cộng-trừ · Báo cáo  (+ thao tác phụ: Hoa hồng, Cài đặt)
 //   Nhân viên             : Lương của tôi · Cách tính hoa hồng · Tài khoản nhận lương
-// Chấm công / nhập giờ KHÔNG có ở đây: chỉ nhập trên trang Lịch làm việc (/today), cùng bản ghi với bảng lương.
+// Chấm công / nhập giờ KHÔNG có ở đây: chỉ nhập ở Tháng › Bảng công (/calendar?view=cong), cùng bản ghi với bảng lương.
 // Đổi tên đường dẫn thì sửa cả HOST_PATH trong src/payroll/src/app.html (nút trong app lương nhảy sang tab khác).
 import { PAYROLL_PATH } from './payroll.mount.js';
 
@@ -27,8 +27,8 @@ export const index = (req, res) => res.redirect(`/luong/${tabsFor(req.user)[0][0
 
 /** /luong/:tab — tab không thuộc vai trò này thì về tab đầu. */
 export const tab = (req, res) => {
-  // Link chấm công cũ: chấm công giờ nằm trên trang Lịch làm việc
-  if (req.params.tab === 'cham-cong') return res.redirect('/today#att-week');
+  // Link chấm công cũ: chấm công giờ nằm ở Tháng › Bảng công
+  if (req.params.tab === 'cham-cong') return res.redirect('/calendar?view=cong');
   const tabs = tabsFor(req.user);
   const cur = tabs.find(([slug]) => slug === req.params.tab);
   if (!cur) return res.redirect('/luong');

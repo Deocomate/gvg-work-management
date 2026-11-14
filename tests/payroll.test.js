@@ -39,8 +39,8 @@ test('trang Lương: mỗi tab một trang trong khung app chính, nhúng đúng
   // Báo cáo 12 tháng là tab riêng; không còn tab nhập chấm công trong Lương
   assert.match((await agent.get('/luong/bao-cao')).text, /tabs(=|&#x3D;)bao"/);
   assert.doesNotMatch(page.text, /href="\/luong\/cham-cong"/);
-  // link chấm công cũ → bảng công trên trang Lịch làm việc
-  assert.equal((await agent.get('/luong/cham-cong')).headers.location, '/today#att-week');
+  // link chấm công cũ → Tháng › Bảng công
+  assert.equal((await agent.get('/luong/cham-cong')).headers.location, '/calendar?view=cong');
   // tab của nhân viên → về tab đầu; link cũ Cài đặt lương → Thiết lập
   assert.equal((await agent.get('/luong/cua-toi')).headers.location, '/luong');
   assert.equal((await agent.get('/account/luong')).headers.location, '/luong/thiet-lap');
@@ -104,23 +104,21 @@ test('sai mật khẩu bị từ chối', async () => {
   assert.equal(res.status, 403);
 });
 
-test('lịch tuần và lịch tháng có chỗ chấm công khi phần Lương đã bật', async () => {
+test('chấm công chỉ ở Tháng › Bảng công khi phần Lương đã bật; trang Lịch làm việc không có bảng công', async () => {
   const { app, agent } = await setup();
   await loginAsAdmin(agent);
-  assert.doesNotMatch((await agent.get('/today')).text, /data-att-root/); // chưa bật thì không có gì
+  assert.doesNotMatch((await agent.get('/calendar?view=cong')).text, /data-att-root/); // chưa bật thì không có gì
   app.locals.payrollEnabled = true;
   const today = await agent.get('/today');
-  assert.match(today.text, /data-att-root data-mode="week" data-selected="\d{4}-\d{2}-\d{2}"/);
-  // bảng công tuần: đủ 7 ngày T2–CN, chấm công / nhập giờ ngay trên trang này
-  assert.match(today.text, /data-days="(\d{4}-\d{2}-\d{2},){6}\d{4}-\d{2}-\d{2}"/);
-  assert.match(today.text, /Bảng công tuần/);
-  assert.match(today.text, /\/js\/attendance\.js/);
+  assert.doesNotMatch(today.text, /data-att-root/);
+  assert.doesNotMatch(today.text, /attendance\.js/);
   // Trang Tháng: tab Lịch việc (mặc định) và tab Bảng công (lưới tháng, mỗi nhân viên một tab)
   const cal = await agent.get('/calendar');
   assert.doesNotMatch(cal.text, /data-att-root/);
   assert.match(cal.text, /href="\/calendar\?month(=|&#x3D;)\d{4}-\d{2}&amp;view(=|&#x3D;)cong/);
   const cong = await agent.get('/calendar?view=cong&month=2026-11');
-  assert.match(cong.text, /data-att-root data-mode="month"/);
+  assert.match(cong.text, /data-att-root data-selected="\d{4}-\d{2}-\d{2}"/);
+  assert.match(cong.text, /\/js\/attendance\.js/);
   assert.match(cong.text, /data-month="2026-11"/);
   assert.match(cong.text, /Bảng công tháng/);
 });

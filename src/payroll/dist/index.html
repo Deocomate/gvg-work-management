@@ -398,7 +398,7 @@ details.params[open]>summary::after{content:"▴"}
 const EMBED=(()=>{const q=new URLSearchParams(location.search);return q.has('embed')?{tabs:(q.get('tabs')||'').split(',').filter(Boolean)}:null})();
 /* host pages for each tab (src/modules/payroll/payroll.controller.js). With one tab per page, the tab bar lives in the
    host site; a button here that leads to another tab opens that host page instead. */
-const HOST_PATH={tong:'/luong/ky-luong',bao:'/luong/bao-cao',cc:'/today',thuong:'/luong/thuong',hh:'/luong/hoa-hong',cd:'/luong/thiet-lap',luong:'/luong/cua-toi',tk:'/luong/tai-khoan'};
+const HOST_PATH={tong:'/luong/ky-luong',bao:'/luong/bao-cao',cc:'/calendar?view=cong',thuong:'/luong/thuong',hh:'/luong/hoa-hong',cd:'/luong/thiet-lap',luong:'/luong/cua-toi',tk:'/luong/tai-khoan'};
 const hostTheme=()=>{try{return localStorage.getItem('theme')==='light'?'light':'dark'}catch(e){return'dark'}};
 (function(){let t=null;try{t=localStorage.getItem('gvg-theme')}catch(e){}
   const mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');
@@ -1931,8 +1931,8 @@ const plusOf=R=>R.lunch+R.liveD+R.liveN+R.page+R.comm+R.bonus;
 /* 38,5 → "38 giờ 30 phút" */
 const hm=h=>{const m=Math.round((+h||0)*60);const H=Math.floor(m/60),M=m%60;return H+' giờ'+(M?' '+M+' phút':'')};
 const statusPill=R=>R.paid?'<span class="pill p-ok">Đã trả</span>':R.locked?'<span class="pill p-mute">🔒 Đã chốt</span>':'<span class="pill p-clay">Tạm tính</span>';
-/* "Xem công": the host's Lịch làm việc page on the week to check (today in the current period, else the period's first day), that person's row highlighted */
-const viewAttUrl=id=>{const t=nowParts();const date=S.ym===t.ym?S.ym+'-'+pad(t.d):S.ym+'-01';return'/today?date='+date+'&att='+encodeURIComponent(id)+'#att-week'};
+/* "Xem công": the host's Tháng › Bảng công page on this period, that person's tab open */
+const viewAttUrl=id=>'/calendar?view=cong&month='+S.ym+'&att='+encodeURIComponent(id);
 
 /* ================= UI PRIMITIVES ================= */
 let toastT;

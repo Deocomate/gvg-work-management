@@ -1,11 +1,9 @@
-{{!-- Chấm công trên lịch (public/js/attendance.js). Chỉ hiện khi phần Lương đã bật.
-      Trang Lịch làm việc: {{> payroll-attendance mode="week" day=date days="7 ngày, dấu phẩy" focus=... filterName=...}} → bảng công tuần, nhập ngay tại đây.
-      Tháng › Bảng công:   {{> payroll-attendance mode="month" month="YYYY-MM" day=today focus=...}} → mỗi nhân viên một tab, lưới cả tháng. --}}
+{{!-- Bảng công tháng (public/js/attendance.js), trang Tháng › Bảng công — nơi DUY NHẤT chấm công / nhập giờ.
+      Dùng: {{> payroll-attendance month="YYYY-MM" day=today focus=attFocus}}. Chỉ hiện khi phần Lương đã bật. --}}
 {{#if @root.payrollEnabled}}
-  <section id="att-week" data-att-root data-mode="{{mode}}" data-selected="{{day}}" data-today="{{@root.today}}" data-days="{{days}}"
-           data-month="{{month}}" data-focus="{{focus}}" data-filter-name="{{filterName}}" class="att-card">
+  <section id="att-month" data-att-root data-selected="{{day}}" data-today="{{@root.today}}" data-month="{{month}}" data-focus="{{focus}}" class="att-card">
     {{!-- Chỗ giữ sẵn khi JS chưa chạy xong: bảng công không làm trang nhảy mạnh --}}
-    <div class="att-head"><div><h2 class="text-sm font-semibold text-ink">Bảng công {{#if (eq mode 'month')}}tháng{{else}}tuần{{/if}}</h2><p class="text-xs text-ink-soft">Đang tải chấm công…</p></div></div>
+    <div class="att-head"><div><h2 class="text-sm font-semibold text-ink">Bảng công tháng</h2><p class="text-xs text-ink-soft">Đang tải chấm công…</p></div></div>
     <noscript><p class="px-4 pb-3 text-sm text-ink-faint">Cần bật JavaScript để chấm công.</p></noscript>
   </section>
   <script src="/js/attendance.js?v={{@root.assetVersion}}" defer></script>

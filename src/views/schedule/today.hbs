@@ -10,7 +10,7 @@
 {{/page-header}}
 
 {{!-- Thanh công cụ: tuần đang xem, chuyển tuần, chọn ngày; lọc người làm (lịch việc + bảng công) và brand (chỉ lịch việc) --}}
-<form method="get" action="/today" class="toolbar mb-4" aria-label="Chọn tuần và lọc">
+<form method="get" action="/today" class="toolbar mb-4 lg:flex-nowrap" aria-label="Chọn tuần và lọc">
   <div class="flex items-center gap-1">
     <a href="/today?date={{week.prev}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần trước" title="Tuần trước">‹</a>
     <span class="min-w-32 px-1 text-center text-sm font-semibold tabular-nums text-ink">{{week.label}}</span>
@@ -19,17 +19,14 @@
   {{#unless week.isThisWeek}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về tuần này</a>{{else}}{{#unless isToday}}<a href="/today?date={{today}}{{userQuery}}" class="btn-ghost btn-sm">Về hôm nay</a>{{/unless}}{{/unless}}
   <label class="sr-only" for="pick-date">Chọn ngày</label>
   <input id="pick-date" type="date" name="date" value="{{date}}" class="input w-auto" data-autosubmit>
-  <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
+  <div class="flex flex-wrap items-center gap-2 lg:ml-auto lg:flex-nowrap">
     {{> schedule/staff-filter}}
-    <select name="brand" class="input w-auto min-w-36" aria-label="Lọc brand (chỉ lọc công việc)" title="Chỉ lọc công việc, không ảnh hưởng bảng công" data-autosubmit>
+    <select name="brand" class="input w-auto min-w-32" aria-label="Lọc brand (chỉ lọc công việc)" data-autosubmit>
       {{#each brandOptions}}<option value="{{value}}" {{selected value @root.brand}}>{{label}}</option>{{/each}}
     </select>
   </div>
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>
-
-{{!-- Bảng chấm công tuần (public/js/attendance.js): hàng = nhân viên, cột = T2–CN; bấm ô để chấm công / nhập giờ --}}
-{{> payroll-attendance mode="week" day=date days=att.days focus=att.focus filterName=att.filterName}}
 
 {{!-- Điện thoại: việc quá hạn nằm cuối trang nên nhắc một dòng ở trên để không bị quên --}}
 {{#if overdue.length}}
