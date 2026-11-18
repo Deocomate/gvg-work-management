@@ -6,12 +6,21 @@
       <a href="/today/sheet?date={{date}}&range=week">Phiếu tuần (T2–CN)</a>
     </div>
   </details>
-  <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
+  <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}{{#if tab.prefix}}&title={{urlEncode tab.prefix}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
 {{/page-header}}
+
+{{!-- Tab loại việc: Tất cả · Lịch đăng · Lịch quay · Kịch bản · Up website (lọc lịch tuần, việc trong ngày, việc quá hạn).
+      Loại việc theo Plan (quay/đăng) hoặc chữ đầu tên việc: "Đăng…", "Quay…", "Kịch bản…", "Up website…" --}}
+<nav class="kind-tabs" aria-label="Loại việc">
+  {{#each tabs}}
+    <a href="/today?date={{@root.date}}{{query}}" class="kind-tab{{#if active}} is-on{{/if}}"{{#if active}} aria-current="page"{{/if}}><span aria-hidden="true">{{icon}}</span>{{label}}</a>
+  {{/each}}
+</nav>
 
 {{!-- Thanh công cụ: tuần đang xem, chuyển tuần, chọn ngày; lọc người làm (lịch việc + bảng công) và brand (chỉ lịch việc) --}}
 {{!-- Luôn một dòng: ô lọc co lại khi màn hẹp; điện thoại ẩn ô chọn ngày (bấm ngày trên lịch tuần để chọn) --}}
 <form method="get" action="/today" class="toolbar toolbar-row mb-4" aria-label="Chọn tuần và lọc">
+  {{#if tab.value}}<input type="hidden" name="tab" value="{{tab.value}}">{{/if}}
   <div class="flex shrink-0 items-center gap-1">
     <a href="/today?date={{week.prev}}{{userQuery}}" class="btn-secondary btn-sm h-9.5 w-9.5 px-0" aria-label="Tuần trước" title="Tuần trước">‹</a>
     <span class="hidden px-1 text-center text-sm font-semibold whitespace-nowrap tabular-nums text-ink sm:inline">{{week.label}}</span>
@@ -76,7 +85,7 @@
         </details>
       {{/if}}
     {{else}}
-      {{> empty-state title="Không có việc nào trong ngày này" text="Thêm việc để cả nhóm biết cần làm gì." actionHref=(concat "/tasks/new?date=" date) actionLabel="+ Thêm việc"}}
+      {{> empty-state title="Không có việc nào trong ngày này" text="Thêm việc để cả nhóm biết cần làm gì." actionHref=(concat "/tasks/new?date=" date "&title=" (urlEncode tab.prefix)) actionLabel="+ Thêm việc"}}
     {{/if}}
   </section>
 

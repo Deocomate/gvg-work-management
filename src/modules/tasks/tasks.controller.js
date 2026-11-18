@@ -55,7 +55,8 @@ export function newForm(req, res) {
   const brand = parseBrandFilter(req.query.brand);
   const assignee = Number(req.query.user) || (service.isManager(req.user) ? '' : req.user.id);
   return renderForm(req, res, {
-    values: { date, assignee_id: assignee, brand: brand === NO_BRAND ? '' : brand, priority: 'normal', repeat: 'none', back: req.query.back },
+    // ?title=: điền sẵn tên việc (VD tab "Kịch bản" trên Lịch làm việc → "Kịch bản: ")
+    values: { date, assignee_id: assignee, brand: brand === NO_BRAND ? '' : brand, title: String(req.query.title || '').slice(0, 60), priority: 'normal', repeat: 'none', back: req.query.back },
   });
 }
 

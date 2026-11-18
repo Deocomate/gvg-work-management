@@ -1,15 +1,38 @@
-// Dữ liệu cho 2 màn hình xem việc: "Hôm nay" (dòng thời gian) và "Lịch" (theo tháng).
-import { addDays, addMonths, isISODate, isISOMonth, monthGrid, nowTimeHM, todayISO, weekDays } from '#lib/dates.js';
+// Dữ liệu cho trang Lịch làm việc (/today: lịch tuần + chi tiết ngày) và phiếu công việc in.
+import { addDays, isISODate, isISOMonth, nowTimeHM, todayISO, weekDays } from '#lib/dates.js';
 import * as tasksRepo from '#modules/tasks/tasks.repo.js';
 import { isManager } from '#modules/tasks/tasks.service.js';
-
-const CHIPS_PER_DAY = 3;
 
 export const parseDate = (value) => (isISODate(value) ? value : todayISO());
 export const parseMonth = (value) => (isISOMonth(value) ? value : todayISO().slice(0, 7));
 
 /** Giá trị ?user= để quản lý xem việc của tất cả mọi người. */
 export const ALL_USERS = 'all';
+
+// Loại việc: việc từ Plan theo plan_kind, việc khác đoán theo chữ đầu tên việc ("Quay …", "Kịch bản: …", "Up website …").
+const KIND_PREFIXES = [
+  ['shoot', ['quay']],
+  ['edit', ['dựng', 'edit']],
+  ['post', ['đăng']],
+  ['script', ['kịch bản', 'viết kịch bản', 'kb ', 'kb:']],
+  ['web', ['up website', 'up web', 'website', 'web ', 'web:']],
+];
+export function taskKindKey(task) {
+  if (task.plan_kind === 'shoot' || task.plan_kind === 'post') return task.plan_kind;
+  const head = String(task.title || '').replace(/^[^\p{L}]+/u, '').toLowerCase();
+  return KIND_PREFIXES.find(([, words]) => words.some((w) => head.startsWith(w)))?.[0] ?? 'other';
+}
+
+// Tab trên trang Lịch làm việc: '' = tất cả việc, còn lại chỉ một loại việc
+export const TABS = [
+  { value: '', label: 'Tất cả việc', icon: '🗂️' },
+  { value: 'dang', label: 'Lịch đăng', icon: '📤', kind: 'post', prefix: 'Đăng: ' },
+  { value: 'quay', label: 'Lịch quay', icon: '🎬', kind: 'shoot', prefix: 'Quay: ' },
+  { value: 'kich-ban', label: 'Kịch bản', icon: '✍️', kind: 'script', prefix: 'Kịch bản: ' },
+  { value: 'web', label: 'Up website', icon: '🌐', kind: 'web', prefix: 'Up website: ' },
+];
+export const parseTab = (value) => TABS.find((t) => t.value && t.value === value) ?? TABS[0];
+const byKind = (kind) => (kind ? (list) => list.filter((t) => taskKindKey(t) === kind) : (list) => list);
 
 /**
  * Xem việc của ai (null = tất cả mọi người).
@@ -65,10 +88,11 @@ export function mergeGroups(tasks) {
 }
 
 // perPerson: giữ mỗi người một bản (phiếu công việc); không thì xem cả nhóm sẽ gộp việc làm chung.
-export async function getDay({ date, assigneeId, brand = '', perPerson = false }) {
+export async function getDay({ date, assigneeId, brand = '', kind = '', perPerson = false }) {
   const today = todayISO();
   const now = nowTimeHM();
-  const merge = assigneeId || perPerson ? (list) => list : mergeGroups;
+  const only = byKind(kind);
+  const merge = assigneeId || perPerson ? only : (list) => mergeGroups(only(list));
   const [tasks, overdue] = await Promise.all([
     tasksRepo.listForDay({ date, assigneeId, brand }).then(merge),
     date === today ? tasksRepo.listOverdue({ beforeDate: today, assigneeId, brand }).then(merge) : [],
@@ -136,10 +160,10 @@ export async function getWeekSheet({ date }) {
 }
 
 /** 7 ngày (T2–CN) của tuần chứa `date`, mỗi ngày kèm danh sách việc — dải lịch tuần trên trang "Hôm nay". */
-export async function getWeek({ date, assigneeId, brand = '' }) {
+export async function getWeek({ date, assigneeId, brand = '', kind = '' }) {
   const days = weekDays(date);
   const today = todayISO();
-  const tasks = await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId, brand });
+  const tasks = byKind(kind)(await tasksRepo.listForRange({ from: days[0], to: days[6], assigneeId, brand }));
   const list = assigneeId ? tasks : mergeGroups(tasks);
 
   return {
@@ -160,37 +184,5 @@ export async function getWeek({ date, assigneeId, brand = '' }) {
     // Sang tuần trước/sau, giữ nguyên thứ đang chọn
     prev: addDays(date, -7),
     next: addDays(date, 7),
-  };
-}
-
-export async function getMonth({ month, assigneeId }) {
-  const weeks = monthGrid(month);
-  const today = todayISO();
-  const tasks = await tasksRepo.listForRange({ from: weeks[0][0], to: weeks.at(-1)[6], assigneeId });
-
-  const byDate = new Map();
-  for (const task of assigneeId ? tasks : mergeGroups(tasks)) byDate.set(task.date, [...(byDate.get(task.date) ?? []), task]);
-
-  const toCell = (date) => {
-    const list = byDate.get(date) ?? [];
-    const unfinished = list.filter((t) => t.status !== 'done').length;
-    return {
-      date,
-      day: Number(date.slice(8)),
-      inMonth: date.startsWith(month),
-      isToday: date === today,
-      total: list.length,
-      unfinished,
-      hasLate: date < today && unfinished > 0,
-      tasks: list.slice(0, CHIPS_PER_DAY),
-      more: Math.max(0, list.length - CHIPS_PER_DAY),
-    };
-  };
-
-  return {
-    weeks: weeks.map((week) => week.map(toCell)),
-    prev: addMonths(month, -1),
-    next: addMonths(month, 1),
-    thisMonth: today.slice(0, 7),
   };
 }

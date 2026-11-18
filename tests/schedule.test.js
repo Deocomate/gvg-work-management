@@ -57,10 +57,10 @@ test('việc hôm qua chưa xong được nhắc ở "Hôm nay"', async () => {
   assert.match(html, /Việc tồn hôm qua/);
 });
 
-test('lịch tháng hiện việc theo ngày và đánh dấu ngày còn việc trễ', async () => {
+test('trang Chấm công (thay lịch tháng): tiêu đề theo tháng, không còn lịch việc tháng', async () => {
   const html = (await hoa.get(`/calendar?month=${today.slice(0, 7)}`)).text;
-  assert.match(html, /Họp sáng/);
-  assert.match(html, /T2[\s\S]*CN/);
+  assert.match(html, new RegExp(`Chấm công tháng ${Number(today.slice(5, 7))}/${today.slice(0, 4)}`));
+  assert.doesNotMatch(html, /Họp sáng/);
   assert.ok((await hoa.get('/calendar?month=abc')).status === 200);
 });
 
@@ -91,8 +91,9 @@ test('quản lý mặc định thấy việc cả nhóm (khớp phiếu công vi
 test('trang Hôm nay có lịch cả tuần (T2–CN); bấm ngày khác vẫn thấy cả tuần, ngày đó được chọn', async () => {
   const html = (await hoa.get('/today')).text;
   assert.match(html, /T2[\s\S]*T3[\s\S]*T4[\s\S]*T5[\s\S]*T6[\s\S]*T7[\s\S]*CN/);
-  // ô tuần: tên + giờ (+ loại việc, trạng thái); bấm ngày → chi tiết ngày bên dưới
-  assert.match(html, /class="wk-task"[^>]*title="Họp sáng · 08:00/);
+  // thẻ việc kiểu "Lịch đăng": tên + giờ, ô tick Xong; bấm ngày → chi tiết ngày bên dưới
+  assert.match(html, /class="wk-title"[^>]*title="Họp sáng · 08:00/);
+  assert.match(html, /aria-label="Tick xong: Họp sáng"/);
   assert.match(html, new RegExp(`href="/today\\?date=${today}#day-tasks"[^>]*aria-current="date"`));
   // Chọn một ngày khác trong tuần: lịch tuần vẫn hiện việc hôm nay, chi tiết là ngày được chọn
   const other = weekDays(today).find((d) => d !== today);
@@ -212,4 +213,24 @@ test('lưới lịch bắt đầu Thứ 2, đủ tuần', () => {
   assert.equal(weeks[0][0], '2026-09-28');
   assert.ok(weeks.every((w) => w.length === 7));
   assert.equal(weeks.at(-1)[6], '2026-11-01');
+});
+
+test('tab loại việc: Lịch đăng · Lịch quay · Kịch bản · Up website lọc theo chữ đầu tên việc', async () => {
+  const date = addDays(today, 60);
+  for (const title of ['Kịch bản: Ngói chùa Bái Đính', 'Up website: trang sản phẩm', 'Quay: Mở lò', 'Đăng: Bình hút lộc', 'Họp tổ'])
+    await assign({ title, date });
+  const page = async (tab) => (await hoa.get(`/today?date=${date}${tab ? `&tab=${tab}` : ''}`)).text;
+  const all = await page('');
+  for (const label of ['Tất cả việc', 'Lịch đăng', 'Lịch quay', 'Kịch bản', 'Up website']) assert.match(all, new RegExp(`class="kind-tab[^"]*"[^>]*>.*${label}</a>`));
+  assert.match(all, /Họp tổ/);
+  const cases = { 'kich-ban': 'Ngói chùa Bái Đính', web: 'trang sản phẩm', quay: 'Mở lò', dang: 'Bình hút lộc' };
+  for (const [tab, title] of Object.entries(cases)) {
+    const html = await page(tab);
+    assert.match(html, new RegExp(title), tab);
+    assert.doesNotMatch(html, /Họp tổ/, tab);
+    for (const other of Object.values(cases).filter((t) => t !== title)) assert.doesNotMatch(html, new RegExp(other), `${tab} có ${other}`);
+  }
+  // Thêm việc ở tab Kịch bản -> tên việc điền sẵn "Kịch bản: "
+  assert.match(await page('kich-ban'), /href="\/tasks\/new\?[^"]*title=K%E1%BB%8Bch%20b%E1%BA%A3n%3A%20/);
+  assert.match((await admin.get('/tasks/new?title=K%E1%BB%8Bch%20b%E1%BA%A3n%3A%20')).text, /name="title"[^>]*value="Kịch bản: "/);
 });

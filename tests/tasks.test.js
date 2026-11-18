@@ -204,8 +204,11 @@ test('việc lặp lại Thứ 2–6 tạo đúng số ngày', async () => {
     repeat_until: '2026-11-15',
   });
   assert.equal(res.status, 302);
-  const cal = (await admin.get(`/calendar?month=2026-11&user=${minhId}`)).text;
-  assert.equal(cal.match(/Báo cáo sáng/g).length >= 10, true);
+  // Lịch tuần: 5 thẻ mỗi tuần (Thứ 2–6), 2 tuần
+  for (const week of ['2026-11-02', '2026-11-09']) {
+    const html = (await admin.get(`/today?date=${week}&user=${minhId}`)).text;
+    assert.equal(html.match(/class="wk-title"[^>]*>Báo cáo sáng</g).length, 5);
+  }
   // Thứ 7/CN không có việc (lịch tuần phía trên vẫn hiện các ngày Thứ 2–6).
   // Chọn ngày cuối tuần khác "hôm nay" vì test khác tạo việc cho hôm nay.
   const weekend = ['2026-11-07', '2026-11-08', '2026-11-14'].find((d) => d !== todayISO());
@@ -243,8 +246,11 @@ test('sửa việc + chọn lặp lại -> giữ việc cũ, thêm việc cho c�
     assert.match((await admin.get(`/today?date=${date}&user=${lanId}`)).text, /Họp giao ban/);
   }
   assert.match((await admin.get(`/today?date=2026-12-08&user=${lanId}`)).text, /Không có việc nào trong ngày này/);
-  const cal = (await admin.get(`/calendar?month=2026-12&user=${lanId}`)).text;
-  assert.equal(cal.match(/Họp giao ban/g).length >= 4, true);
+  let cards = 0;
+  for (const week of ['2026-12-07', '2026-12-14']) {
+    cards += (await admin.get(`/today?date=${week}&user=${lanId}`)).text.match(/class="wk-title"[^>]*>Họp giao ban</g).length;
+  }
+  assert.equal(cards, 4);
 });
 
 test('quy tắc lặp lại', () => {

@@ -1,6 +1,6 @@
-// Màn hình "Hôm nay" và "Lịch". Chỉ đọc dữ liệu; thao tác thật nằm ở module tasks.
+// Màn hình "Lịch làm việc" (/today) và "Chấm công" (/calendar). Chỉ đọc dữ liệu; thao tác thật nằm ở module tasks.
 import { BRANDS, NO_BRAND, brandInfo, parseBrandFilter } from '#lib/brands.js';
-import { todayISO } from '#lib/dates.js';
+import { addMonths, todayISO } from '#lib/dates.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { TASK_STATUSES } from '#modules/tasks/tasks.schema.js';
 import { canChangeStatus, canEdit, isManager, taskLinks } from '#modules/tasks/tasks.service.js';
@@ -8,27 +8,22 @@ import * as service from './schedule.service.js';
 
 const statusInfo = Object.fromEntries(TASK_STATUSES.map((s) => [s.value, s]));
 const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-const WEEK_CELL_LIMIT = 4; // số việc tối đa mỗi ô lịch tuần (trang Lịch làm việc), còn lại "+N việc khác"
+const WEEK_CELL_LIMIT = 6; // số thẻ việc tối đa mỗi cột ngày (trang Lịch làm việc), còn lại "+N việc khác"
 
-// Loại việc hiện trên lịch tuần: việc từ Plan theo plan_kind, việc khác đoán theo chữ đầu tên việc.
+// Nhãn loại việc trên thẻ lịch tuần (loại việc đoán ở service.taskKindKey)
 const TASK_KINDS = {
   shoot: { label: 'Quay', badge: 'kind-shoot' },
   edit: { label: 'Dựng', badge: 'kind-edit' },
   post: { label: 'Đăng', badge: 'kind-post' },
+  script: { label: 'Kịch bản', badge: 'kind-script' },
+  web: { label: 'Website', badge: 'kind-web' },
   other: { label: 'Khác', badge: 'kind-other' },
 };
-export function taskKind(task) {
-  if (task.plan_kind === 'shoot' || task.plan_kind === 'post') return TASK_KINDS[task.plan_kind];
-  const head = String(task.title || '').replace(/^[^p{L}]+/u, '').toLowerCase();
-  if (head.startsWith('quay')) return TASK_KINDS.shoot;
-  if (head.startsWith('dựng') || head.startsWith('edit')) return TASK_KINDS.edit;
-  if (head.startsWith('đăng')) return TASK_KINDS.post;
-  return TASK_KINDS.other;
-}
-// Tên việc trên ô tuần: bỏ tiền tố "🎬 Quay: " / "📤 Đăng: " vì đã có nhãn loại việc
-const shortTitle = (title) => String(title || '').replace(/^S*s*(Quay|Đăng|Dựng)s*:s*/u, '');
+export const taskKind = (task) => TASK_KINDS[service.taskKindKey(task)];
+// Tên việc trên thẻ tuần: bỏ tiền tố "🎬 Quay: " / "📤 Đăng: " / "Kịch bản: " … vì đã có nhãn loại việc
+const shortTitle = (title) => String(title || '').replace(/^[^\p{L}]*(Quay|Đăng|Dựng|Kịch bản|Up website)\s*:\s*/iu, '');
 // "Nguyễn Thị Hoa, Lê Văn Nam" → "Hoa, Nam" (tên gọi = chữ cuối)
-const givenNames = (names) => String(names || '').split(',').map((n) => n.replace(/(xong)/, '').trim().split(/s+/).pop()).filter(Boolean).join(', ');
+const givenNames = (names) => String(names || '').split(',').map((n) => n.replace(/\(xong\)/, '').trim().split(/\s+/).pop()).filter(Boolean).join(', ');
 const ddmm = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const OVERDUE_VISIBLE = 3; // số việc tồn hiện sẵn, còn lại gập lại
 
@@ -49,9 +44,15 @@ async function viewerContext(req) {
   const selectedUser = manager ? (assigneeId ?? service.ALL_USERS) : '';
   const brand = parseBrandFilter(req.query.brand);
   const brandQuery = brand ? `&brand=${encodeURIComponent(brand)}` : '';
+  const tab = service.parseTab(req.query.tab);
+  const tabQuery = tab.value ? `&tab=${tab.value}` : '';
+  const userPart = manager ? `&user=${selectedUser}` : '';
   return {
     brand,
     brandQuery,
+    tab,
+    // Thanh tab: giữ người + brand đang lọc khi đổi tab
+    tabs: service.TABS.map((t) => ({ ...t, query: userPart + brandQuery + (t.value ? `&tab=${t.value}` : ''), active: t.value === tab.value })),
     brandOptions: [
       { value: '', label: 'Tất cả brand' },
       ...BRANDS.map((b) => ({ value: b.value, label: b.label })),
@@ -64,17 +65,21 @@ async function viewerContext(req) {
     allUsers: service.ALL_USERS,
     selectedUser,
     // Giữ lựa chọn nhân viên (quản lý) + brand khi chuyển ngày/tuần/tháng
-    userQuery: (manager ? `&user=${selectedUser}` : '') + brandQuery,
+    userQuery: userPart + brandQuery + tabQuery,
   };
 }
 
 const withStatus = (task) => ({ ...task, statusInfo: statusInfo[task.status], brandInfo: brandInfo(task.brand) });
-// Ô lịch tuần: thêm loại việc, tên ngắn, tên người phụ trách (khi xem cả nhóm)
-const weekCell = (task) => ({
+// Thẻ việc trên lịch tuần (kiểu "Lịch đăng"): màu theo brand, loại việc, tên ngắn, người làm, ô tick Xong, chữ cam khi quá hạn
+const weekCell = (user, today) => (task) => ({
   ...withStatus(task),
+  canStatus: canChangeStatus(user, task),
+  brandKey: brandInfo(task.brand)?.short.toLowerCase() ?? 'none',
   kind: taskKind(task),
   shortTitle: shortTitle(task.title),
   who: givenNames([task.assignee_name, task.coworkers].filter(Boolean).join(', ')),
+  isDone: task.status === 'done',
+  isLate: task.status !== 'done' && task.date < today,
 });
 const withLinks = (task) => ({ ...task, linkList: taskLinks(task) });
 
@@ -83,8 +88,8 @@ export async function today(req, res) {
   const date = service.parseDate(req.query.date);
   const viewer = await viewerContext(req);
   const [day, week] = await Promise.all([
-    service.getDay({ date, assigneeId: viewer.assigneeId, brand: viewer.brand }),
-    service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand }),
+    service.getDay({ date, assigneeId: viewer.assigneeId, brand: viewer.brand, kind: viewer.tab.kind }),
+    service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand, kind: viewer.tab.kind }),
   ]);
   const withRights = decorate(req.user);
   const overdue = day.overdue.map((t) => ({ ...withRights(t), shortDate: ddmm(t.date) }));
@@ -96,7 +101,7 @@ export async function today(req, res) {
     isSelected: d.date === date,
     tasks: d.tasks.map(withStatus),
     // Mỗi ô chỉ liệt kê vài việc đầu cho lịch tuần gọn; còn lại "+N việc khác" mở chi tiết ngày đó bên dưới
-    shown: d.tasks.slice(0, WEEK_CELL_LIMIT).map(weekCell),
+    shown: d.tasks.slice(0, WEEK_CELL_LIMIT).map(weekCell(req.user, day.today)),
     more: Math.max(0, d.tasks.length - WEEK_CELL_LIMIT),
   }));
   const first = days[0].date;
@@ -151,29 +156,21 @@ async function weekSheet(res, date) {
   });
 }
 
+// Trang "Chấm công" (/calendar): bảng công tháng, mỗi nhân viên một tab — nơi duy nhất chấm công / nhập giờ.
+// Lịch việc theo tháng đã bỏ: việc xem ở Lịch làm việc (tuần).
 export async function calendar(req, res) {
   const month = service.parseMonth(req.query.month);
-  const viewer = await viewerContext(req);
-  const data = await service.getMonth({ month, assigneeId: viewer.assigneeId });
+  const today = todayISO();
   const [year, monthNumber] = month.split('-');
-  // Hai tab của trang Tháng: lịch việc (mặc định) và bảng công tháng (?view=cong, mỗi nhân viên một tab)
-  const view = req.query.view === 'cong' && req.app.locals.payrollEnabled ? 'cong' : 'viec';
-  const viewQuery = view === 'cong' ? '&view=cong' : '';
-
   res.render('schedule/calendar', {
-    title: view === 'cong' ? 'Bảng công tháng' : 'Lịch công việc',
-    subtitle: view === 'cong' ? 'Bảng công: chọn người, bấm một ngày để chấm công / nhập giờ' : 'Bấm vào một ngày để xem chi tiết',
-    view,
-    viewQuery,
-    today: todayISO(),
+    title: 'Chấm công',
+    subtitle: 'Chọn người, bấm một ngày để chấm công / nhập giờ',
+    today,
     attFocus: String(req.query.att || '').slice(0, 40),
-    ...viewer,
-    ...data,
     month,
-    monthLabel: `Tháng ${Number(monthNumber)}/${year}`,
-    weekdayLabels: WEEKDAY_LABELS,
-    weeks: data.weeks.map((week) =>
-      week.map((cell) => ({ ...cell, tasks: cell.tasks.map(withStatus) })),
-    ),
+    prev: addMonths(month, -1),
+    next: addMonths(month, 1),
+    thisMonth: today.slice(0, 7),
+    monthLabel: `Chấm công tháng ${Number(monthNumber)}/${year}`,
   });
 }

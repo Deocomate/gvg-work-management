@@ -39,8 +39,8 @@ test('trang Lương: mỗi tab một trang trong khung app chính, nhúng đúng
   // Báo cáo 12 tháng là tab riêng; không còn tab nhập chấm công trong Lương
   assert.match((await agent.get('/luong/bao-cao')).text, /tabs(=|&#x3D;)bao"/);
   assert.doesNotMatch(page.text, /href="\/luong\/cham-cong"/);
-  // link chấm công cũ → Tháng › Bảng công
-  assert.equal((await agent.get('/luong/cham-cong')).headers.location, '/calendar?view=cong');
+  // link chấm công cũ → trang Chấm công
+  assert.equal((await agent.get('/luong/cham-cong')).headers.location, '/calendar');
   // tab của nhân viên → về tab đầu; link cũ Cài đặt lương → Thiết lập
   assert.equal((await agent.get('/luong/cua-toi')).headers.location, '/luong');
   assert.equal((await agent.get('/account/luong')).headers.location, '/luong/thiet-lap');
@@ -104,18 +104,19 @@ test('sai mật khẩu bị từ chối', async () => {
   assert.equal(res.status, 403);
 });
 
-test('chấm công chỉ ở Tháng › Bảng công khi phần Lương đã bật; trang Lịch làm việc không có bảng công', async () => {
+test('chấm công chỉ ở trang Chấm công khi phần Lương đã bật; trang Lịch làm việc không có bảng công', async () => {
   const { app, agent } = await setup();
   await loginAsAdmin(agent);
-  assert.doesNotMatch((await agent.get('/calendar?view=cong')).text, /data-att-root/); // chưa bật thì không có gì
+  const off = (await agent.get('/calendar')).text;
+  assert.doesNotMatch(off, /data-att-root/); // chưa bật thì chỉ báo chưa bật
+  assert.match(off, /Chưa bật phần Chấm công/);
   app.locals.payrollEnabled = true;
   const today = await agent.get('/today');
   assert.doesNotMatch(today.text, /data-att-root/);
   assert.doesNotMatch(today.text, /attendance\.js/);
-  // Trang Tháng: tab Lịch việc (mặc định) và tab Bảng công (lưới tháng, mỗi nhân viên một tab)
-  const cal = await agent.get('/calendar');
-  assert.doesNotMatch(cal.text, /data-att-root/);
-  assert.match(cal.text, /href="\/calendar\?month(=|&#x3D;)\d{4}-\d{2}&amp;view(=|&#x3D;)cong/);
+  // Menu "Chấm công" (/calendar) vào thẳng bảng công tháng; link cũ ?view=cong vẫn chạy
+  assert.match(today.text, /href="\/calendar"[^>]*>\s*Chấm công/);
+  assert.match((await agent.get('/calendar')).text, /data-att-root/);
   const cong = await agent.get('/calendar?view=cong&month=2026-11');
   assert.match(cong.text, /data-att-root data-selected="\d{4}-\d{2}-\d{2}"/);
   assert.match(cong.text, /\/js\/attendance\.js/);

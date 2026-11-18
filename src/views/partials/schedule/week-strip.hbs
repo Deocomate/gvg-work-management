@@ -1,6 +1,6 @@
 {{!-- Lịch việc 7 ngày (T2–CN) của tuần đang xem — vùng nội dung chính của trang Lịch làm việc.
-      Máy tính: mỗi ô liệt kê vài việc đầu (shown: tên tối đa 2 dòng, giờ, loại việc, brand, người làm, trạng thái) + "+N việc khác".
-      Bấm tên ngày → chọn ngày (chi tiết bên dưới); bấm một việc → mở đầy đủ việc đó trong chi tiết ngày.
+      Máy tính: mỗi cột ngày là các thẻ việc kiểu "Lịch đăng": nền + vạch màu theo brand, nhãn brand/loại việc, tên việc,
+      giờ + người làm, ô tick "Xong" (bỏ tick = mở lại). Chữ cam: quá hạn mà chưa tick. Bấm tên việc → mở đầy đủ ở chi tiết ngày.
       Điện thoại: chỉ thứ, ngày và số việc; bấm để xem danh sách bên dưới.
       Dùng: {{> schedule/week-strip days=week.days selected=date}} --}}
 <section class="card mb-5 overflow-hidden" aria-label="Lịch việc trong tuần">
@@ -15,20 +15,39 @@
           {{#if tasks.length}}<span class="text-[11px] font-medium md:hidden {{#if hasLate}}text-bad-300{{else if unfinished}}text-sun-300{{else}}text-ok-300{{/if}}">{{tasks.length}} việc</span>{{/if}}
         </a>
         {{#if tasks.length}}
-          <ul class="hidden min-w-0 space-y-1.5 px-1.5 pb-2 md:block">
+          <ul class="hidden min-w-0 space-y-2 px-1.5 pb-2 md:block">
             {{#each shown}}
-              <li>
-                <a href="/today?date={{../date}}{{@root.userQuery}}#task-{{id}}" class="wk-task{{#if (eq status 'done')}} is-done{{/if}}"
-                   title="{{title}}{{#if start_time}} · {{start_time}}{{/if}}{{#if who}} · {{who}}{{/if}} · {{statusInfo.label}}">
-                  <span class="line-clamp-2 text-[13px] font-medium leading-snug break-words text-ink">{{shortTitle}}</span>
-                  <span class="mt-1 flex flex-wrap items-center gap-1 text-[10px] leading-none">
-                    {{#if start_time}}<span class="tabular-nums text-ink-soft">{{start_time}}</span>{{/if}}
-                    <span class="kind {{kind.badge}}">{{kind.label}}</span>
-                    {{#if brandInfo}}<span class="{{brandInfo.badge}} px-1.5 py-0 text-[10px]" title="{{brandInfo.label}}">{{brandInfo.short}}</span>{{/if}}
-                    {{#if (and @root.showAssignee who)}}<span class="max-w-full truncate text-ink-soft">{{who}}</span>{{/if}}
-                    <span class="st-dot st-{{status}}">{{statusInfo.label}}</span>
+              <li class="wk-card b-{{brandKey}}{{#if isDone}} is-done{{/if}}{{#if isLate}} is-late{{/if}}">
+                {{#if (or brandInfo (ne kind.label 'Khác'))}}
+                <span class="flex flex-wrap items-center gap-1">
+                  {{#if brandInfo}}<span class="wk-tag" title="{{brandInfo.label}}">{{brandInfo.label}}</span>{{/if}}
+                  {{#if (ne kind.label 'Khác')}}<span class="kind {{kind.badge}} text-[10px] leading-none">{{kind.label}}</span>{{/if}}
+                </span>
+                {{/if}}
+                <a href="/today?date={{../date}}{{@root.userQuery}}#task-{{id}}" class="wk-title"
+                   title="{{title}}{{#if start_time}} · {{start_time}}{{/if}}{{#if who}} · {{who}}{{/if}} · {{statusInfo.label}}{{#if isLate}} · quá hạn{{/if}}">{{shortTitle}}</a>
+                {{#if (or start_time (and @root.showAssignee who) (eq status 'doing'))}}
+                  <span class="flex flex-wrap items-center gap-x-1.5 text-[10px] leading-tight text-ink-soft">
+                    {{#if start_time}}<span class="tabular-nums">{{start_time}}</span>{{/if}}
+                    {{#if (and @root.showAssignee who)}}<span class="max-w-full truncate">{{who}}</span>{{/if}}
+                    {{#if (eq status 'doing')}}<span class="st-dot st-doing">Đang làm</span>{{/if}}
                   </span>
-                </a>
+                {{/if}}
+                {{#if canStatus}}
+                  <form method="post" action="/tasks/{{id}}/status">
+                    {{> form/csrf}}
+                    <input type="hidden" name="status" value="{{#if isDone}}todo{{else}}done{{/if}}">
+                    <input type="hidden" name="back" value="{{@root.back}}">
+                    {{#if isGroup}}<input type="hidden" name="group" value="1">{{/if}}
+                    <label class="wk-tick">
+                      <input type="checkbox" {{#if isDone}}checked{{/if}} data-autosubmit aria-label="{{#if isDone}}Bỏ tick xong{{else}}Tick xong{{/if}}: {{title}}">
+                      <span>Xong</span>
+                    </label>
+                    <noscript><button type="submit" class="btn-ghost btn-sm">Lưu</button></noscript>
+                  </form>
+                {{else if isDone}}
+                  <span class="wk-tick"><input type="checkbox" checked disabled aria-label="Đã xong"><span>Xong</span></span>
+                {{/if}}
               </li>
             {{/each}}
             {{#if more}}<li><a href="/today?date={{date}}{{@root.userQuery}}#day-tasks" class="block rounded-md px-1.5 py-1 text-xs font-medium text-brand-300 hover:bg-raised">+{{more}} việc khác</a></li>{{/if}}
@@ -37,4 +56,11 @@
       </div>
     {{/each}}
   </div>
+  <p class="hidden flex-wrap items-center gap-x-4 gap-y-1 border-t border-line px-3 py-2 text-[11px] text-ink-faint md:flex">
+    <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-vg"></span>Vũ Gia</span>
+    <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-gs"></span>GSXD</span>
+    <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-kl"></span>Klayy</span>
+    <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-none"></span>Chưa gắn brand</span>
+    <span class="text-orange-300 light:text-orange-700">Chữ cam: quá hạn mà chưa tick</span>
+  </p>
 </section>

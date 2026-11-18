@@ -17,7 +17,6 @@
 - [x] Đăng nhập (admin tạo từ ADMIN_EMAIL/ADMIN_PASSWORD; tự đăng ký khi ALLOW_SIGNUP=true)
 - [x] **Lịch làm việc** (`/today`, trang chủ, menu "Lịch làm việc"): thanh công cụ (khoảng ngày của tuần, ‹ ›, Về tuần này, chọn ngày, lọc người làm + brand, "+ Thêm việc", "Xuất phiếu ▾" phiếu ngày/tuần) → **lịch việc 7 ngày** (mỗi việc: tên tối đa 2 dòng, giờ, loại Quay/Dựng/Đăng/Khác, brand, người làm khi xem cả nhóm, trạng thái; tối đa 4 việc + "+N việc khác"; việc xong chỉ mờ đi, không gạch ngang; bấm việc mở đầy đủ ở chi tiết ngày `#task-<id>`) → chi tiết ngày đang chọn (việc đã xong gập lại) + cột "Quá hạn" (3 việc + "Xem tất cả"). Hôm nay = vòng tròn tím, ngày đang chọn = vạch xanh. Loại việc: việc từ Plan theo plan_kind, việc khác đoán theo chữ đầu tên (`taskKind` trong schedule.controller.js). Trang này KHÔNG có chấm công
 - [x] Mỗi tài khoản mặc định chỉ thấy việc của mình; quản lý chọn được nhân viên khác hoặc "Tất cả nhân viên" (`?user=all`)
-- [x] Ảnh nền xanh mờ cho toàn app (`public/img/bg.jpg`), thẻ hơi trong suốt
 - [x] Việc trong ngày (chi tiết ngày trên trang Lịch làm việc): dòng thời gian việc, tiến độ, đánh dấu đang diễn ra/trễ, nút Bắt đầu/Xong/Mở lại; việc quá hạn từ ngày trước ở cột phụ
 - [x] Lịch tháng (`/calendar`): việc theo từng ngày, chấm đỏ ngày đã qua còn việc chưa xong; bấm ngày để xem chi tiết
 - [x] Giao việc (`/tasks`): tên, ghi chú, người làm, ngày, giờ bắt đầu/kết thúc (trống = cả ngày), mức độ; Lặp lại / Không lặp lại — khi lặp thì chọn thứ bằng hàng nút tròn T2…CN (mô tả "Mỗi Thứ Hai"…), lặp tới ngày chọn (tối đa 92 ngày). Có cả ở form thêm và form sửa
@@ -33,7 +32,7 @@
   - Nút Mở / Sửa / Xoá của từng link chỉ là biểu tượng (rê chuột hiện chữ)
   - **Tìm kiếm** trong mọi thư mục theo tên, ghi chú, đường link, tên thư mục — gõ không dấu vẫn ra
   - **Xem trước** ngay trong app (cửa sổ nổi) cho link Google Drive (file, thư mục), Docs, Sheets, Slides, Forms, YouTube; link khác chỉ có nút "Mở ↗"
-- [x] Giao diện tối "Dusty Bloom" (mặc định) + tuỳ chọn giao diện sáng tím "Lavender" (nút ☀/☾ trên menu, nhớ theo từng máy); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
+- [x] Giao diện tối "Midnight" (mặc định: nền tím than, menu dải xanh–tím, nút chính xanh tím) + giao diện sáng "Mint" (nền xanh bạc hà, thẻ trắng, màu chính teal, nút chính và mục menu đang mở màu vàng) — đổi bằng nút ☀/☾ trên menu, nhớ theo từng máy. Thẻ việc trên lịch tuần là thẻ pastel theo brand. Màu nằm hết ở đầu `src/styles/app.css`; khung Lương nhúng theo cùng bảng màu qua khối `html.embed` trong `src/payroll/src/app.html` (đổi màu thì sửa cả hai); ô chọn ngày/giờ/danh sách tự vẽ (`public/js/pickers.js`), lựa chọn ngắn dùng nút bấm (`form/segmented`)
 - [x] Ngày lễ: tự bật 7 ngày trước lễ, chỉ còn **nhãn nhỏ** "<lễ> · còn N ngày" trên thanh menu (đã bỏ thẻ treo, đồ treo, emoji rơi và menu hắt màu để không rối quanh dữ liệu). Lễ: Năm mới, Tết (tới mùng 4), Valentine, 8/3, 30/4–1/5, 2/9, Trung thu, 20/10, Halloween, 20/11, Giáng sinh
 - [x] Data khách hàng (`/customers`, menu "Data khách hàng"): quản lý + nhân viên vai trò **Sale** (VD: chị Trang) xem/thêm/sửa/xoá. Bấm tên khách mở thẻ chi tiết, tải PNG/PDF. Trường: loại khách (cá nhân/doanh nghiệp), tên, ngày sinh, công ty + MST (khi là doanh nghiệp), SĐT, email, Zalo, Facebook, TikTok, kênh khác (mỗi kênh một ô), địa chỉ, nguồn khách, trạng thái chăm sóc (Mới → Đang tư vấn → Đã mua → Khách quen / Ngừng), người phụ trách, mặt hàng quan tâm, ghi chú, người nhập. Hoá đơn: mỗi lần mua thêm một hoá đơn (ngày, giá trị, file PDF/ảnh ≤10MB, ghi chú hoá đơn) ngay trong form khách; trang sửa khách liệt kê hoá đơn (mở file, xoá), danh sách khách hiện tổng giá trị + số hoá đơn. Tìm theo tên/SĐT/công ty/email/mặt hàng, lọc trạng thái/nguồn/phụ trách, đếm theo trạng thái. Chặn trùng số điện thoại
 - [x] Plan nội dung (`/plan`, menu "Nội dung" (tiêu đề trang "Nội dung", URL giữ `/plan`), mọi người dùng) — thay cho Google Sheet "Idea bank - Gốm Vũ Gia, Klayy & GSXD". 2 tab con:
@@ -96,6 +95,7 @@
 - Quảng cáo: chỉ quản lý (vai trò admin) xem — ban đầu giới hạn theo danh sách email, sau đổi thành mọi quản lý theo yêu cầu. Token Facebook/TikTok chỉ nằm trong biến môi trường, gửi qua header. "Kết quả" Facebook = tin nhắn mới + khách tiềm năng + lượt mua (lấy omni_purchase trước, không cộng trùng purchase); TikTok = `conversion` theo mục tiêu tối ưu. Tổng gộp FB + TikTok chỉ hiện khi cùng loại tiền.
 
 ## Nhật ký thay đổi
+- 2026-11-18 — Đổi theme: tối "Midnight" (tím than + xanh tím) và sáng "Mint" (xanh bạc hà + teal + nút vàng), thẻ việc pastel; khung Lương theo cùng bảng màu; bỏ ảnh nền.
 
 <!-- Mới nhất ở trên. Mỗi dòng: ngày — thay đổi — ai yêu cầu (nếu biết) -->
 - 2026-11-14 — Chấm công chuyển hẳn sang Tháng › Bảng công (tab từng nhân viên, lưới tháng, bấm ngày để chấm / nhập giờ); bỏ bảng công tuần khỏi trang Lịch làm việc. "Xem công" ở Lương mở đúng tháng + tab người đó.
