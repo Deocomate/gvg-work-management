@@ -221,7 +221,7 @@ test('tab loại việc: Lịch đăng · Lịch quay · Kịch bản · Up webs
     await assign({ title, date });
   const page = async (tab) => (await hoa.get(`/today?date=${date}${tab ? `&tab=${tab}` : ''}`)).text;
   const all = await page('');
-  for (const label of ['Tất cả việc', 'Lịch đăng', 'Lịch quay', 'Kịch bản', 'Up website']) assert.match(all, new RegExp(`class="kind-tab[^"]*"[^>]*>.*${label}</a>`));
+  for (const label of ['Tất cả việc', 'Lịch đăng', 'Lịch quay', 'Kịch bản', 'Up website']) assert.match(all, new RegExp(`class="kind-tab[^"]*"[^>]*>[\\s\\S]*?${label}</a>`));
   assert.match(all, /Họp tổ/);
   const cases = { 'kich-ban': 'Ngói chùa Bái Đính', web: 'trang sản phẩm', quay: 'Mở lò', dang: 'Bình hút lộc' };
   for (const [tab, title] of Object.entries(cases)) {

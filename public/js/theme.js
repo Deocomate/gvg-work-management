@@ -1,14 +1,22 @@
 // Chế độ sáng/tối. Nạp trong <head> (không defer) để đặt data-theme trước khi vẽ trang, tránh nháy màu.
-// Mặc định là tối; lựa chọn lưu trong localStorage của từng máy.
+// Mặc định theo hệ thống (máy đang để tối thì tối); không biết hệ thống thì sáng.
+// Ai bấm ☀/☾ thì lựa chọn đó lưu trong localStorage của máy và luôn được ưu tiên.
+// (Khung Lương đọc theo đúng quy tắc này — hostTheme() trong src/payroll/src/app.html.)
 const THEME_KEY = 'theme';
 const THEME_COLORS = { dark: '#0d1514', light: '#f3ecfb' };
+const systemDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+function savedTheme() {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    return value === 'light' || value === 'dark' ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 function readTheme() {
-  try {
-    return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
-  } catch {
-    return 'dark';
-  }
+  return savedTheme() || (systemDark && systemDark.matches ? 'dark' : 'light');
 }
 
 function applyTheme(theme) {
@@ -22,7 +30,12 @@ function applyTheme(theme) {
 
 applyTheme(readTheme());
 
-// <button data-theme-toggle> -> đổi sáng/tối.
+// Chưa ai chọn: đổi theo khi hệ thống chuyển sáng/tối.
+systemDark?.addEventListener?.('change', () => {
+  if (!savedTheme()) applyTheme(readTheme());
+});
+
+// <button data-theme-toggle> -> đổi sáng/tối và nhớ lựa chọn.
 document.addEventListener('click', (event) => {
   if (!event.target.closest('[data-theme-toggle]')) return;
   const next = readTheme() === 'light' ? 'dark' : 'light';

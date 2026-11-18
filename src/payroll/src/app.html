@@ -415,12 +415,12 @@ details.params[open]>summary::after{content:"▴"}
 <script>
 /* apply the saved theme (or the system one) before the first paint, so there is no light flash */
 /* ?embed=1&tabs=a,b: shown inside the Lịch công việc site (iframe). Only those tabs, no logo/theme button,
-   and the theme follows the host site's own setting (localStorage 'theme', dark unless 'light'). */
+   and the theme follows the host site's own setting (localStorage 'theme' if chosen, else the system setting, else light). */
 const EMBED=(()=>{const q=new URLSearchParams(location.search);return q.has('embed')?{tabs:(q.get('tabs')||'').split(',').filter(Boolean)}:null})();
 /* host pages for each tab (src/modules/payroll/payroll.controller.js). With one tab per page, the tab bar lives in the
    host site; a button here that leads to another tab opens that host page instead. */
 const HOST_PATH={tong:'/luong/ky-luong',bao:'/luong/bao-cao',cc:'/calendar?view=cong',thuong:'/luong/thuong',hh:'/luong/hoa-hong',cd:'/luong/thiet-lap',luong:'/luong/cua-toi',tk:'/luong/tai-khoan'};
-const hostTheme=()=>{try{return localStorage.getItem('theme')==='light'?'light':'dark'}catch(e){return'dark'}};
+const hostTheme=()=>{let t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t==='light'||t==='dark')return t;return window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'};
 (function(){let t=null;try{t=localStorage.getItem('gvg-theme')}catch(e){}
   const mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');
   if(EMBED){document.documentElement.classList.add('embed');t=hostTheme()}

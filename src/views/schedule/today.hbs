@@ -13,7 +13,7 @@
       Loại việc theo Plan (quay/đăng) hoặc chữ đầu tên việc: "Đăng…", "Quay…", "Kịch bản…", "Up website…" --}}
 <nav class="kind-tabs" aria-label="Loại việc">
   {{#each tabs}}
-    <a href="/today?date={{@root.date}}{{query}}" class="kind-tab{{#if active}} is-on{{/if}}"{{#if active}} aria-current="page"{{/if}}><span aria-hidden="true">{{icon}}</span>{{label}}</a>
+    <a href="/today?date={{@root.date}}{{query}}" class="kind-tab{{#if active}} is-on{{/if}}"{{#if active}} aria-current="page"{{/if}}>{{> schedule/kind-icon name=icon}}{{label}}</a>
   {{/each}}
 </nav>
 
@@ -37,13 +37,6 @@
   </div>
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>
-
-{{!-- Điện thoại: việc quá hạn nằm cuối trang nên nhắc một dòng ở trên để không bị quên --}}
-{{#if overdue.length}}
-  <a href="#overdue" class="mb-4 flex items-center justify-between gap-2 rounded-xl border border-sun-400/40 bg-surface px-4 py-2.5 text-sm font-medium text-sun-300 lg:hidden">
-    <span>Quá hạn: {{overdue.length}} việc từ những ngày trước</span><span aria-hidden="true">↓</span>
-  </a>
-{{/if}}
 
 {{> schedule/week-strip days=week.days selected=date}}
 

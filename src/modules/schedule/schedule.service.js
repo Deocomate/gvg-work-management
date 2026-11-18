@@ -25,11 +25,11 @@ export function taskKindKey(task) {
 
 // Tab trên trang Lịch làm việc: '' = tất cả việc, còn lại chỉ một loại việc
 export const TABS = [
-  { value: '', label: 'Tất cả việc', icon: '🗂️' },
-  { value: 'dang', label: 'Lịch đăng', icon: '📤', kind: 'post', prefix: 'Đăng: ' },
-  { value: 'quay', label: 'Lịch quay', icon: '🎬', kind: 'shoot', prefix: 'Quay: ' },
-  { value: 'kich-ban', label: 'Kịch bản', icon: '✍️', kind: 'script', prefix: 'Kịch bản: ' },
-  { value: 'web', label: 'Up website', icon: '🌐', kind: 'web', prefix: 'Up website: ' },
+  { value: '', label: 'Tất cả việc', icon: 'all' },
+  { value: 'dang', label: 'Lịch đăng', icon: 'post', kind: 'post', prefix: 'Đăng: ' },
+  { value: 'quay', label: 'Lịch quay', icon: 'shoot', kind: 'shoot', prefix: 'Quay: ' },
+  { value: 'kich-ban', label: 'Kịch bản', icon: 'script', kind: 'script', prefix: 'Kịch bản: ' },
+  { value: 'web', label: 'Up website', icon: 'web', kind: 'web', prefix: 'Up website: ' },
 ];
 export const parseTab = (value) => TABS.find((t) => t.value && t.value === value) ?? TABS[0];
 const byKind = (kind) => (kind ? (list) => list.filter((t) => taskKindKey(t) === kind) : (list) => list);

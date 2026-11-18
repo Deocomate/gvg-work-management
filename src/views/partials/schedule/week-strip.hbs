@@ -1,6 +1,6 @@
 {{!-- Lịch việc 7 ngày (T2–CN) của tuần đang xem — vùng nội dung chính của trang Lịch làm việc.
       Máy tính: mỗi cột ngày là các thẻ việc kiểu "Lịch đăng": nền + vạch màu theo brand, nhãn brand/loại việc, tên việc,
-      giờ + người làm, ô tick "Xong" (bỏ tick = mở lại). Chữ cam: quá hạn mà chưa tick. Bấm tên việc → mở đầy đủ ở chi tiết ngày.
+      giờ + người làm, ô tick "Xong" (bỏ tick = mở lại). Việc quá hạn mà chưa tick có chữ cam (không ghi chú thích). Bấm tên việc → mở đầy đủ ở chi tiết ngày.
       Điện thoại: chỉ thứ, ngày và số việc; bấm để xem danh sách bên dưới.
       Dùng: {{> schedule/week-strip days=week.days selected=date}} --}}
 <section class="card mb-5 overflow-hidden" aria-label="Lịch việc trong tuần">
@@ -60,7 +60,5 @@
     <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-vg"></span>Vũ Gia</span>
     <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-gs"></span>GSXD</span>
     <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-kl"></span>Klayy</span>
-    <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-none"></span>Chưa gắn brand</span>
-    <span class="text-orange-300 light:text-orange-700">Chữ cam: quá hạn mà chưa tick</span>
-  </p>
+    <span class="inline-flex items-center gap-1.5"><span class="wk-swatch b-none"></span>Chưa gắn brand</span>  </p>
 </section>
