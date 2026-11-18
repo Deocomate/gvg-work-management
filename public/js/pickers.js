@@ -3,7 +3,7 @@
 // trình duyệt tắt JS thì vẫn dùng ô mặc định như cũ.
 //   <select>               -> danh sách xổ xuống (trên 7 lựa chọn có ô tìm nhanh, gõ không dấu cũng được)
 //   <select multiple>      -> như trên nhưng bấm để chọn/bỏ nhiều mục; data-placeholder là chữ khi chưa chọn gì
-//   <input type="date">    -> lịch tháng + nút "Hôm nay" / "Ngày mai". data-min-from="date": không chọn trước ngày ở ô "date"
+//   <input type="date">    -> lịch tháng + nút "Hôm nay" / "Ngày mai". data-min-from="date": không chọn trước ngày ở ô "date"; data-short: chỉ ghi dd/mm (ô nhỏ)
 //   <input type="time">    -> cột giờ + phút (bước 5 phút). data-after="start_time": tự gợi ý giờ kết thúc = bắt đầu + 1 tiếng
 (() => {
   const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -323,7 +323,7 @@
     }
     function render() {
       const day = parseISO(input.value);
-      picker.value.textContent = day ? formatDay(day) : placeholder;
+      picker.value.textContent = day ? (input.hasAttribute('data-short') ? `${pad(day.getDate())}/${pad(day.getMonth() + 1)}` : formatDay(day)) : placeholder;
       trigger.classList.toggle('is-placeholder', !day);
     }
     function choose(day) {

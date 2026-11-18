@@ -109,5 +109,7 @@ export async function applyTaskStatus(task, status) {
   if (!plan || plan.status === 'dropped') return;
   const next = status === 'done' ? 'posted' : plan.status === 'posted' ? 'selected' : plan.status;
   if (next !== plan.status) await repo.updateStatus(plan.id, next);
+  // Mở lại việc đăng = chưa đăng: bỏ tick Facebook / TikTok ở tab Lịch đăng.
+  if (status !== 'done') await repo.resetChannels(plan.id);
   await syncPlan(plan.id);
 }

@@ -1,0 +1,23 @@
+{{!-- Một mục tick trong checklist Up website (sản phẩm/dự án cần up hoặc việc cần hoàn thiện). Tick = lưu ngay; × = bỏ mục.
+      Dùng: {{> schedule/web-item this}} --}}
+<li class="wp-item{{#if done}} is-done{{/if}}">
+  <form method="post" action="/website/items/{{id}}" class="min-w-0 flex-1">
+    {{> form/csrf}}
+    <input type="hidden" name="back" value="{{@root.back}}">
+    <input type="hidden" name="done" value="{{#if done}}0{{else}}1{{/if}}">
+    <label class="flex cursor-pointer items-start gap-2">
+      <input type="checkbox" class="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer accent-ok-400" {{#if done}}checked{{/if}} data-autosubmit aria-label="{{text}}">
+      <span class="min-w-0">
+        <span class="wp-text">{{text}}</span>
+        {{#if meta}}<small class="block text-[11px] text-ink-faint">{{meta}}</small>{{/if}}
+        {{#if flag}}<em class="block text-[11px] not-italic text-orange-300 light:text-orange-700">{{flag}}</em>{{/if}}
+      </span>
+    </label>
+    <noscript><button type="submit" class="btn-ghost btn-sm">Lưu</button></noscript>
+  </form>
+  <form method="post" action="/website/items/{{id}}/delete" data-confirm="Bỏ &quot;{{text}}&quot; khỏi danh sách?">
+    {{> form/csrf}}
+    <input type="hidden" name="back" value="{{@root.back}}">
+    <button type="submit" class="wp-x" title="Bỏ khỏi danh sách" aria-label="Bỏ {{text}}">×</button>
+  </form>
+</li>

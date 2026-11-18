@@ -171,3 +171,17 @@ document.querySelectorAll('[data-auto-reload]').forEach((el) => {
   setInterval(check, 30_000);
   document.addEventListener('visibilitychange', check);
 });
+
+// <details data-open-on-hash id="…"> -> mở sẵn khi link trỏ tới nó (VD tick sản phẩm ở tab Up website xong quay lại đúng danh sách).
+{
+  const openFromHash = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const target = id && document.getElementById(id);
+    const details = target?.closest('details[data-open-on-hash]');
+    if (!details) return;
+    details.open = true;
+    target.scrollIntoView({ block: 'start' });
+  };
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
+}

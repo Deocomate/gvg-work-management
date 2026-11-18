@@ -1,0 +1,185 @@
+{{!-- Tab Up website trên trang Lịch làm việc: checklist launch website theo từng trang (không theo tuần).
+      Chọn site GSXD · THCeramics / GVG · Gốm Vũ Gia; mỗi trang: danh mục, hiện trạng, sản phẩm/dự án cần up,
+      việc cần hoàn thiện, tiến độ (= mục đã tick / tổng mục), người làm + deadline. Cột phải: tiến độ, thêm trang.
+      Dùng: {{> schedule/website}} (dữ liệu: web — schedule.controller websiteTab) --}}
+<div class="mb-4 flex flex-wrap items-center gap-2">
+  {{#each web.sites}}
+    <a href="/today?tab=web&site={{value}}" class="kind-tab{{#if active}} is-on{{/if}}"{{#if active}} aria-current="page"{{/if}}>
+      <span class="wk-swatch b-{{brandKey}}"></span>{{label}} <span class="tabular-nums opacity-80">{{percent}}%</span>
+    </a>
+  {{/each}}
+  <a href="{{web.site.url}}" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-sm">Mở {{web.site.short}} ↗</a>
+</div>
+
+<form method="get" action="/today" class="toolbar toolbar-row mb-4" aria-label="Lọc trang">
+  <input type="hidden" name="tab" value="web">
+  <input type="hidden" name="site" value="{{web.site.value}}">
+  <p class="shrink-0 text-sm text-ink-soft"><span class="font-semibold text-ink">{{web.summary.pages}}</span> trang · <span class="font-semibold text-ink">{{web.summary.done}}/{{web.summary.total}}</span> mục xong</p>
+  <div class="toolbar-filters">
+    <select name="cat" class="input w-full" aria-label="Lọc danh mục" data-autosubmit>
+      <option value="">Tất cả danh mục</option>
+      {{#each web.categories}}<option value="{{this}}" {{selected this @root.web.filters.category}}>{{this}}</option>{{/each}}
+    </select>
+    <select name="state" class="input w-full" aria-label="Lọc tiến độ" data-autosubmit>
+      <option value="">Mọi tiến độ</option>
+      <option value="todo" {{selected "todo" web.filters.state}}>Chưa xong</option>
+      <option value="done" {{selected "done" web.filters.state}}>Đã xong 100%</option>
+    </select>
+  </div>
+  <noscript><button type="submit" class="btn-secondary btn-sm">Lọc</button></noscript>
+</form>
+
+<div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+  <section class="min-w-0 space-y-3" aria-label="Các trang của {{web.site.short}}">
+    {{#each web.pages}}
+      <article id="page-{{id}}" class="card wp-page b-{{@root.web.site.brandKey}} scroll-mt-24 p-4">
+        <header class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="text-base font-semibold text-ink"><span class="mr-1 text-xs font-semibold tabular-nums text-ink-faint">{{stt}}.</span>{{title}}</h3>
+            {{#if url}}<a href="{{url}}" target="_blank" rel="noopener noreferrer" class="text-xs text-bloom-300 hover:underline">{{path}} ↗</a>{{/if}}
+          </div>
+          <div class="w-36 shrink-0 text-right">
+            <p class="text-sm"><b class="text-ink">{{percent}}%</b> <span class="text-xs text-ink-faint">· {{done}}/{{total}} mục</span></p>
+            <span class="bd-bar{{#if (eq percent 100)}} is-full{{/if}}"><span style="width: {{percent}}%"></span></span>
+          </div>
+        </header>
+
+        {{!-- Danh mục, hiện trạng, người làm, deadline: đổi là lưu ngay --}}
+        <form method="post" action="/website/pages/{{id}}" class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {{> form/csrf}}
+          <input type="hidden" name="back" value="{{@root.back}}">
+          <select name="category" class="input field-sm" aria-label="Danh mục" data-autosubmit>
+            {{#each @root.web.categories}}<option value="{{this}}" {{selected this ../category}}>{{this}}</option>{{/each}}
+          </select>
+          <select name="status" class="input field-sm" aria-label="Hiện trạng" data-autosubmit>
+            {{#each @root.web.statuses}}<option value="{{value}}" {{selected value ../status}}>{{label}}</option>{{/each}}
+          </select>
+          <select name="assignee_id" class="input field-sm" aria-label="Người làm" data-autosubmit>
+            <option value="">Chọn người làm</option>
+            {{#each @root.web.staffOptions}}<option value="{{value}}" {{selected value ../assignee_id}}>{{label}}</option>{{/each}}
+          </select>
+          <input type="date" name="deadline" value="{{deadline}}" class="input field-sm{{#if isLate}} text-orange-300{{/if}}" aria-label="Deadline" title="Deadline{{#if isLate}} (quá hạn){{/if}}" data-autosubmit>
+          <noscript><button type="submit" class="btn-secondary btn-sm">Lưu</button></noscript>
+        </form>
+
+        {{#if current_note}}
+          <p class="mt-3 text-sm text-ink-soft"><span class="{{statusInfo.badge}} mr-1">{{statusInfo.label}}</span>{{current_note}}</p>
+        {{else}}
+          <p class="mt-3"><span class="{{statusInfo.badge}}">{{statusInfo.label}}</span></p>
+        {{/if}}
+
+        {{#if products.length}}
+          <details id="items-{{id}}" class="wp-items mt-3 scroll-mt-24" data-open-on-hash>
+            <summary class="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <b class="text-ink">{{label.verb}} {{productsDone}}/{{products.length}} {{label.unit}}</b>
+              <span class="text-xs text-ink-faint">{{productsPercent}}%</span>
+              <span class="bd-bar w-28"><span style="width: {{productsPercent}}%"></span></span>
+              <span class="text-xs font-medium text-brand-300">Xem danh sách</span>
+            </summary>
+            <div class="mt-2">
+              <ul class="wp-grid">
+                {{#each products}}
+                  {{#if groupStart}}<li class="wp-group">{{groupStart}}</li>{{/if}}
+                  {{> schedule/web-item this}}
+                {{/each}}
+              </ul>
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <form method="post" action="/website/pages/{{id}}/items" class="flex min-w-0 flex-1 gap-2">
+                  {{> form/csrf}}
+                  <input type="hidden" name="back" value="{{@root.back}}">
+                  <input type="hidden" name="kind" value="item">
+                  <input name="text" class="input field-sm min-w-0 flex-1" placeholder="{{label.add}}" maxlength="300" required aria-label="{{label.add}}">
+                  <button type="submit" class="btn-secondary btn-sm">Thêm</button>
+                </form>
+                {{#if (lt productsDone products.length)}}
+                  <form method="post" action="/website/pages/{{id}}/done-all">
+                    {{> form/csrf}}
+                    <input type="hidden" name="back" value="{{@root.back}}">
+                    <button type="submit" class="btn-ghost btn-sm">Tick tất cả</button>
+                  </form>
+                {{/if}}
+              </div>
+            </div>
+          </details>
+        {{/if}}
+
+        <div class="mt-3">
+          {{#if products.length}}<p class="mb-1 text-xs font-semibold text-ink-faint">Việc cần hoàn thiện</p>{{/if}}
+          {{#if todos.length}}
+            <ul class="space-y-1">{{#each todos}}{{> schedule/web-item this}}{{/each}}</ul>
+          {{/if}}
+          <form method="post" action="/website/pages/{{id}}/items" class="mt-2 flex gap-2">
+            {{> form/csrf}}
+            <input type="hidden" name="back" value="{{@root.back}}">
+            <input type="hidden" name="kind" value="todo">
+            <input name="text" class="input field-sm min-w-0 flex-1" placeholder="+ Thêm việc cần làm…" maxlength="300" required aria-label="Thêm việc cần làm cho {{title}}">
+            <button type="submit" class="btn-secondary btn-sm">Thêm</button>
+          </form>
+        </div>
+
+        {{#if canDelete}}
+          <form method="post" action="/website/pages/{{id}}/delete" class="mt-2 text-right" data-confirm="Xoá trang &quot;{{title}}&quot; và mọi mục trong đó?">
+            {{> form/csrf}}
+            <input type="hidden" name="back" value="{{@root.back}}">
+            <button type="submit" class="btn-ghost btn-sm text-bad-300">Xoá trang</button>
+          </form>
+        {{/if}}
+      </article>
+    {{else}}
+      <p class="card p-4 text-sm text-ink-soft">Không có trang nào khớp bộ lọc.</p>
+    {{/each}}
+  </section>
+
+  <aside class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-1" aria-label="Tiến độ {{web.site.short}}">
+    <div class="card p-4">
+      <h2 class="bd-h">Tiến độ {{web.site.short}}</h2>
+      <p class="flex justify-between text-sm"><span>Toàn bộ website</span><b class="text-ink">{{web.summary.percent}}%</b></p>
+      <span class="bd-bar"><span style="width: {{web.summary.percent}}%"></span></span>
+      {{#if web.summary.products.total}}
+        <p class="mt-3 flex justify-between text-sm"><span>Sản phẩm đã up</span><b class="text-ink">{{web.summary.products.done}}/{{web.summary.products.total}}</b></p>
+      {{/if}}
+      {{#if web.summary.projects.total}}
+        <p class="mt-2 flex justify-between text-sm"><span>Dự án đã up ảnh</span><b class="text-ink">{{web.summary.projects.done}}/{{web.summary.projects.total}}</b></p>
+      {{/if}}
+    </div>
+
+    <div class="card p-4">
+      <h2 class="bd-h">Theo danh mục</h2>
+      <table class="bd-sum">
+        <thead><tr><th>Danh mục</th><th>Trang</th><th>Tiến độ</th></tr></thead>
+        <tbody>
+          {{#each web.summary.byCategory}}
+            <tr><td><a href="/today?tab=web&site={{@root.web.site.value}}&cat={{urlEncode name}}" class="hover:underline">{{name}}</a></td><td>{{pages}}</td><td>{{percent}}%</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card p-4">
+      <h2 class="bd-h">Theo người làm</h2>
+      {{#if web.summary.byPerson.length}}
+        <table class="bd-sum">
+          <thead><tr><th>Người</th><th>Trang</th><th>Tiến độ</th></tr></thead>
+          <tbody>{{#each web.summary.byPerson}}<tr><td>{{name}}</td><td>{{pages}}</td><td>{{percent}}%</td></tr>{{/each}}</tbody>
+        </table>
+      {{else}}
+        <p class="text-sm text-ink-faint">Chưa giao trang nào. Chọn người làm ở từng trang.</p>
+      {{/if}}
+    </div>
+
+    {{> schedule/manual-tasks}}
+
+    <form id="web-add" method="post" action="/website/pages" class="card scroll-mt-24 space-y-2 p-4">
+      <h2 class="bd-h">Thêm trang cho {{web.site.short}}</h2>
+      {{> form/csrf}}
+      <input type="hidden" name="back" value="{{back}}">
+      <input type="hidden" name="site" value="{{web.site.value}}">
+      <input name="title" class="input" placeholder="Tên trang (VD: Ngói vảy cá)" maxlength="120" required aria-label="Tên trang">
+      <input name="path" class="input" placeholder="/duong-dan (không bắt buộc)" maxlength="300" aria-label="Đường dẫn">
+      <select name="category" class="input" aria-label="Danh mục">
+        {{#each web.categories}}<option value="{{this}}" {{selected this @root.web.filters.category}}>{{this}}</option>{{/each}}
+      </select>
+      <button type="submit" class="btn-primary w-full">Thêm trang</button>
+    </form>
+  </aside>
+</div>

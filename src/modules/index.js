@@ -21,6 +21,7 @@ import adsRoutes from './ads/ads.routes.js';
 import accountRoutes from './account/account.routes.js';
 import { requireAdsAccess } from './ads/ads.service.js';
 import payrollRoutes from './payroll/payroll.routes.js';
+import websiteRoutes from './website/website.routes.js';
 // [vibe:module-imports]
 
 export const modules = [
@@ -36,6 +37,7 @@ export const modules = [
   { path: '/ads', router: adsRoutes, middleware: [requireAuth, requireAdsAccess] }, // chỉ quản lý
   { path: '/account', router: accountRoutes, middleware: [requireAuth] }, // Cài đặt > Tài khoản: mọi người
   { path: '/luong', router: payrollRoutes, middleware: [requireAuth] }, // Lương (nhúng app lương ở /luong/app); mọi người
+  { path: '/website', router: websiteRoutes, middleware: [requireAuth] }, // checklist Up website; mọi người
   // [vibe:module-mounts]
 ];
 

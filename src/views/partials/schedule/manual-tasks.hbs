@@ -1,0 +1,16 @@
+{{!-- Cột phải các tab Lịch đăng / Lịch quay / Kịch bản / Up website: việc giao tay cùng loại trong tuần
+      (tên việc bắt đầu bằng "Đăng: ", "Quay: ", "Kịch bản: ", "Up website: ") + nút giao việc mới điền sẵn tiền tố.
+      Dùng: {{> schedule/manual-tasks}} --}}
+<div class="card p-4">
+  <div class="mb-2 flex items-center justify-between gap-2">
+    <h2 class="bd-h mb-0">Việc giao thêm trong tuần</h2>
+    <a href="/tasks/new?date={{@root.date}}{{#if @root.selectedUser}}&user={{@root.selectedUser}}{{/if}}{{#if @root.brand}}&brand={{urlEncode @root.brand}}{{/if}}&title={{urlEncode @root.tab.prefix}}&back={{urlEncode @root.back}}" class="btn-ghost btn-sm">+ Giao việc</a>
+  </div>
+  {{#if @root.manualTasks.length}}
+    <ol class="divide-y divide-line">
+      {{#each @root.manualTasks}}{{> schedule/task-row this back=@root.back showAssignee=@root.showAssignee}}{{/each}}
+    </ol>
+  {{else}}
+    <p class="text-sm text-ink-faint">Chưa có việc nào tên bắt đầu bằng "{{@root.tab.prefix}}" trong tuần này.</p>
+  {{/if}}
+</div>

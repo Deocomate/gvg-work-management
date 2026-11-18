@@ -1,0 +1,51 @@
+{{!-- Thẻ nội dung trên tab Lịch đăng / Lịch quay / Kịch bản — mỗi tab một cấu trúc:
+      dang: tick Facebook + TikTok · quay: giờ, địa điểm, ngày đăng, tick Đã quay, link REF + Kịch bản
+      kich-ban: ngày đăng/quay, người viết, hạn kịch bản (chọn ngày khác được), tick Kịch bản xong, link Kịch bản + REF.
+      Dùng: {{> schedule/board-card this tab=@root.board.tab}} --}}
+<li id="plan-{{id}}" class="wk-card bd-card b-{{brandKey}}{{#if isDone}} is-done{{/if}}{{#if isLate}} is-late{{/if}}">
+  <span class="flex flex-wrap items-center gap-1">
+    <span class="wk-tag" title="{{brandInfo.label}}">{{brandInfo.label}}</span>
+    {{#if isLate}}<span class="text-[10px] font-semibold text-orange-300 light:text-orange-700">quá hạn</span>{{/if}}
+  </span>
+
+  {{#if (eq tab 'quay')}}
+    <span class="bd-meta">{{#if time}}<span class="tabular-nums">{{time}}</span>{{else}}Chưa có giờ{{/if}}{{#if location}} · {{location}}{{/if}}{{#if postDM}} · Đăng {{postDM}}{{/if}}</span>
+  {{else if (eq tab 'kich-ban')}}
+    {{#if (or postDM shootDM)}}<span class="bd-meta">{{#if postDM}}Đăng {{postDM}}{{/if}}{{#if (and postDM shootDM)}} · {{/if}}{{#if shootDM}}Quay {{shootDM}}{{/if}}</span>{{/if}}
+  {{/if}}
+
+  <a href="/plan/{{id}}?back={{urlEncode @root.back}}" data-plan-detail class="wk-title" title="{{title}}">{{title}}</a>
+
+  {{#if (eq tab 'dang')}}
+    <div class="bd-ticks">
+      {{#each channels}}{{> schedule/board-tick id=../id field=value label=label done=done canTick=../canTick}}{{/each}}
+    </div>
+  {{else if (eq tab 'quay')}}
+    <div class="bd-ticks">{{> schedule/board-tick id=id field="filmed" label="Đã quay" done=isDone canTick=canTick}}</div>
+    <div class="bd-links">
+      <span><b>REF:</b> {{#if refUrl}}<a href="{{refUrl}}" target="_blank" rel="noopener noreferrer" title="{{refUrl}}">Mở ↗</a>{{else}}<span class="bd-none">chưa có</span>{{/if}}</span>
+      <span><b>Kịch bản:</b> {{#if scriptUrl}}<a href="{{scriptUrl}}" target="_blank" rel="noopener noreferrer" title="{{scriptUrl}}">Mở ↗</a>{{else if scriptText}}<a href="/plan/{{id}}?back={{urlEncode @root.back}}" data-plan-detail>Trong Plan</a>{{else}}<span class="bd-none">chưa có</span>{{/if}}</span>
+    </div>
+  {{else}}
+    {{#if writer}}<span class="bd-meta">Viết: {{writer}}</span>{{/if}}
+    <div class="bd-deadline">
+      <span>Hạn</span>
+      {{#if canTick}}
+        <form method="post" action="/plan/{{id}}/script-deadline" class="flex items-center gap-1">
+          {{> form/csrf}}
+          <input type="hidden" name="back" value="{{@root.back}}#plan-{{id}}">
+          <input type="date" name="deadline" value="{{deadline}}" class="bd-date" data-short data-autosubmit aria-label="Hạn kịch bản: {{title}}">
+          {{#if customDeadline}}<button type="submit" name="reset" value="1" class="bd-reset" title="Về hạn tự động (theo ngày đăng)">Tự động</button>{{/if}}
+        </form>
+      {{else}}
+        <b class="tabular-nums">{{deadlineDM}}</b>
+      {{/if}}
+      {{#unless customDeadline}}<span class="bd-none">(tự động)</span>{{/unless}}
+    </div>
+    <div class="bd-ticks">{{> schedule/board-tick id=id field="script" label="Kịch bản xong" done=isDone canTick=canTick}}</div>
+    <div class="bd-links">
+      <span><b>Kịch bản:</b> {{#if scriptUrl}}<a href="{{scriptUrl}}" target="_blank" rel="noopener noreferrer" title="{{scriptUrl}}">Mở ↗</a>{{else if scriptText}}<a href="/plan/{{id}}?back={{urlEncode @root.back}}" data-plan-detail>Trong Plan</a>{{else}}<span class="bd-none">chưa có</span>{{/if}}</span>
+      <span><b>REF:</b> {{#if refUrl}}<a href="{{refUrl}}" target="_blank" rel="noopener noreferrer" title="{{refUrl}}">Mở ↗</a>{{else}}<span class="bd-none">chưa có</span>{{/if}}</span>
+    </div>
+  {{/if}}
+</li>

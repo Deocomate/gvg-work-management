@@ -678,6 +678,44 @@
       hover:border-line-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine-400;
   }
   .kind-tab.is-on { @apply border-brand-500 bg-brand-500 text-cream; }
+  /* Tab Lịch đăng / Lịch quay / Kịch bản: lịch tuần riêng từng tab (partials/schedule/board*.hbs).
+     Điện thoại: ngày xếp dọc, ngày trống ẩn; máy tính: 7 cột. */
+  .bd-day { @apply border-b border-line md:border-b-0; }
+  .bd-day.is-empty { @apply hidden md:flex; }
+  .bd-day .wk-head { @apply flex-row justify-start gap-2 hover:bg-transparent md:justify-center md:gap-1.5 md:px-1.5; }
+  /* Ngày dạng dd/mm: hôm nay là viên thuốc tím (không bóp thành vòng tròn) */
+  .bd-day .wk-num { @apply px-2 whitespace-nowrap; }
+  .bd-card { @apply scroll-mt-24 gap-1; }
+  .bd-meta { @apply text-[11px] leading-tight text-ink-soft; }
+  .bd-ticks { @apply mt-0.5 flex flex-wrap gap-x-3 gap-y-1; }
+  .wk-tick.is-on { @apply text-ok-300 light:text-ok-500; }
+  .bd-links { @apply flex flex-col gap-0.5 text-[11px] leading-tight text-ink-soft; }
+  .bd-links b { @apply font-semibold text-ink-faint; }
+  .bd-links a { @apply font-medium text-bloom-300 hover:underline; }
+  .bd-none { @apply text-[11px] text-ink-faint; }
+  .bd-deadline { @apply flex flex-wrap items-center gap-1 text-[11px] text-ink-soft; }
+  input.bd-date { @apply w-[7.5rem] rounded-md border border-line bg-surface px-1 py-0.5 text-[11px] text-ink; }
+  .bd-date .picker-trigger { @apply h-7 min-w-0 gap-1 rounded-md px-1.5 py-0 text-[11px] font-semibold; }
+  .bd-reset { @apply rounded-md px-1 py-0.5 text-[11px] font-medium text-brand-300 hover:bg-raised; }
+  .bd-h { @apply mb-2 text-sm font-semibold text-ink; }
+  .bd-sum { @apply w-full text-sm; }
+  .bd-sum th { @apply pb-1 text-left text-[11px] font-semibold text-ink-faint; }
+  .bd-sum th:not(:first-child), .bd-sum td:not(:first-child) { @apply text-right tabular-nums; }
+  .bd-sum td { @apply border-t border-line py-1.5 align-top; }
+  .bd-bar { @apply mt-1 block h-1.5 overflow-hidden rounded-full bg-canvas; }
+  .bd-bar > span { @apply block h-full rounded-full bg-sun-400; }
+  .bd-bar.is-full > span { @apply bg-ok-400; }
+  /* Tab Up website: thẻ trang (vạch trái màu site), lưới sản phẩm, mục tick */
+  .wp-page { border-left: 3px solid var(--wk); }
+  /* Ô nhỏ (danh mục, hiện trạng, người làm, deadline của từng trang); có bộ chọn tự vẽ thì thu nhỏ nút của nó */
+  input.field-sm, select.field-sm, .field-sm .picker-trigger { @apply h-8 min-w-0 px-2 py-1 text-xs; }
+  .wp-items > summary { @apply list-none rounded-lg bg-canvas/60 px-3 py-2 [&::-webkit-details-marker]:hidden; }
+  .wp-items[open] > summary span:last-child { @apply hidden; }
+  .wp-grid { @apply grid gap-x-4 gap-y-1 sm:grid-cols-2 2xl:grid-cols-3; }
+  .wp-group { @apply col-span-full mt-2 text-xs font-semibold text-ink-faint first:mt-0; }
+  .wp-item { @apply flex items-start gap-1 rounded-md px-1 py-0.5 text-sm hover:bg-raised; }
+  .wp-item.is-done .wp-text { @apply text-ink-faint line-through; }
+  .wp-x { @apply rounded px-1.5 text-base leading-none text-ink-faint hover:bg-bad-500/15 hover:text-bad-300; }
   .st-dot { @apply inline-flex items-center gap-1 before:h-1.5 before:w-1.5 before:rounded-full before:bg-current before:content-['']; }
   .st-todo { @apply text-ink-faint; }
   .st-doing { @apply text-sun-300; }

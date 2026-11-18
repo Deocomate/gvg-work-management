@@ -1,4 +1,5 @@
-{{#> page-header title=title subtitle=(concat "Tuần " week.label)}}
+{{#> page-header title=title subtitle=(default subtitle (concat "Tuần " week.label))}}
+  {{#unless web}}
   <details class="menu">
     <summary class="btn-secondary cursor-pointer" title="Phiếu công việc để in hoặc gửi cho mọi người">Xuất phiếu ▾</summary>
     <div class="menu-list">
@@ -6,11 +7,18 @@
       <a href="/today/sheet?date={{date}}&range=week">Phiếu tuần (T2–CN)</a>
     </div>
   </details>
+  {{/unless}}
+  {{#if addAction}}
+  <a href="{{addAction.href}}" class="btn-primary">{{addAction.label}}</a>
+  {{else}}
   <a href="/tasks/new?date={{date}}{{#if selectedUser}}&user={{selectedUser}}{{/if}}{{#if brand}}&brand={{urlEncode brand}}{{/if}}{{#if tab.prefix}}&title={{urlEncode tab.prefix}}{{/if}}&back={{urlEncode back}}" class="btn-primary">+ Thêm việc</a>
+  {{/if}}
 {{/page-header}}
 
-{{!-- Tab loại việc: Tất cả · Lịch đăng · Lịch quay · Kịch bản · Up website (lọc lịch tuần, việc trong ngày, việc quá hạn).
-      Loại việc theo Plan (quay/đăng) hoặc chữ đầu tên việc: "Đăng…", "Quay…", "Kịch bản…", "Up website…" --}}
+{{!-- Tab loại việc, mỗi tab một cấu trúc riêng:
+      Tất cả việc = lịch việc tuần + việc trong ngày + việc quá hạn (theo người làm);
+      Lịch đăng / Lịch quay / Kịch bản = lịch tuần nội dung Plan (partials/schedule/board.hbs);
+      Up website = checklist theo trang của từng site (partials/schedule/website.hbs). --}}
 <nav class="kind-tabs" aria-label="Loại việc">
   {{#each tabs}}
     <a href="/today?date={{@root.date}}{{query}}" class="kind-tab{{#if active}} is-on{{/if}}"{{#if active}} aria-current="page"{{/if}}>{{> schedule/kind-icon name=icon}}{{label}}</a>
@@ -19,6 +27,7 @@
 
 {{!-- Thanh công cụ: tuần đang xem, chuyển tuần, chọn ngày; lọc người làm (lịch việc + bảng công) và brand (chỉ lịch việc) --}}
 {{!-- Luôn một dòng: ô lọc co lại khi màn hẹp; điện thoại ẩn ô chọn ngày (bấm ngày trên lịch tuần để chọn) --}}
+{{#unless web}}
 <form method="get" action="/today" class="toolbar toolbar-row mb-4" aria-label="Chọn tuần và lọc">
   {{#if tab.value}}<input type="hidden" name="tab" value="{{tab.value}}">{{/if}}
   <div class="flex shrink-0 items-center gap-1">
@@ -37,7 +46,13 @@
   </div>
   <noscript><button type="submit" class="btn-secondary btn-sm">Xem</button></noscript>
 </form>
+{{/unless}}
 
+{{#if board}}
+{{> schedule/board}}
+{{else if web}}
+{{> schedule/website}}
+{{else}}
 {{> schedule/week-strip days=week.days selected=date}}
 
 {{!-- Màn rộng: việc của ngày đang chọn bên trái, việc quá hạn bên phải. Điện thoại: xếp chồng. --}}
@@ -99,3 +114,10 @@
     </aside>
   {{/if}}
 </div>
+{{/if}}
+
+{{#if (or board web)}}
+{{!-- Bấm tên nội dung -> popup chi tiết Plan --}}
+<dialog id="plan-dialog" class="customer-dialog" aria-label="Chi tiết nội dung"></dialog>
+<script src="/js/plan-detail.js?v={{@root.assetVersion}}" defer></script>
+{{/if}}

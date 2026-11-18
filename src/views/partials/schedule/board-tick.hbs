@@ -1,0 +1,19 @@
+{{!-- Một ô tick trên thẻ tab Lịch đăng / Lịch quay / Kịch bản (POST /plan/:id/tick). Tick = gửi ngay.
+      Dùng: {{> schedule/board-tick id=../id field="fb" label="Facebook" done=done canTick=../canTick}} --}}
+{{#if canTick}}
+  <form method="post" action="/plan/{{id}}/tick">
+    {{> form/csrf}}
+    <input type="hidden" name="field" value="{{field}}">
+    <input type="hidden" name="on" value="{{#if done}}0{{else}}1{{/if}}">
+    <input type="hidden" name="back" value="{{@root.back}}#plan-{{id}}">
+    <label class="wk-tick{{#if done}} is-on{{/if}}">
+      <input type="checkbox" {{#if done}}checked{{/if}} data-autosubmit aria-label="{{label}}">
+      <span>{{label}}</span>
+    </label>
+    <noscript><button type="submit" class="btn-ghost btn-sm">Lưu</button></noscript>
+  </form>
+{{else}}
+  <span class="wk-tick{{#if done}} is-on{{/if}}" title="Chỉ người phụ trách, người đăng / quay / viết mới tick được">
+    <input type="checkbox" {{#if done}}checked{{/if}} disabled aria-label="{{label}}"><span>{{label}}</span>
+  </span>
+{{/if}}

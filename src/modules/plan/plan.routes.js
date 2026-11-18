@@ -18,6 +18,8 @@ router.get('/:id', controller.show);
 router.get('/:id/edit', controller.editForm);
 router.post('/:id', controller.update);
 router.post('/:id/status', controller.setStatus);
+router.post('/:id/tick', controller.tick); // tab Lịch đăng / Lịch quay / Kịch bản trên Lịch làm việc
+router.post('/:id/script-deadline', controller.scriptDeadline);
 router.post('/:id/delete', controller.destroy);
 
 export default router;

@@ -1,6 +1,8 @@
 // Màn hình "Lịch làm việc" (/today) và "Chấm công" (/calendar). Chỉ đọc dữ liệu; thao tác thật nằm ở module tasks.
 import { BRANDS, NO_BRAND, brandInfo, parseBrandFilter } from '#lib/brands.js';
-import { addMonths, todayISO } from '#lib/dates.js';
+import { addDays, addMonths, todayISO, weekDays } from '#lib/dates.js';
+import * as planBoard from '#modules/plan/plan.board.js';
+import * as website from '#modules/website/website.service.js';
 import { staffOptions } from '#modules/staff/staff.service.js';
 import { TASK_STATUSES } from '#modules/tasks/tasks.schema.js';
 import { canChangeStatus, canEdit, isManager, taskLinks } from '#modules/tasks/tasks.service.js';
@@ -87,6 +89,9 @@ const withLinks = (task) => ({ ...task, linkList: taskLinks(task) });
 export async function today(req, res) {
   const date = service.parseDate(req.query.date);
   const viewer = await viewerContext(req);
+  // Mỗi tab loại việc một cấu trúc riêng: Lịch đăng / Lịch quay / Kịch bản = lịch tuần từ Plan nội dung, Up website = checklist
+  if (viewer.tab.value === 'web') return websiteTab(req, res, viewer, date);
+  if (planBoard.isBoardTab(viewer.tab.value)) return boardTab(req, res, viewer, date);
   const [day, week] = await Promise.all([
     service.getDay({ date, assigneeId: viewer.assigneeId, brand: viewer.brand, kind: viewer.tab.kind }),
     service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand, kind: viewer.tab.kind }),
@@ -122,6 +127,77 @@ export async function today(req, res) {
     overdueTop: overdue.slice(0, OVERDUE_VISIBLE),
     overdueRest: overdue.slice(OVERDUE_VISIBLE),
     back: `/today?date=${date}${viewer.userQuery}`,
+  });
+}
+
+const weekInfo = (date, today) => {
+  const days = weekDays(date);
+  return {
+    days,
+    label: `${ddmm(days[0])} – ${ddmm(days[6])}/${days[6].slice(0, 4)}`,
+    isThisWeek: days[0] <= today && today <= days[6],
+    prev: addDays(date, -7),
+    next: addDays(date, 7),
+  };
+};
+const BOARD_TEXT = {
+  dang: { add: ['post_date', '+ Thêm bài đăng'], hint: 'Tick từng kênh khi đã đăng · đủ Facebook và TikTok thì bài được gạch', empty: 'Tuần này chưa có bài nào cần đăng.', unit: 'bài' },
+  quay: { add: ['shoot_date', '+ Thêm buổi quay'], hint: 'Tick khi đã quay xong · buổi đã quay được gạch', empty: 'Tuần này chưa có buổi quay nào.', unit: 'buổi quay' },
+  'kich-ban': { add: [null, '+ Thêm nội dung'], hint: 'Tick khi kịch bản xong · hạn tự tính theo ngày đăng, bấm ngày để chọn ngày khác', empty: 'Tuần này không có kịch bản nào tới hạn.', unit: 'kịch bản' },
+};
+
+// Nút thêm trên tab nội dung: mở form Plan, điền sẵn ngày đăng / ngày quay là ngày đang xem
+const addPlanAction = ([dateParam, label], date, back) => ({
+  href: `/plan/new?${dateParam ? `${dateParam}=${date}&` : ''}back=${encodeURIComponent(back)}`,
+  label,
+});
+
+// Tab Lịch đăng / Lịch quay / Kịch bản: lịch tuần các nội dung Plan + cột thống kê; kèm việc giao tay cùng loại trong tuần.
+async function boardTab(req, res, viewer, date) {
+  const today = todayISO();
+  const week = weekInfo(date, today);
+  const personId = viewer.manager ? viewer.assigneeId : null; // nhân viên xem cả lịch nội dung của nhóm
+  const [board, tasks] = await Promise.all([
+    planBoard.getBoard(viewer.tab.value, { days: week.days, brand: viewer.brand, personId }, req.user),
+    service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand, kind: viewer.tab.kind }),
+  ]);
+  const manual = manualTasks(tasks, req.user);
+  const back = `/today?date=${date}${viewer.userQuery}`;
+  res.render('schedule/today', {
+    title: 'Lịch làm việc',
+    ...viewer,
+    date,
+    today,
+    isToday: date === today,
+    week: { ...week, days: board.days.map((d, i) => ({ ...d, weekdayLabel: WEEKDAY_LABELS[i] })) },
+    board: { ...board, ...BOARD_TEXT[viewer.tab.value], tab: viewer.tab.value },
+    manualTasks: manual,
+    addAction: addPlanAction(BOARD_TEXT[viewer.tab.value].add, date, back),
+    back,
+  });
+}
+
+// Việc giao tay (không từ Plan) cùng loại trong tuần — cột phải các tab loại việc
+const manualTasks = (week, user) =>
+  week.days.flatMap((d) => d.tasks).filter((t) => !t.plan_id).map((t) => ({ ...decorate(user)(t), shortDate: ddmm(t.date) }));
+
+// Tab Up website: checklist theo trang của từng site (không theo tuần), kèm việc "Up website: …" giao trong tuần.
+async function websiteTab(req, res, viewer, date) {
+  const [data, staff, tasks] = await Promise.all([
+    website.getChecklist({ site: req.query.site, category: String(req.query.cat ?? ''), state: String(req.query.state ?? '') }, req.user),
+    staffOptions(),
+    service.getWeek({ date, assigneeId: viewer.assigneeId, brand: viewer.brand, kind: viewer.tab.kind }),
+  ]);
+  const q = new URLSearchParams({ tab: 'web', site: data.site.value, ...(data.filters.category && { cat: data.filters.category }), ...(data.filters.state && { state: data.filters.state }) });
+  res.render('schedule/today', {
+    title: 'Lịch làm việc',
+    ...viewer,
+    date,
+    subtitle: 'Checklist launch website theo từng trang',
+    addAction: { href: '#web-add', label: '+ Thêm trang' },
+    web: { ...data, staffOptions: staff.map((o) => ({ ...o, value: String(o.value) })) },
+    manualTasks: manualTasks(tasks, req.user),
+    back: `/today?${q}`,
   });
 }
 

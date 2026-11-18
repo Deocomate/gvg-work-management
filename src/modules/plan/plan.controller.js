@@ -7,6 +7,7 @@ import { isManager } from '#modules/tasks/tasks.service.js';
 import { BRANDS, PLATFORMS, PLAN_STATUSES, MAX_EXTRA_REFERENCES, extraReferences } from './plan.schema.js';
 import * as service from './plan.service.js';
 import { importFromSheet } from './plan.import.js';
+import * as board from './plan.board.js';
 
 const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const str = (v) => (typeof v === 'string' ? v.slice(0, 100) : '');
@@ -214,4 +215,22 @@ export async function destroy(req, res) {
   const plan = await service.deletePlan(req.params.id, req.user);
   req.flash('success', `Đã xoá "${plan.title}".`);
   res.redirect(safeBack(req.body.back, '/plan'));
+}
+
+// Ô tick trên 3 tab nội dung của Lịch làm việc: field = fb | tt | filmed | script, on = 1 | 0.
+const TICK_FIELDS = new Set(['fb', 'tt', 'filmed', 'script']);
+export async function tick(req, res) {
+  const back = safeBack(req.body.back, '/today');
+  if (!TICK_FIELDS.has(req.body.field)) {
+    req.flash('error', 'Ô tick không hợp lệ.');
+    return res.redirect(back);
+  }
+  await board.tick(req.params.id, req.body.field, req.body.on === '1', req.user);
+  res.redirect(back);
+}
+
+// Hạn kịch bản chọn riêng (ô ngày trên thẻ Kịch bản); bỏ trống / "Về tự động" = tính theo ngày đăng.
+export async function scriptDeadline(req, res) {
+  await board.setScriptDeadline(req.params.id, req.body.reset === '1' ? '' : req.body.deadline, req.user);
+  res.redirect(safeBack(req.body.back, '/today?tab=kich-ban'));
 }
