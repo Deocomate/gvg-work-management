@@ -1,7 +1,7 @@
 // Quản lý tài khoản (bảng users). Tạo tài khoản dùng chung auth.repo.create.
 import { all, get, run } from '#db';
 
-const PUBLIC_COLUMNS = 'id, email, name, phone, role, created_at';
+const PUBLIC_COLUMNS = 'id, email, name, phone, role, can_payroll, created_at';
 
 export const listAll = () =>
   all(`SELECT ${PUBLIC_COLUMNS} FROM users ORDER BY role = 'admin' DESC, name COLLATE NOCASE`);
@@ -25,10 +25,19 @@ export async function update(id, { name, email, phone = null, role }) {
   return findById(id);
 }
 
+/** Bật/tắt quyền xem lương & chấm công của mọi người. */
+export const setCanPayroll = (id, on) =>
+  run(`UPDATE users SET can_payroll = ?, updated_at = datetime('now') WHERE id = ?`, [on ? 1 : 0, id]);
+
 export const updatePassword = (id, passwordHash) =>
   run(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`, [passwordHash, id]);
 
 export async function remove(id) {
   const { changes } = await run('DELETE FROM users WHERE id = ?', [id]);
   return changes > 0;
+}
+
+/** Đã có ai được bật quyền xem lương & chấm công của mọi người chưa. */
+export async function anyCanPayroll() {
+  return Boolean(await get('SELECT 1 FROM users WHERE can_payroll = 1 LIMIT 1'));
 }

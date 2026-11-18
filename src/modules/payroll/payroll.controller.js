@@ -1,10 +1,12 @@
 // Trang Lương trong khung app chính. Mỗi tab là một trang riêng (/luong/<tab>) nhúng đúng một tab của app lương
 // (lõi ở /luong/app, xem payroll.mount.js) bằng iframe ?embed=1&tabs=<khoá tab>. Thanh tab nằm ở app chính.
-//   Quản lý (chủ cửa hàng): Bảng lương · Khoản cộng-trừ · Báo cáo  (+ thao tác phụ: Hoa hồng, Cài đặt)
-//   Nhân viên             : Lương của tôi · Cách tính hoa hồng · Tài khoản nhận lương
+//   Người xem lương mọi người (Mai, Nhài = chủ cửa hàng, xem payroll.access.js):
+//       Bảng lương · Khoản cộng-trừ · Báo cáo  (+ thao tác phụ: Hoa hồng, Cài đặt)
+//   Người khác, kể cả Quản lý: Lương của tôi · Cách tính hoa hồng · Tài khoản nhận lương
 // Chấm công / nhập giờ KHÔNG có ở đây: chỉ nhập ở Chấm công (/calendar), cùng bản ghi với bảng lương.
 // Đổi tên đường dẫn thì sửa cả HOST_PATH trong src/payroll/src/app.html (nút trong app lương nhảy sang tab khác).
 import { PAYROLL_PATH } from './payroll.mount.js';
+import { canViewAllPayroll } from './payroll.access.js';
 
 // [đường dẫn, khoá tab trong app lương, tên tab, thao tác phụ?]
 const OWNER_TABS = [
@@ -20,16 +22,16 @@ const STAFF_TABS = [
   ['tai-khoan', 'tk', 'Tài khoản nhận lương'],
 ];
 
-const tabsFor = (user) => (user?.role === 'admin' ? OWNER_TABS : STAFF_TABS);
+const tabsFor = async (user) => ((await canViewAllPayroll(user)) ? OWNER_TABS : STAFF_TABS);
 
 /** /luong → tab đầu tiên của người đang đăng nhập. */
-export const index = (req, res) => res.redirect(`/luong/${tabsFor(req.user)[0][0]}`);
+export const index = async (req, res) => res.redirect(`/luong/${(await tabsFor(req.user))[0][0]}`);
 
-/** /luong/:tab — tab không thuộc vai trò này thì về tab đầu. */
-export const tab = (req, res) => {
+/** /luong/:tab — tab không thuộc quyền của người này thì về tab đầu. */
+export const tab = async (req, res) => {
   // Link chấm công cũ: chấm công giờ nằm ở Chấm công
   if (req.params.tab === 'cham-cong') return res.redirect('/calendar');
-  const tabs = tabsFor(req.user);
+  const tabs = await tabsFor(req.user);
   const cur = tabs.find(([slug]) => slug === req.params.tab);
   if (!cur) return res.redirect('/luong');
   const toLink = ([slug, , label]) => ({ href: `/luong/${slug}`, label });
@@ -44,5 +46,5 @@ export const tab = (req, res) => {
 };
 
 /** Link cũ Cài đặt > Cài đặt lương (/account/luong) → tab tương ứng trong Lương. */
-export const legacySettings = (req, res) =>
-  res.redirect(req.user?.role === 'admin' ? '/luong/thiet-lap' : '/luong/tai-khoan');
+export const legacySettings = async (req, res) =>
+  res.redirect((await canViewAllPayroll(req.user)) ? '/luong/thiet-lap' : '/luong/tai-khoan');

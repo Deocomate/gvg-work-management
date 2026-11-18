@@ -19,6 +19,7 @@ import { loadUser } from '#middleware/auth.js';
 import { findUserById } from '#modules/auth/auth.service.js';
 import { taskBadge } from '#middleware/task-badge.js';
 import { PAYROLL_PATH, payrollConfigProblem, payrollRouter } from '#modules/payroll/payroll.mount.js';
+import { canViewAllPayroll } from '#modules/payroll/payroll.access.js';
 // [vibe:app-imports]
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,11 +57,12 @@ export function createApp() {
     httpOnly: true,
     secure: config.isProd,
   });
-  // Một tài khoản cho mọi việc: vào Lương bằng chính phiên đăng nhập lịch công việc, Quản lý = chủ cửa hàng (toàn quyền lương).
+  // Một tài khoản cho mọi việc: người được xem lương mọi người (Mai, Nhài — users.can_payroll) vào Lương bằng chính phiên
+  // đăng nhập lịch công việc, với quyền chủ cửa hàng. Người khác (kể cả Quản lý) đăng nhập tài khoản lương của mình, chỉ thấy của mình.
   const ssoUser = async (req, res) => {
     await new Promise((resolve, reject) => session(req, res, (err) => (err ? reject(err) : resolve())));
     const user = req.session?.userId ? await findUserById(req.session.userId) : null;
-    const who = user?.role === 'admin' ? 'admin' : null;
+    const who = (await canViewAllPayroll(user)) ? 'admin' : null;
     return who ? { who, name: user.name } : null;
   };
   app.use(PAYROLL_PATH, payrollRouter(config.payroll, { ssoUser }));
