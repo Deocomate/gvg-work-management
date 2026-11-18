@@ -1,7 +1,7 @@
 // Chế độ sáng/tối. Nạp trong <head> (không defer) để đặt data-theme trước khi vẽ trang, tránh nháy màu.
 // Mặc định là tối; lựa chọn lưu trong localStorage của từng máy.
 const THEME_KEY = 'theme';
-const THEME_COLORS = { dark: '#15132a', light: '#eef6f4' };
+const THEME_COLORS = { dark: '#0d1514', light: '#f3ecfb' };
 
 function readTheme() {
   try {

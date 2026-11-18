@@ -378,27 +378,27 @@ html.embed .top{top:0;margin-top:0;padding:0 4px}
 html.embed .top .brand{display:none}
 html.embed .wrap{padding:0 4px 24px}
 html.embed .login{margin-top:20px}
-/* embedded: neutral surfaces follow the host site's palette (src/styles/app.css) — light "Mint" white cards on mint,
-   dark "Midnight" indigo cards. Person tones (--brand, --clay…) stay as they are. */
-html.embed{--card:#fff;--solid:#fff;--ink:#1B2A29;--ink2:#435654;--ink3:#7B8D8A;--line:#E0EBE8;--line2:#C6D8D3;--glassLine:#E3EEEB;
-  --sh:0 6px 18px -10px rgba(20,80,72,.14);--blur:none}
+/* embedded: neutral surfaces follow the host site's palette (src/styles/app.css) — light "Lavender" white cards on lavender,
+   dark "Dusty Bloom" deep-green cards. Person tones (--brand, --clay…) stay as they are. */
+html.embed{--card:#fff;--solid:#fff;--ink:#2A1A3C;--ink2:#4D3B62;--ink3:#7A6990;--line:#E6DBF3;--line2:#C5B0E2;--glassLine:#E9E0F5;
+  --sh:0 6px 18px -10px rgba(60,30,90,.14);--blur:none}
 html.embed .tbl{background:#fff}
-html.embed th,html.embed tr.tot td{background:#F3F8F7}
-html.embed[data-theme=dark]{--paper:#15132A;--card:#221F38;--solid:#221F38;--ink:#F3F1FC;--ink2:#C6C2E0;--ink3:#8D88AD;
-  --line:rgba(190,180,255,.12);--line2:rgba(190,180,255,.2);--glassLine:rgba(190,180,255,.1);--guide:transparent;--off:#4A4574;
-  --glass:linear-gradient(180deg,rgba(200,190,255,.1) 0%,rgba(200,190,255,.04) 100%);
-  --glassHover:linear-gradient(180deg,rgba(200,190,255,.16) 0%,rgba(200,190,255,.07) 100%);
-  --glassRim:rgba(190,180,255,.14);--sh:0 6px 18px -10px rgba(5,3,20,.55)}
-html.embed[data-theme=dark] .tbl,html.embed[data-theme=dark] .cal{background:#221F38}
-html.embed[data-theme=dark] th,html.embed[data-theme=dark] tr.tot td{background:#2D2A47}
+html.embed th,html.embed tr.tot td{background:#F7F2FC}
+html.embed[data-theme=dark]{--paper:#0D1514;--card:#142120;--solid:#142120;--ink:#EEEDD9;--ink2:#C2C5B3;--ink3:#889691;
+  --line:rgba(238,237,217,.12);--line2:rgba(238,237,217,.2);--glassLine:rgba(238,237,217,.1);--guide:transparent;--off:#36504D;
+  --glass:linear-gradient(180deg,rgba(225,240,232,.1) 0%,rgba(225,240,232,.04) 100%);
+  --glassHover:linear-gradient(180deg,rgba(225,240,232,.16) 0%,rgba(225,240,232,.07) 100%);
+  --glassRim:rgba(238,237,217,.14);--sh:0 6px 18px -10px rgba(0,0,0,.5)}
+html.embed[data-theme=dark] .tbl,html.embed[data-theme=dark] .cal{background:#142120}
+html.embed[data-theme=dark] th,html.embed[data-theme=dark] tr.tot td{background:#1B2C2A}
 html.embed[data-theme=dark] .card::before,html.embed[data-theme=dark] .modal::before{background:none}
-html.embed[data-theme=dark] .hero>.card:last-child,html.embed[data-theme=dark] .split>.card:last-child,html.embed[data-theme=dark] .split>div:last-child>.card:first-child{background:#221F38}
-html.embed[data-theme=dark] .hero>.card:first-child,html.embed[data-theme=dark] .split>.card:first-child,html.embed[data-theme=dark] .split>div:first-child>.card:first-child{background:linear-gradient(120deg,rgba(var(--toneRGB),.3) 0%,rgba(var(--toneRGB),.1) 50%,#221F38 90%)}
-html.embed[data-theme=dark] input[type=text],html.embed[data-theme=dark] input[type=password],html.embed[data-theme=dark] input[type=number],html.embed[data-theme=dark] input[type=time],html.embed[data-theme=dark] input[type=date],html.embed[data-theme=dark] input[type=month],html.embed[data-theme=dark] select,html.embed[data-theme=dark] textarea{background:rgba(21,19,42,.7)}
-html.embed[data-theme=dark] .ytip{background:#2D2A47}
-html.embed[data-theme=dark] .modal{background:#221F38}
-html.embed[data-theme=dark] .toast{background:rgba(45,42,71,.95)}
-html.embed[data-theme=dark] .cell.out{background:rgba(0,0,0,.18);color:#5A5580}
+html.embed[data-theme=dark] .hero>.card:last-child,html.embed[data-theme=dark] .split>.card:last-child,html.embed[data-theme=dark] .split>div:last-child>.card:first-child{background:#142120}
+html.embed[data-theme=dark] .hero>.card:first-child,html.embed[data-theme=dark] .split>.card:first-child,html.embed[data-theme=dark] .split>div:first-child>.card:first-child{background:linear-gradient(120deg,rgba(var(--toneRGB),.3) 0%,rgba(var(--toneRGB),.1) 50%,#142120 90%)}
+html.embed[data-theme=dark] input[type=text],html.embed[data-theme=dark] input[type=password],html.embed[data-theme=dark] input[type=number],html.embed[data-theme=dark] input[type=time],html.embed[data-theme=dark] input[type=date],html.embed[data-theme=dark] input[type=month],html.embed[data-theme=dark] select,html.embed[data-theme=dark] textarea{background:rgba(10,14,12,.6)}
+html.embed[data-theme=dark] .ytip{background:#1B2C2A}
+html.embed[data-theme=dark] .modal{background:#142120}
+html.embed[data-theme=dark] .toast{background:rgba(27,44,42,.95)}
+html.embed[data-theme=dark] .cell.out{background:rgba(0,0,0,.18);color:#4A5450}
 /* host page resizes the frame to fit (no inner scrollbar); modal and toast follow the visible part of the frame */
 html.embed.fit,html.embed.fit body{overflow:hidden}
 html.embed.fit .modal-bg{position:absolute;inset:auto 0 auto 0;top:var(--vp-top,0px);height:var(--vp-h,100vh)}
