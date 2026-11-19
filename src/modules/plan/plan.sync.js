@@ -1,7 +1,8 @@
 // Đồng bộ Plan nội dung <-> lịch làm việc (bảng tasks), 2 chiều:
 // - Plan -> lịch: việc "🎬 Quay: …" (ngày quay, khung giờ, địa điểm, CSVC) giao cho người quay,
 //   "📤 Đăng: …" (ngày đăng, cả ngày) giao cho người đăng; chưa chọn thì giao cho người phụ trách.
-//   Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo; bỏ ngày, không còn ai làm hoặc chuyển "Bỏ" thì việc bị xoá.
+//   Đổi ngày/người/trạng thái ở Plan thì việc tự đổi theo; bỏ ngày, không còn ai làm, chuyển "Bỏ" hoặc "On hold"
+//   thì việc bị xoá (On hold -> "Tiếp tục" thì việc được tạo lại).
 // - Lịch -> Plan: bấm Xong việc đăng -> Plan "Đã xong"; mở lại việc đăng -> lùi về "Đã chọn".
 //   Việc quay tick xong/mở lại tuỳ người làm (Plan không còn bước "Đã quay").
 // Việc lấy từ Plan chỉ sửa ở Plan (tasks.service chặn sửa/xoá trực tiếp).
@@ -27,10 +28,12 @@ export function parseTimeRange(text) {
 }
 
 const isDone = (plan) => plan.status === 'posted';
+/** Bỏ / On hold: nội dung không có việc nào trên lịch. */
+const isOffSchedule = (plan) => plan.status === 'dropped' || plan.status === 'on_hold';
 
 /** Các việc lẽ ra phải có trên lịch cho nội dung này: { shoot?, post? }. */
 function desiredTasks(plan) {
-  if (plan.status === 'dropped') return {};
+  if (isOffSchedule(plan)) return {};
   const shooter = plan.shooter_id ?? plan.owner_id;
   const poster = plan.poster_id ?? plan.owner_id;
   const base = { created_by: plan.created_by, priority: 'normal', group_key: null, plan_id: plan.id, brand: plan.brand || null };
@@ -106,7 +109,7 @@ export const removePlanTasks = (planId) => tasksRepo.removeForPlan(planId);
 export async function applyTaskStatus(task, status) {
   if (!task.plan_id || task.plan_kind !== 'post') return;
   const plan = await repo.findById(task.plan_id);
-  if (!plan || plan.status === 'dropped') return;
+  if (!plan || isOffSchedule(plan)) return;
   const next = status === 'done' ? 'posted' : plan.status === 'posted' ? 'selected' : plan.status;
   if (next !== plan.status) await repo.updateStatus(plan.id, next);
   // Mở lại việc đăng = chưa đăng: bỏ tick Facebook / TikTok ở tab Lịch đăng.

@@ -21,32 +21,32 @@ const FROM = `FROM content_plans p
 /** Mới nhất lên đầu. Lọc tìm kiếm (không dấu) làm trong service. */
 export const listAll = () => all(`SELECT ${COLUMNS} ${FROM} ORDER BY p.created_at DESC, p.id DESC`);
 
-/** Nội dung có ngày quay hoặc ngày đăng nằm trong khoảng [from, to]. */
+/** Nội dung (trừ On hold) có ngày quay hoặc ngày đăng nằm trong khoảng [from, to]. */
 export const listForRange = ({ from, to }) =>
   all(
     `SELECT ${COLUMNS} ${FROM}
-     WHERE (p.shoot_date BETWEEN ? AND ?) OR (p.post_date BETWEEN ? AND ?)
+     WHERE p.status <> 'on_hold' AND ((p.shoot_date BETWEEN ? AND ?) OR (p.post_date BETWEEN ? AND ?))
      ORDER BY COALESCE(p.post_time, ''), COALESCE(p.shoot_time, ''), p.title COLLATE NOCASE`,
     [from, to, from, to],
   );
 
-/** Video sắp đăng (từ hôm nay) chưa có ngày quay, chưa quay/đăng/bỏ — cho "Lịch quay". */
+/** Video sắp đăng (từ hôm nay) chưa có ngày quay, chưa quay/đăng/bỏ/on hold — cho "Lịch quay". */
 export const listUpcomingWithoutShoot = (today) =>
   all(
     `SELECT ${COLUMNS} ${FROM}
-     WHERE p.post_date >= ? AND p.shoot_date IS NULL AND p.status NOT IN ('posted', 'dropped')
+     WHERE p.post_date >= ? AND p.shoot_date IS NULL AND p.status NOT IN ('posted', 'dropped', 'on_hold')
      ORDER BY p.post_date, COALESCE(p.post_time, '')`,
     [today],
   );
 
 /**
- * Cho 3 tab Lịch đăng / Lịch quay / Kịch bản trên Lịch làm việc: nội dung chưa bỏ có ngày đăng, ngày quay
- * hoặc hạn kịch bản nằm trong [from, to] (service tự lọc lại theo từng tab).
+ * Cho 3 tab Lịch đăng / Lịch quay / Kịch bản trên Lịch làm việc: nội dung chưa bỏ / không on hold có ngày đăng,
+ * ngày quay hoặc hạn kịch bản nằm trong [from, to] (service tự lọc lại theo từng tab).
  */
 export const listForBoard = ({ from, to }) =>
   all(
     `SELECT ${COLUMNS} ${FROM}
-     WHERE p.status <> 'dropped'
+     WHERE p.status NOT IN ('dropped', 'on_hold')
        AND ((p.post_date BETWEEN ? AND ?) OR (p.shoot_date BETWEEN ? AND ?) OR (p.script_deadline BETWEEN ? AND ?))
      ORDER BY p.title COLLATE NOCASE`,
     [from, to, from, to, from, to],

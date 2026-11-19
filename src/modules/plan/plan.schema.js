@@ -43,9 +43,11 @@ export const CONTENT_LINES = [
 // Thẻ trên lịch: nền trung tính + chữ đậm cho dễ đọc ở cả giao diện sáng/tối; bước hiện tại thể hiện bằng
 // vạch màu bên trái (bar) và chấm màu (dot). Màu cố định (không theo theme) để 2 giao diện giống nhau.
 // Thứ tự = thứ tự các bước. Chỉ 3 bước: Mới → Đã chọn → Đã xong ("Đã xong" giữ giá trị 'posted' trong DB).
+// "On hold" = tạm dừng (chưa làm được): giữ nguyên ngày/người, chỉ gỡ khỏi các lịch cho tới khi bấm "Tiếp tục".
 export const PLAN_STATUSES = [
   { value: 'idea', label: 'Mới', badge: 'badge-gray', bar: 'border-l-slate-400', dot: 'bg-slate-400' },
   { value: 'selected', label: 'Đã chọn', badge: 'badge-pink', bar: 'border-l-fuchsia-500', dot: 'bg-fuchsia-500' },
+  { value: 'on_hold', label: 'On hold', badge: 'badge-yellow', bar: 'border-l-amber-400', dot: 'bg-amber-400' },
   { value: 'posted', label: 'Đã xong', badge: 'badge-green', bar: 'border-l-emerald-500', dot: 'bg-emerald-500' },
   { value: 'dropped', label: 'Bỏ', badge: 'badge-red', bar: 'border-l-rose-500 line-through', dot: 'bg-rose-500' },
 ];

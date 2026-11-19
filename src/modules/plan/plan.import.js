@@ -19,6 +19,7 @@ const SHEET_STATUS = {
   'đã quay': 'selected',
   'đã đăng': 'posted',
   'đã xong': 'posted',
+  'on hold': 'on_hold',
   'bỏ': 'dropped',
 };
 const SHEET_FIELDS = [

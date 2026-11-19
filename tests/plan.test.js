@@ -305,6 +305,36 @@ test('đồng bộ 2 chiều: tick xong việc trên lịch -> Plan đổi bư�
   assert.doesNotMatch((await nam.get('/today?date=2026-12-21')).text, /Bình hút lộc/);
 });
 
+test('On hold: giữ ngày nhưng gỡ khỏi mọi lịch; "Tiếp tục" đưa về Đã chọn và lịch hiện lại', async () => {
+  const namId = await userId('Trần Nam');
+  const title = 'Ngói men tạm dừng';
+  await add(admin, { title, brand: 'GSXD', owner_id: namId, shoot_date: '2026-12-14', post_date: '2026-12-17' });
+  const id = await idOf(title);
+  const visibleEverywhere = async () => {
+    const pages = await Promise.all([
+      nam.get('/today?date=2026-12-14'),
+      admin.get('/today?date=2026-12-17&user=all&tab=dang'),
+      admin.get('/today?date=2026-12-14&user=all&tab=quay'),
+      admin.get('/plan/weeks?kind=post&week=2026-12-14'),
+      admin.get('/plan/calendar?kind=shoot&month=2026-12'),
+    ]);
+    return pages.map((p) => p.text.includes(title));
+  };
+  assert.deepEqual(await visibleEverywhere(), [true, true, true, true, true]);
+
+  await postForm(admin, `/plan/${id}/status`, { status: 'on_hold' }, { from: '/plan' });
+  const card = await cardOf(admin, title);
+  assert.equal(card.column, 'on_hold');
+  assert.match(card.html, /Tiếp tục/);
+  assert.deepEqual(await visibleEverywhere(), [false, false, false, false, false]);
+  // Ngày vẫn giữ nguyên
+  assert.match((await admin.get(`/plan/${id}`)).text, /17\/12\/2026/);
+
+  await postForm(admin, `/plan/${id}/status`, { status: 'selected' }, { from: '/plan' });
+  assert.equal((await cardOf(admin, title)).column, 'selected');
+  assert.deepEqual(await visibleEverywhere(), [true, true, true, true, true]);
+});
+
 test('đọc khung giờ quay gõ tự do', () => {
   assert.deepEqual(parseTimeRange('15h00 - 15h30'), { start: '15:00', end: '15:30' });
   assert.deepEqual(parseTimeRange('9h - 11h'), { start: '09:00', end: '11:00' });

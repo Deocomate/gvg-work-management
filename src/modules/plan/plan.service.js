@@ -26,6 +26,7 @@ export const canDelete = (user, plan) => isManager(user) || plan.created_by === 
 const NEXT_STEP = {
   idea: { status: 'selected', label: 'Chọn' },
   selected: { status: 'posted', label: 'Xong' },
+  on_hold: { status: 'selected', label: 'Tiếp tục' },
 };
 
 /** Thêm thông tin hiển thị (nhãn, màu, quyền, bước tiếp) cho view. */
@@ -105,7 +106,7 @@ function groupByPostWeek(items, today) {
   return groups;
 }
 
-/** Idea bank dạng bảng cột theo bước: Mới → Đã chọn (cột "Bỏ" chỉ hiện khi bật). */
+/** Idea bank dạng bảng cột theo bước: Mới → Đã chọn → On hold (cột "Bỏ" chỉ hiện khi bật). */
 export async function getBoard({ brand, owner, link, q, dropped } = {}, user) {
   const { shown: all, filters } = await filteredPlans({ brand, owner, link, q });
   const shown = all.filter((p) => p.status !== ARCHIVED);
@@ -113,8 +114,8 @@ export async function getBoard({ brand, owner, link, q, dropped } = {}, user) {
 
   const columns = PLAN_STATUSES.filter((s) => s.value !== ARCHIVED && (dropped || s.value !== 'dropped')).map((s) => {
     const items = shown.filter((p) => p.status === s.value).map((p) => decorate(p, user));
-    if (s.value !== 'selected') return { ...s, total: items.length, items };
-    // Đã chọn: chia theo tuần của ngày đăng (sớm trước), chưa có ngày đăng gom xuống cuối.
+    if (s.value !== 'selected' && s.value !== 'on_hold') return { ...s, total: items.length, items };
+    // Đã chọn / On hold: chia theo tuần của ngày đăng (sớm trước), chưa có ngày đăng gom xuống cuối.
     items.sort((a, b) => (!a.post_date - !b.post_date) || (a.post_date ?? '').localeCompare(b.post_date ?? ''));
     return { ...s, total: items.length, items, groups: groupByPostWeek(items, today) };
   });
