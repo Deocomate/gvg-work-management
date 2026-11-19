@@ -45,7 +45,7 @@ test('trang có ?holiday= (khi dev) hiện dải chúc mừng và hiệu ứng',
   const res = await agent.get('/login?holiday=christmas');
   assert.match(res.text, /data-holiday="christmas"/);
   assert.match(res.text, /Còn 3 ngày nữa là Giáng sinh/);
-  // chỉ còn nhãn nhỏ đếm ngược, không có hiệu ứng rơi quanh dữ liệu
-  assert.match(res.text, /class="holiday-pill"/);
+  // thẻ tròn đếm ngược treo dưới menu, không có hiệu ứng rơi quanh dữ liệu
+  assert.match(res.text, /class="holiday-tag"/);
   assert.doesNotMatch(res.text, /\/js\/holiday\.js/);
 });

@@ -42,6 +42,14 @@ function openPayrollStore(dbFile) {
   return stores.get(dbFile);
 }
 
+// Danh sách nhân viên trong app lương ([{ id: 'nv1', name }]). cfg/main không mã hoá tên nên server đọc được.
+export async function payrollStaffList(options = config.payroll) {
+  if (payrollConfigProblem(options)) return [];
+  const cfg = await (await openPayrollStore(options.dbFile)).getDoc('cfg/main');
+  const staff = Array.isArray(cfg?.staff) ? cfg.staff : [];
+  return staff.filter((s) => /^nv\d+$/.test(s?.id)).map((s) => ({ id: s.id, name: String(s.name || '') }));
+}
+
 /**
  * Router cho /luong/app. Mở DB lần đầu có người vào, các request sau dùng lại.
  * ssoUser(req, res) -> { who, name } | null: tài khoản lương liên kết với người đang đăng nhập lịch công việc.

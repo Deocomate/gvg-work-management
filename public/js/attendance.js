@@ -1,7 +1,7 @@
 // Chấm công ở trang Tháng › Bảng công (/calendar?view=cong): mỗi nhân viên một tab, lưới cả tháng.
 // Dữ liệu lương mã hoá trên trình duyệt nên server không đọc được: trang này mở app lương trong một khung ẩn
-// (/luong/app/?embed=1&bridge=1). Khung đó tự đăng nhập (Quản lý = chủ cửa hàng qua tài khoản lịch; nhân viên =
-// "Ghi nhớ đăng nhập"), rồi đọc/ghi CÙNG bản ghi chấm công với bảng lương, theo cùng quy tắc (bridgeDaySet trong app.html).
+// (/luong/app/?embed=1&bridge=1). Khung đó tự đăng nhập bằng tài khoản lịch (người xem lương mọi người = chủ cửa hàng;
+// người khác = hồ sơ lương trùng tên), rồi đọc/ghi CÙNG bản ghi chấm công với bảng lương, theo cùng quy tắc (bridgeDaySet trong app.html).
 // Không có nơi nhập chấm công thứ hai: trang Lương chỉ hiện tổng công/giờ và nút "Xem công" dẫn về đây.
 //
 // HTML: <section data-att-root data-selected="YYYY-MM-DD" data-today="YYYY-MM-DD" data-month="YYYY-MM" data-focus="id nhân viên">
@@ -598,9 +598,9 @@
       return;
     }
     if (!state.signedIn) {
-      const a = el('a', 'btn-secondary btn-sm', 'Đăng nhập Lương');
+      const a = el('a', 'btn-secondary btn-sm', 'Mở Lương');
       a.href = '/luong';
-      headBar(root, 'Cần đăng nhập phần Lương một lần trên máy này (chọn "Ghi nhớ đăng nhập") để chấm công tại đây.', [a]);
+      headBar(root, 'Chưa tìm thấy hồ sơ lương trùng tên với tài khoản này. Nhờ sếp đặt tên trong Lương › Cài đặt giống tên tài khoản lịch.', [a]);
       return;
     }
     const list = people();

@@ -18,8 +18,9 @@ import { registerModules } from '#modules/index.js';
 import { loadUser } from '#middleware/auth.js';
 import { findUserById } from '#modules/auth/auth.service.js';
 import { taskBadge } from '#middleware/task-badge.js';
-import { PAYROLL_PATH, payrollConfigProblem, payrollRouter } from '#modules/payroll/payroll.mount.js';
-import { canViewAllPayroll } from '#modules/payroll/payroll.access.js';
+import { PAYROLL_PATH, payrollConfigProblem, payrollRouter, payrollStaffList } from '#modules/payroll/payroll.mount.js';
+import { canViewAllPayroll, payrollStaffIdFor } from '#modules/payroll/payroll.access.js';
+import { listAll as listStaffUsers } from '#modules/staff/staff.repo.js';
 // [vibe:app-imports]
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,12 +58,15 @@ export function createApp() {
     httpOnly: true,
     secure: config.isProd,
   });
-  // Một tài khoản cho mọi việc: người được xem lương mọi người (Mai, Nhài — users.can_payroll) vào Lương bằng chính phiên
-  // đăng nhập lịch công việc, với quyền chủ cửa hàng. Người khác (kể cả Quản lý) đăng nhập tài khoản lương của mình, chỉ thấy của mình.
+  // Một tài khoản cho mọi việc: ai cũng vào Lương & chấm công bằng chính phiên đăng nhập lịch công việc.
+  // Người được xem lương mọi người (Mai, Nhài — users.can_payroll) = chủ cửa hàng; người khác = hồ sơ lương trùng tên
+  // (payrollStaffIdFor), chỉ thấy của mình. Không ghép được tên thì khung Lương mới hỏi đăng nhập lương như cũ.
   const ssoUser = async (req, res) => {
     await new Promise((resolve, reject) => session(req, res, (err) => (err ? reject(err) : resolve())));
     const user = req.session?.userId ? await findUserById(req.session.userId) : null;
-    const who = (await canViewAllPayroll(user)) ? 'admin' : null;
+    if (!user) return null;
+    if (await canViewAllPayroll(user)) return { who: 'admin', name: user.name };
+    const who = payrollStaffIdFor(user, await listStaffUsers(), await payrollStaffList());
     return who ? { who, name: user.name } : null;
   };
   app.use(PAYROLL_PATH, payrollRouter(config.payroll, { ssoUser }));
