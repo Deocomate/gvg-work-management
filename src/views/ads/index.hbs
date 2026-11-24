@@ -1,19 +1,41 @@
 {{> subnav/ads}}
-{{#> page-header title=title subtitle=(concat (formatDay range.from) " – " (formatDay range.to) " · Chỉ quản lý xem được")}}
-  <form method="post" action="/ads/refresh">
-    {{> form/csrf}}
-    <input type="hidden" name="range" value="{{range.key}}">
-    <button type="submit" class="btn-secondary btn-sm">↻ Cập nhật ngay</button>
-  </form>
+{{!-- Cả báo cáo nằm trong #ads-report để nút "Tải PDF" chụp lại (public/js/export-image.js);
+      phần có data-export-skip (nút, ô chọn ngày) không vào file. --}}
+<div id="ads-report" data-filename="{{exportFilename}}" data-export-breaks="section, tbody tr" data-export-bg="page" data-export-width="1100">
+{{#> page-header title="Báo cáo quảng cáo" subtitle=(concat rangeText " · Chỉ quản lý xem được")}}
+  <div class="flex flex-wrap items-center gap-2" data-export-skip>
+    {{#if anyConfigured}}
+      <a href="/ads/export.xlsx?{{rangeQuery}}" class="btn-secondary btn-sm" download title="Tổng quan, từng chiến dịch, từng ngày — mở bằng Excel / Google Sheets">⬇ Xuất Excel</a>
+      <button type="button" class="btn-secondary btn-sm" data-export="pdf" data-export-target="#ads-report" title="Tải trang báo cáo này thành file PDF">⬇ Tải PDF</button>
+    {{/if}}
+    <form method="post" action="/ads/refresh">
+      {{> form/csrf}}
+      <input type="hidden" name="range" value="{{range.key}}">
+      {{#if (eq range.key 'custom')}}
+        <input type="hidden" name="from" value="{{range.from}}">
+        <input type="hidden" name="to" value="{{range.to}}">
+      {{/if}}
+      <button type="submit" class="btn-secondary btn-sm">↻ Cập nhật ngay</button>
+    </form>
+  </div>
 {{/page-header}}
 
 {{!-- Tự tải lại trang khi hết thời gian lưu tạm (public/js/app.js) --}}
 <div data-auto-reload="{{refreshSeconds}}" hidden></div>
 
-<div class="mb-5 flex flex-wrap gap-2" role="group" aria-label="Khoảng thời gian">
-  {{#each ranges}}
-    <a href="/ads?range={{value}}" class="btn-sm {{#if (eq value @root.range.key)}}btn-secondary{{else}}btn-ghost{{/if}}"{{#if (eq value @root.range.key)}} aria-current="page"{{/if}}>{{label}}</a>
-  {{/each}}
+<div class="mb-5 flex flex-wrap items-center gap-2" data-export-skip>
+  <div class="flex flex-wrap gap-2" role="group" aria-label="Khoảng thời gian">
+    {{#each ranges}}
+      <a href="/ads?range={{value}}" class="btn-sm {{#if (eq value @root.range.key)}}btn-secondary{{else}}btn-ghost{{/if}}"{{#if (eq value @root.range.key)}} aria-current="page"{{/if}}>{{label}}</a>
+    {{/each}}
+  </div>
+  <form method="get" action="/ads" class="flex flex-wrap items-center gap-1.5 sm:ml-auto" aria-label="Chọn khoảng ngày">
+    <input type="hidden" name="range" value="custom">
+    <input type="date" name="from" value="{{customFrom}}" max="{{today}}" class="input w-auto py-1 text-xs" aria-label="Từ ngày" required>
+    <span class="text-xs text-ink-faint">–</span>
+    <input type="date" name="to" value="{{customTo}}" max="{{today}}" class="input w-auto py-1 text-xs" aria-label="Đến ngày" required>
+    <button type="submit" class="btn-sm {{#if (eq range.key 'custom')}}btn-secondary{{else}}btn-ghost{{/if}}">Xem</button>
+  </form>
 </div>
 
 {{#unless anyConfigured}}
@@ -75,8 +97,8 @@
         {{/if}}
 
         {{#if daily.length}}
-          <h3 class="mt-5 mb-2 text-sm font-medium text-ink-soft">Chi tiêu theo ngày</h3>
-          <div class="flex h-28 items-end gap-1" role="img" aria-label="Biểu đồ chi tiêu theo ngày của {{label}}">
+          <h3 class="mt-5 mb-2 text-sm font-medium text-ink-soft">{{chartTitle}}{{#if (and @root.range.lifetime (eq key 'tiktok'))}} <span class="font-normal text-ink-faint">(365 ngày gần nhất)</span>{{/if}}</h3>
+          <div class="flex h-28 items-end gap-1" role="img" aria-label="{{chartTitle}} — {{label}}">
             {{#each daily}}
               <div class="flex h-full flex-1 flex-col justify-end" title="{{tip}}">
                 <div class="w-full rounded-t bg-brand-500/80 hover:bg-brand-400" style="height: {{height}}%"></div>
@@ -105,7 +127,15 @@
               <tbody>
                 {{#each campaigns}}
                   <tr>
-                    <td class="max-w-72"><span class="font-medium text-ink">{{name}}</span>{{#if (gt ../accounts.length 1)}}<br><span class="text-xs text-ink-faint">{{account}}</span>{{/if}}</td>
+                    <td class="min-w-56 max-w-80"><span class="font-medium text-ink">{{name}}</span>
+                      {{#if (or statusInfo startDate (gt ../accounts.length 1))}}
+                        <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
+                          {{#if statusInfo}}<span class="{{statusInfo.badge}} whitespace-nowrap">{{statusInfo.label}}</span>{{/if}}
+                          {{#if startDate}}<span class="whitespace-nowrap">Bắt đầu {{formatDay startDate}}{{#if endDate}} · kết thúc {{formatDay endDate}}{{/if}}</span>{{/if}}
+                          {{#if (gt ../accounts.length 1)}}<span>{{account}}</span>{{/if}}
+                        </span>
+                      {{/if}}
+                    </td>
                     <td class="text-right tabular-nums whitespace-nowrap">{{f.spend}}</td>
                     <td class="text-right tabular-nums">{{f.results}}</td>
                     <td class="text-right tabular-nums whitespace-nowrap">{{f.costPerResult}}</td>
@@ -130,4 +160,11 @@
 <p class="text-xs text-ink-faint">
   Số liệu lấy trực tiếp từ Facebook và TikTok, tự làm mới mỗi {{refreshMinutes}} phút khi trang đang mở; bấm <b>Cập nhật ngay</b> để lấy lại tức thì.
   Số của hôm nay có thể còn thay đổi vài giờ sau (nền tảng chốt số chậm).
+  {{#if range.lifetime}}<b>Từ đầu chiến dịch</b> = toàn bộ số liệu nền tảng còn lưu (Facebook giữ tối đa 37 tháng gần nhất).{{/if}}
 </p>
+</div>
+
+{{#if anyConfigured}}
+  <script src="/vendor/html-to-image.js?v={{assetVersion}}" defer></script>
+  <script src="/js/export-image.js?v={{assetVersion}}" defer></script>
+{{/if}}

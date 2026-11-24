@@ -4,10 +4,30 @@
 // PDF tự ghép, không cần thư viện: khổ A4 dọc, ảnh JPEG; khung dài thì chia nhiều trang, cắt ở ranh giới
 // giữa các dòng bảng / trước tiêu đề mỗi người (data-export-breaks) để không cắt ngang một việc.
 // Link trong PDF là ảnh nên không bấm được — muốn bấm link thì dùng nút "In / Lưu PDF".
+// Tuỳ chọn trên khung: data-export-skip (bỏ phần tử khi chụp), data-export-bg="page" (nền theo giao diện sáng/tối),
+// data-export-width="1100" (tạm giãn khung khi chụp để bảng rộng không bị cắt).
 
 // style.margin = 0: khung căn giữa bằng margin auto (phiếu công việc) sẽ bị html-to-image chép nguyên lề
 // tính ra (VD 380px trên màn rộng) vào ảnh -> nội dung lệch phải, mất nửa phiếu. Bỏ lề ngoài khi chụp.
-const CAPTURE = { pixelRatio: 2, backgroundColor: '#ffffff', skipFonts: true, cacheBust: true, style: { margin: '0' } };
+// data-export-skip: phần tử bị bỏ khi chụp (nút bấm, ô chọn ngày…).
+const CAPTURE = {
+  pixelRatio: 2,
+  backgroundColor: '#ffffff',
+  skipFonts: true,
+  cacheBust: true,
+  style: { margin: '0' },
+  filter: (node) => !(node instanceof Element && node.hasAttribute('data-export-skip')),
+};
+// Khung có data-export-bg="page" (trang Quảng cáo theo giao diện sáng/tối): nền ảnh = nền trang, không ép trắng.
+const isTransparent = (color) => !color || color === 'transparent' || /rgba\(.*,\s*0\)$/.test(color);
+function pageBackground() {
+  for (const el of [document.body, document.documentElement]) {
+    const color = getComputedStyle(el).backgroundColor;
+    if (!isTransparent(color)) return color;
+  }
+  return '#ffffff';
+}
+const captureFor = (target) => (target.dataset.exportBg === 'page' ? { ...CAPTURE, backgroundColor: pageBackground() } : CAPTURE);
 const A4_W = 595.28;
 const A4_H = 841.89;
 const MARGIN = 28;
@@ -103,7 +123,7 @@ function jpegsToPdf(pages) {
 }
 
 async function toPdf(target) {
-  const canvas = await window.htmlToImage.toCanvas(target, CAPTURE);
+  const canvas = await window.htmlToImage.toCanvas(target, captureFor(target));
   const scale = canvas.width / target.getBoundingClientRect().width;
   const pageHeight = Math.floor(((A4_H - MARGIN * 2) / (A4_W - MARGIN * 2)) * canvas.width);
   const parts = target.dataset.exportBreaks ? slices(canvas.height, pageHeight, breakPoints(target, scale)) : [[0, canvas.height]];
@@ -112,7 +132,7 @@ async function toPdf(target) {
     piece.width = canvas.width;
     piece.height = to - from;
     const ctx = piece.getContext('2d');
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = captureFor(target).backgroundColor;
     ctx.fillRect(0, 0, piece.width, piece.height);
     ctx.drawImage(canvas, 0, from, canvas.width, piece.height, 0, 0, canvas.width, piece.height);
     return { bytes: dataUrlBytes(piece.toDataURL('image/jpeg', 0.92)), width: piece.width, height: piece.height };
@@ -120,7 +140,25 @@ async function toPdf(target) {
   return jpegsToPdf(pages);
 }
 
-const toPng = (target) => window.htmlToImage.toBlob(target, CAPTURE);
+const toPng = (target) => window.htmlToImage.toBlob(target, captureFor(target));
+
+/**
+ * Khung có data-export-width="1100": tạm giãn khung đúng bề rộng đó khi chụp, để bảng rộng (trang Quảng cáo)
+ * không bị cắt cột trên màn hẹp/điện thoại. Chụp xong trả lại như cũ.
+ */
+async function withExportWidth(target, run) {
+  const width = Number(target.dataset.exportWidth);
+  if (!width) return run();
+  const before = target.style.cssText;
+  target.style.width = `${width}px`;
+  target.style.maxWidth = 'none';
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  try {
+    return await run();
+  } finally {
+    target.style.cssText = before;
+  }
+}
 
 document.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-export]');
@@ -135,7 +173,8 @@ document.addEventListener('click', async (event) => {
   button.disabled = true;
   button.textContent = 'Đang tạo…';
   try {
-    save(await (kind === 'pdf' ? toPdf(target) : toPng(target)), `${target.dataset.filename || 'tai-ve'}.${kind}`);
+    const blob = await withExportWidth(target, () => (kind === 'pdf' ? toPdf(target) : toPng(target)));
+    save(blob, `${target.dataset.filename || 'tai-ve'}.${kind}`);
   } catch (error) {
     console.error(error);
     window.alert('Không tạo được file, thử lại nhé.');

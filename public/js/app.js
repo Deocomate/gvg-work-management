@@ -176,7 +176,8 @@ document.querySelectorAll('[data-auto-reload]').forEach((el) => {
 {
   const openFromHash = () => {
     const id = decodeURIComponent(location.hash.slice(1));
-    const target = id && document.getElementById(id);
+    // Không có #… thì id = '' -> phải ra null, không phải '' ('' ?.closest vẫn gọi và báo lỗi)
+    const target = id ? document.getElementById(id) : null;
     const details = target?.closest('details[data-open-on-hash]');
     if (!details) return;
     details.open = true;

@@ -2,6 +2,7 @@
 //   { accounts: [{ id, name, currency }], totals, campaigns: [...], daily: [{ date, spend, results }] }
 // Mọi số đều là Number. Token gửi qua header (không nằm trên URL, không lộ trong log).
 import { config } from '#config';
+import { addDays } from '#lib/dates.js';
 
 const num = (value) => {
   const n = Number(value);
@@ -53,9 +54,11 @@ export function sumRows(rows) {
 function mergeDaily(rows) {
   const byDate = new Map();
   for (const r of rows) {
-    const d = byDate.get(r.date) ?? { date: r.date, spend: 0, results: 0 };
+    const d = byDate.get(r.date) ?? { date: r.date, spend: 0, results: 0, impressions: 0, clicks: 0 };
     d.spend += r.spend;
     d.results += r.results;
+    d.impressions += r.impressions;
+    d.clicks += r.clicks;
     byDate.set(r.date, d);
   }
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
@@ -116,22 +119,82 @@ async function metaGet(path, params) {
 
 const META_FIELDS = 'spend,impressions,reach,clicks,actions,action_values';
 
-async function fetchMetaAccount(accountId, { from, to }) {
-  const timeRange = { since: from, until: to };
-  const [info, campaigns, daily] = await Promise.all([
+/**
+ * Trạng thái chiến dịch Facebook -> active | paused | ended | archived | deleted | review | issue.
+ * Đang bật nhưng đã quá ngày kết thúc thì tính là "ended".
+ */
+export function metaCampaignStatus(effectiveStatus, stopTime, now = Date.now()) {
+  if (effectiveStatus === 'ACTIVE' && stopTime && Date.parse(stopTime) < now) return 'ended';
+  switch (effectiveStatus) {
+    case 'ACTIVE':
+      return 'active';
+    case 'PAUSED':
+    case 'CAMPAIGN_PAUSED':
+    case 'ADSET_PAUSED':
+      return 'paused';
+    case 'ARCHIVED':
+      return 'archived';
+    case 'DELETED':
+      return 'deleted';
+    case 'IN_PROCESS':
+    case 'PENDING_REVIEW':
+    case 'PREAPPROVED':
+      return 'review';
+    case 'WITH_ISSUES':
+    case 'DISAPPROVED':
+    case 'PENDING_BILLING_INFO':
+      return 'issue';
+    default:
+      return null;
+  }
+}
+
+// start_time dạng "2026-10-12T10:00:00+0700" -> lấy phần ngày (đã theo giờ tài khoản quảng cáo).
+const metaDay = (value) => (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null);
+
+/** Thông tin chiến dịch (trạng thái, ngày bắt đầu/kết thúc). Lỗi thì bỏ qua — chỉ là thông tin phụ. */
+async function fetchMetaCampaignInfo(accountId) {
+  try {
+    const rows = await metaGet(`act_${accountId}/campaigns`, { fields: 'id,effective_status,start_time,stop_time', limit: '500' });
+    return new Map(
+      (Array.isArray(rows) ? rows : []).map((c) => [
+        c.id,
+        { status: metaCampaignStatus(c.effective_status, c.stop_time), startDate: metaDay(c.start_time), endDate: metaDay(c.stop_time) },
+      ]),
+    );
+  } catch (err) {
+    if (!(err instanceof AdsApiError)) throw err;
+    return new Map();
+  }
+}
+
+async function fetchMetaAccount(accountId, range) {
+  // Từ đầu chiến dịch: 'maximum' = toàn bộ thời gian Facebook còn giữ số liệu (tối đa 37 tháng).
+  const period = range.lifetime ? { date_preset: 'maximum' } : { time_range: { since: range.from, until: range.to } };
+  const [info, campaigns, daily, campaignInfo] = await Promise.all([
     metaGet(`act_${accountId}`, { fields: 'name,currency' }),
     metaGet(`act_${accountId}/insights`, {
       level: 'campaign',
       fields: `campaign_id,campaign_name,${META_FIELDS}`,
-      time_range: timeRange,
+      ...period,
       limit: '500',
     }),
-    metaGet(`act_${accountId}/insights`, { level: 'account', fields: META_FIELDS, time_range: timeRange, time_increment: '1', limit: '100' }),
+    metaGet(`act_${accountId}/insights`, { level: 'account', fields: META_FIELDS, ...period, time_increment: '1', limit: '500' }),
+    fetchMetaCampaignInfo(accountId),
   ]);
   const account = { id: accountId, name: info.name || `act_${accountId}`, currency: info.currency || 'VND' };
   return {
     account,
-    campaigns: campaigns.map((c) => ({ id: c.campaign_id, name: c.campaign_name, account: account.name, ...normalizeMetaRow(c) })),
+    campaigns: campaigns.map((c) => ({
+      id: c.campaign_id,
+      name: c.campaign_name,
+      account: account.name,
+      status: null,
+      startDate: null,
+      endDate: null,
+      ...campaignInfo.get(c.campaign_id),
+      ...normalizeMetaRow(c),
+    })),
     daily: daily.map((d) => ({ date: d.date_start, ...normalizeMetaRow(d) })),
   };
 }
@@ -163,25 +226,54 @@ async function tiktokGet(path, params) {
   return body.data ?? {};
 }
 
-async function tiktokReport(advertiserId, { from, to }, extra) {
+// TikTok giới hạn mỗi lần hỏi theo ngày tối đa 365 ngày -> khoảng dài thì chia nhỏ rồi ghép lại.
+const TIKTOK_MAX_DAYS = 365;
+
+export function splitRange(from, to, maxDays = TIKTOK_MAX_DAYS) {
+  const parts = [];
+  for (let start = from; start <= to; start = addDays(start, maxDays)) {
+    const end = addDays(start, maxDays - 1);
+    parts.push({ from: start, to: end < to ? end : to });
+  }
+  return parts;
+}
+
+/** period = { lifetime: true } (toàn bộ thời gian, không chia theo ngày) hoặc { from, to }. */
+async function tiktokReport(advertiserId, period, extra) {
+  const windows = period.lifetime ? [{ query_lifetime: 'true' }] : splitRange(period.from, period.to).map((p) => ({ start_date: p.from, end_date: p.to }));
   const rows = [];
-  for (let page = 1; page <= 10; page++) {
-    const data = await tiktokGet('report/integrated/get/', {
-      advertiser_id: advertiserId,
-      report_type: 'BASIC',
-      start_date: from,
-      end_date: to,
-      page: String(page),
-      page_size: '1000',
-      ...extra,
-    });
-    rows.push(...(data.list ?? []));
-    if (page >= (data.page_info?.total_page ?? 1)) break;
+  for (const window of windows) {
+    for (let page = 1; page <= 10; page++) {
+      const data = await tiktokGet('report/integrated/get/', {
+        advertiser_id: advertiserId,
+        report_type: 'BASIC',
+        ...window,
+        page: String(page),
+        page_size: '1000',
+        ...extra,
+      });
+      rows.push(...(data.list ?? []));
+      if (page >= (data.page_info?.total_page ?? 1)) break;
+    }
   }
   return rows;
 }
 
+/** Cộng dồn các dòng cùng chiến dịch (khi khoảng ngày bị chia nhỏ). */
+function mergeCampaigns(rows) {
+  const byId = new Map();
+  for (const row of rows) {
+    const prev = byId.get(row.id);
+    if (!prev) byId.set(row.id, { ...row });
+    else for (const k of SUM_KEYS) prev[k] += row[k];
+  }
+  return [...byId.values()];
+}
+
 async function fetchTiktokAccount(advertiserId, range) {
+  // Từ đầu chiến dịch: tổng theo chiến dịch lấy trọn đời (query_lifetime); TikTok không cho chia theo ngày
+  // khi lấy trọn đời nên biểu đồ chỉ vẽ 365 ngày gần nhất.
+  const dailyPeriod = range.lifetime ? { from: addDays(range.to, -(TIKTOK_MAX_DAYS - 1)), to: range.to } : range;
   const [info, campaigns, daily] = await Promise.all([
     tiktokGet('advertiser/info/', { advertiser_ids: [advertiserId], fields: ['name', 'currency'] }),
     tiktokReport(advertiserId, range, {
@@ -189,18 +281,23 @@ async function fetchTiktokAccount(advertiserId, range) {
       dimensions: ['campaign_id'],
       metrics: [...TIKTOK_METRICS, 'campaign_name'],
     }),
-    tiktokReport(advertiserId, range, { data_level: 'AUCTION_ADVERTISER', dimensions: ['stat_time_day'], metrics: TIKTOK_METRICS }),
+    tiktokReport(advertiserId, dailyPeriod, { data_level: 'AUCTION_ADVERTISER', dimensions: ['stat_time_day'], metrics: TIKTOK_METRICS }),
   ]);
   const meta = info.list?.[0] ?? {};
   const account = { id: advertiserId, name: meta.name || advertiserId, currency: meta.currency || 'VND' };
   return {
     account,
-    campaigns: campaigns.map((r) => ({
-      id: r.dimensions?.campaign_id,
-      name: r.metrics?.campaign_name || r.dimensions?.campaign_id,
-      account: account.name,
-      ...normalizeTiktokMetrics(r.metrics),
-    })),
+    campaigns: mergeCampaigns(
+      campaigns.map((r) => ({
+        id: r.dimensions?.campaign_id,
+        name: r.metrics?.campaign_name || r.dimensions?.campaign_id,
+        account: account.name,
+        status: null,
+        startDate: null,
+        endDate: null,
+        ...normalizeTiktokMetrics(r.metrics),
+      })),
+    ),
     // stat_time_day dạng "2026-11-10 00:00:00"
     daily: daily.map((r) => ({ date: String(r.dimensions?.stat_time_day ?? '').slice(0, 10), ...normalizeTiktokMetrics(r.metrics) })),
   };

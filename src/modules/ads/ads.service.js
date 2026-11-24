@@ -5,7 +5,7 @@
 // - API lỗi mà còn bản lưu cũ -> vẫn hiện bản cũ kèm cảnh báo, không để trang trống.
 import { config } from '#config';
 import { forbidden } from '#lib/errors.js';
-import { addDays, todayISO } from '#lib/dates.js';
+import { addDays, isISODate, todayISO } from '#lib/dates.js';
 import { PLATFORMS, fetchPlatform, AdsApiError } from './ads.providers.js';
 import * as repo from './ads.repo.js';
 
@@ -22,10 +22,27 @@ export const RANGES = [
   { value: '7d', label: '7 ngày' },
   { value: '30d', label: '30 ngày' },
   { value: 'month', label: 'Tháng này' },
+  { value: 'lifetime', label: 'Từ đầu chiến dịch' },
 ];
 
-/** Đổi lựa chọn khoảng ngày thành { key, from, to } theo giờ Việt Nam. */
-export function resolveRange(value, today = todayISO()) {
+// Facebook chỉ trả số liệu trong 37 tháng gần nhất -> ngày tự chọn không lùi xa hơn.
+const MAX_BACK_DAYS = 37 * 30;
+
+/**
+ * Đổi lựa chọn khoảng ngày thành { key, from, to } theo giờ Việt Nam.
+ * - 'lifetime': toàn bộ thời gian đã chạy (from = null; sau khi lấy số liệu sẽ điền ngày đầu có chi tiêu).
+ * - 'custom': ngày tự chọn custom = { from, to } (YYYY-MM-DD). Sai/thiếu thì về 7 ngày.
+ */
+export function resolveRange(value, today = todayISO(), custom = {}) {
+  if (value === 'custom' && isISODate(custom.from) && isISODate(custom.to)) {
+    let [from, to] = custom.from <= custom.to ? [custom.from, custom.to] : [custom.to, custom.from];
+    const earliest = addDays(today, -MAX_BACK_DAYS);
+    if (to > today) to = today;
+    if (from > to) from = to;
+    if (from < earliest) from = earliest;
+    if (to < earliest) to = earliest;
+    return { key: 'custom', from, to };
+  }
   const key = RANGES.some((r) => r.value === value) ? value : '7d';
   switch (key) {
     case 'today':
@@ -38,10 +55,16 @@ export function resolveRange(value, today = todayISO()) {
       return { key, from: addDays(today, -29), to: today };
     case 'month':
       return { key, from: `${today.slice(0, 7)}-01`, to: today };
+    case 'lifetime':
+      return { key, from: null, to: today, lifetime: true };
     default:
       return { key, from: addDays(today, -6), to: today };
   }
 }
+
+/** Tham số URL giữ nguyên khoảng ngày đang xem (chuyển trang, xuất file). Chỉ chứa giá trị đã lọc. */
+export const rangeQuery = (range) =>
+  range.key === 'custom' ? `range=custom&from=${range.from}&to=${range.to}` : `range=${range.key}`;
 
 // fetched_at lưu dạng 'YYYY-MM-DD HH:MM:SS' (UTC)
 const ageMinutes = (fetchedAt) => (Date.now() - Date.parse(`${fetchedAt.replace(' ', 'T')}Z`)) / 60_000;
@@ -51,7 +74,7 @@ async function loadPlatform(key, range, { force }) {
   const base = { key, label: platform.label, resultLabel: platform.resultLabel };
   if (!platform.isConfigured()) return { ...base, configured: false };
 
-  const cacheKey = `${key}:${range.from}:${range.to}`;
+  const cacheKey = range.lifetime ? `${key}:lifetime` : `${key}:${range.from}:${range.to}`;
   const cached = await repo.findCache(cacheKey);
   if (cached && !force && ageMinutes(cached.fetched_at) < config.ads.cacheMinutes) {
     return { ...base, configured: true, ...JSON.parse(cached.payload), fetchedAt: cached.fetched_at };
@@ -68,9 +91,12 @@ async function loadPlatform(key, range, { force }) {
   }
 }
 
-/** Báo cáo cho trang /ads: từng nền tảng + tổng chi tiêu chung (khi cùng loại tiền). */
-export async function getReport(rangeValue, { force = false } = {}) {
-  const range = resolveRange(rangeValue);
+/**
+ * Báo cáo cho trang /ads: từng nền tảng + tổng chi tiêu chung (khi cùng loại tiền).
+ * custom = { from, to } khi rangeValue = 'custom'.
+ */
+export async function getReport(rangeValue, { force = false, custom = {} } = {}) {
+  const range = resolveRange(rangeValue, todayISO(), custom);
   const platforms = await Promise.all(Object.keys(PLATFORMS).map((key) => loadPlatform(key, range, { force })));
   if (force) await repo.pruneCache();
 
@@ -86,6 +112,12 @@ export async function getReport(rangeValue, { force = false } = {}) {
         }
       : null;
   if (combined) combined.costPerResult = combined.results ? combined.spend / combined.results : null;
+
+  // Từ đầu chiến dịch: ngày đầu tiên có chi tiêu = mốc bắt đầu của báo cáo.
+  if (range.lifetime) {
+    const firstDays = withData.map((p) => p.daily.find((d) => d.spend > 0)?.date).filter(Boolean).sort();
+    range.from = firstDays[0] ?? null;
+  }
 
   return { range, platforms, combined, anyConfigured: platforms.some((p) => p.configured) };
 }
