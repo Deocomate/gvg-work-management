@@ -49,7 +49,7 @@ export async function setCover(albumId, photoId) {
 
 // ---------- Ảnh ----------
 
-const PHOTO_COLUMNS = 'id, album_id, file_name, file_type, file_size, width, height, created_at';
+const PHOTO_COLUMNS = 'id, album_id, folder, file_name, file_type, file_size, width, height, created_at';
 
 export const listPhotos = (albumId) =>
   all(`SELECT ${PHOTO_COLUMNS} FROM gallery_photos WHERE album_id = ? ORDER BY id`, [albumId]);
@@ -71,10 +71,11 @@ export const findPhotoThumb = (id) =>
 /** Thêm ảnh vào album (album bị xoá cùng lúc thì không thêm, trả null) và đẩy album lên đầu danh sách. */
 export async function createPhoto(albumId, photo, userId) {
   const { changes, id } = await run(
-    `INSERT INTO gallery_photos (album_id, file_name, file_type, file_size, width, height, data, thumb, thumb_type, created_by)
-     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM gallery_albums WHERE id = ?)`,
+    `INSERT INTO gallery_photos (album_id, folder, file_name, file_type, file_size, width, height, data, thumb, thumb_type, created_by)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM gallery_albums WHERE id = ?)`,
     [
       albumId,
+      photo.folder ?? '',
       photo.file_name,
       photo.file_type,
       photo.file_size,

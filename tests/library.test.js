@@ -19,9 +19,10 @@ const PHOTO_B = jpeg(2);
 const createAlbum = (data) => postForm(admin, '/library', data, { from: '/library/new' });
 const albumIdFrom = (res) => Number(res.headers.location.match(/^\/library\/(\d+)$/)[1]);
 
-async function uploadPhoto(agent, albumId, { buffer, name, thumb, width, height }) {
+async function uploadPhoto(agent, albumId, { buffer, name, thumb, width, height, folder }) {
   const token = await csrfToken(agent, '/library');
   let req = agent.post(`/library/${albumId}/photos`).set('Accept', 'application/json').set('x-csrf-token', token);
+  if (folder) req = req.field('folder', folder);
   if (width) req = req.field('width', String(width)).field('height', String(height));
   if (buffer) req = req.attach('photo', buffer, name);
   if (thumb) req = req.attach('thumb', thumb, 'thumb.webp');
@@ -116,7 +117,9 @@ test('trang album: lưới ảnh có nút tải từng ảnh + tải cả album;
   assert.equal(ids.length, 2);
   assert.match(page, new RegExp(`href="/library/photos/${ids[0]}/file\\?download=1" download="bình gốm.jpg"`));
   assert.match(page, new RegExp(`href="/library/${albumId}/download"`));
-  assert.match(page, /lib-tile-feature/); // ảnh đầu là ô lớn
+  assert.match(page, /<p class="lib-caption" title="bình gốm.jpg">bình gốm<\/p>/); // tên dưới ảnh, bỏ đuôi
+  assert.doesNotMatch(page, /data-lib-caption/); // nhân viên không sửa tên được
+  assert.match((await admin.get(`/library/${albumId}`)).text, /data-lib-caption/);
   assert.doesNotMatch(page, /data-lib-upload/);
   assert.doesNotMatch(page, /data-viewer-delete/);
 
@@ -179,8 +182,60 @@ test('đổi tên ảnh: giữ đuôi file gốc, bỏ ký tự cấm, tên tr�
   assert.equal(blank.status, 302);
   assert.match((await mai.get(`/library/${albumId}`)).text, /data-name="bình gốm.jpg"/);
 
+  // Sửa ngay dưới ảnh (JS) thì nhận JSON
+  const token = await csrfToken(admin, `/library/${albumId}`);
+  const json = await admin.post(`/library/photos/${first}/rename`).set('Accept', 'application/json').set('x-csrf-token', token).type('form').send({ name: 'Bình 01' });
+  assert.equal(json.status, 200);
+  assert.deepEqual(json.body, { fileName: 'Bình 01.jpg', displayName: 'Bình 01' });
+  const bad = await admin.post(`/library/photos/${first}/rename`).set('Accept', 'application/json').set('x-csrf-token', token).type('form').send({ name: ' ' });
+  assert.equal(bad.status, 422);
+  await rename(admin, 'bình gốm');
+
   assert.equal((await rename(mai, 'x')).status, 403);
   assert.equal((await postForm(admin, '/library/photos/9999/rename', { name: 'x' }, { from: `/library/${albumId}` })).status, 404);
+});
+
+test('thư mục con: lọc dần từng cấp, đếm số ảnh, tải zip theo mục đang lọc', async () => {
+  const res = await createAlbum({ name: 'Ảnh ban men lam' });
+  const id = albumIdFrom(res);
+  const put = (name, folder, fill) => uploadPhoto(admin, id, { buffer: jpeg(fill), name, folder });
+  assert.equal((await put('ban1.jpg', 'Ảnh ban', 3)).status, 201);
+  await put('trang1.jpg', ' Ảnh ban \\ Ảnh nền trắng/ ', 4); // gọn khoảng trắng, nhận cả \ và /
+  await put('rong1.jpg', 'Ảnh lẻ/Rồng', 5);
+  await put('rong2.jpg', 'Ảnh lẻ/Rồng', 6);
+  await put('sen1.jpg', 'Ảnh lẻ/Sen', 7);
+
+  const tiles = (html) => [...html.matchAll(/data-lib-photo data-id="\d+" data-name="([^"]+)"/g)].map((m) => m[1]);
+  const chips = (html) => [...html.matchAll(/class="lib-chip( lib-chip-active)?"[^>]*>([^<]+)<span class="lib-chip-count">(\d+)/g)].map((m) => `${m[1] ? '*' : ''}${m[2].trim()} ${m[3]}`);
+
+  const all = (await mai.get(`/library/${id}`)).text;
+  assert.equal(tiles(all).length, 5);
+  assert.deepEqual(chips(all), ['*Tất cả 5', 'Ảnh ban 2', 'Ảnh lẻ 3']); // chỉ hàng cấp 1
+
+  const le = (await mai.get(`/library/${id}?folder=${encodeURIComponent('Ảnh lẻ')}`)).text;
+  assert.deepEqual(tiles(le), ['rong1.jpg', 'rong2.jpg', 'sen1.jpg']);
+  assert.deepEqual(chips(le), ['Tất cả 5', 'Ảnh ban 2', '*Ảnh lẻ 3', '*Tất cả 3', 'Rồng 2', 'Sen 1']);
+  assert.match(le, /Tải 3 ảnh này/);
+
+  const rong = (await mai.get(`/library/${id}?folder=${encodeURIComponent('Ảnh lẻ/Rồng')}`)).text;
+  assert.deepEqual(tiles(rong), ['rong1.jpg', 'rong2.jpg']);
+  assert.deepEqual(chips(rong), ['Tất cả 5', 'Ảnh ban 2', '*Ảnh lẻ 3', 'Tất cả 3', '*Rồng 2', 'Sen 1']);
+
+  // "Ảnh ban" có ảnh riêng + thư mục con "Ảnh nền trắng"
+  const ban = (await mai.get(`/library/${id}?folder=${encodeURIComponent('Ảnh ban')}`)).text;
+  assert.deepEqual(tiles(ban), ['ban1.jpg', 'trang1.jpg']);
+  assert.deepEqual(chips(ban).slice(3), ['*Tất cả 2', 'Ảnh nền trắng 1']);
+
+  const none = (await mai.get(`/library/${id}?folder=khong-co`)).text;
+  assert.match(none, /Mục này chưa có ảnh/);
+
+  const zip = await mai.get(`/library/${id}/download?folder=${encodeURIComponent('Ảnh lẻ/Rồng')}`).buffer(true).parse(binary);
+  assert.deepEqual(readZip(zip.body).map((e) => e.name), ['rong1.jpg', 'rong2.jpg']);
+  assert.equal(zip.headers['content-disposition'], `attachment; filename*=UTF-8''${encodeURIComponent('Ảnh ban men lam - Ảnh lẻ - Rồng.zip')}`);
+
+  // Đang lọc thì form tải lên mang sẵn thư mục đó
+  assert.match((await admin.get(`/library/${id}?folder=${encodeURIComponent('Ảnh lẻ/Sen')}`)).text, /name="folder" value="Ảnh lẻ\/Sen"/);
+  await postForm(admin, `/library/${id}/delete`, {}, { from: `/library/${id}` });
 });
 
 test('đặt ảnh bìa, xoá ảnh, sửa và xoá album', async () => {

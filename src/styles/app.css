@@ -839,18 +839,33 @@
   .lib-progress-bar { @apply h-1.5 overflow-hidden rounded-full bg-raised; }
   .lib-progress-bar > span { @apply block h-full w-0 rounded-full bg-pine-400 transition-all; }
 
-  .lib-grid { @apply grid grid-flow-dense grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4; }
-  .lib-tile { @apply relative aspect-square overflow-hidden rounded-xl bg-raised; }
-  .lib-tile-feature { @apply col-span-2 row-span-2; }
-  .lib-tile-feature-right { @apply lg:col-start-3; }
+  /* Bộ lọc dần theo thư mục: mỗi cấp một hàng nút; hàng con thụt vào, có vạch bên trái */
+  .lib-filters { @apply mb-5 space-y-2; }
+  .lib-filter-row { @apply flex flex-wrap gap-1.5; }
+  .lib-filter-row + .lib-filter-row { @apply ml-1 border-l-2 border-line pl-3; }
+  .lib-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink-soft transition
+      hover:border-line-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine-400;
+  }
+  .lib-chip-active { @apply border-pine-500 bg-pine-500 text-white hover:border-pine-500 hover:text-white; }
+  .lib-chip-count { @apply text-xs tabular-nums opacity-70; }
+
+  /* Lưới đều: ảnh vuông + tên ngay dưới ảnh */
+  .lib-grid { @apply grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5; }
+  .lib-tile { @apply min-w-0; }
+  .lib-tile-media { @apply relative aspect-square overflow-hidden rounded-xl bg-raised; }
   .lib-tile-open { @apply block h-full w-full cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pine-400; }
   .lib-tile-open img { @apply h-full w-full object-cover transition duration-500 ease-out; }
-  .lib-tile:hover .lib-tile-open img { @apply scale-[1.04]; }
+  .lib-tile-media:hover .lib-tile-open img { @apply scale-[1.04]; }
+  .lib-caption { @apply mt-1.5 line-clamp-2 block w-full px-0.5 text-left text-sm leading-snug break-words text-ink; }
+  .lib-caption-edit { @apply cursor-text rounded-md hover:bg-raised hover:text-ink focus-visible:outline-2 focus-visible:outline-pine-400; }
+  .lib-caption-input { @apply mt-1 w-full rounded-md border border-pine-400 bg-surface px-1.5 py-1 text-sm text-ink outline-none; }
+  .lib-caption-saving { @apply opacity-50; }
   /* Thanh dưới ảnh: ẩn, rê chuột/tab tới thì hiện. Máy cảm ứng (không rê chuột được) luôn hiện nút tải. */
   .lib-tile-bar {
     @apply pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end gap-2 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2 pt-10 opacity-0 transition duration-200 sm:p-3 sm:pt-12;
   }
-  .lib-tile:hover .lib-tile-bar, .lib-tile:focus-within .lib-tile-bar { @apply opacity-100; }
+  .lib-tile-media:hover .lib-tile-bar, .lib-tile-media:focus-within .lib-tile-bar { @apply opacity-100; }
   .lib-dl {
     @apply pointer-events-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#2a1a3c] shadow-lg transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
   }

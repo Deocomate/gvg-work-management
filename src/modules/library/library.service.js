@@ -24,17 +24,67 @@ export async function getAlbum(id) {
   return album;
 }
 
-/** Album + ảnh để hiển thị lưới. */
-export async function getAlbumWithPhotos(id) {
+// ---------- Thư mục con trong album ----------
+
+/** "  Ảnh lẻ \ Rồng/ " -> "Ảnh lẻ/Rồng": gọn khoảng trắng, bỏ cấp rỗng; tối đa 5 cấp, 200 ký tự. '' = không thư mục. */
+export function cleanFolder(value) {
+  return String(value ?? '')
+    .normalize('NFC')
+    .split(/[\\/]+/)
+    .map((s) => s.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 5)
+    .join('/')
+    .slice(0, 200);
+}
+
+/** Ảnh nằm trong thư mục `folder` (kể cả thư mục con của nó). folder '' = cả album. */
+const inFolder = (photoFolder, folder) => !folder || photoFolder === folder || photoFolder.startsWith(`${folder}/`);
+
+const byName = (a, b) => a.localeCompare(b, 'vi', { numeric: true, sensitivity: 'base' });
+
+/**
+ * Bộ lọc dần theo thư mục: mỗi cấp một hàng nút. Hàng đầu là các thư mục cấp 1; chọn một thư mục
+ * thì hiện thêm hàng thư mục con của nó (nếu có). Mỗi nút kèm số ảnh (tính cả thư mục con).
+ */
+function folderFilters(photos, selected) {
+  const parts = selected ? selected.split('/') : [];
+  const rows = [];
+  for (let depth = 0; depth <= parts.length; depth++) {
+    const parent = parts.slice(0, depth).join('/');
+    const inside = photos.filter((p) => inFolder(p.folder, parent));
+    const counts = new Map();
+    for (const p of inside) {
+      const seg = p.folder.split('/')[depth];
+      if (seg) counts.set(seg, (counts.get(seg) ?? 0) + 1);
+    }
+    if (!counts.size) break;
+    rows.push({
+      all: { path: parent, count: inside.length, active: selected === parent },
+      items: [...counts.keys()].sort(byName).map((seg) => ({
+        label: seg,
+        path: parent ? `${parent}/${seg}` : seg,
+        count: counts.get(seg),
+        active: parts[depth] === seg,
+      })),
+    });
+  }
+  return rows;
+}
+
+const extOf = (name) => name.match(/\.[a-z0-9]{1,5}$/i)?.[0] ?? '';
+/** Tên hiện dưới ảnh: bỏ đuôi .jpg cho gọn. */
+const displayName = (fileName) => fileName.slice(0, fileName.length - extOf(fileName).length) || fileName;
+
+/** Album + ảnh (đã lọc theo thư mục) + các hàng nút lọc. */
+export async function getAlbumWithPhotos(id, folderInput = '') {
   const album = await getAlbum(id);
-  // Lưới kiểu tạp chí: cứ 5 ảnh thì ảnh đầu là ô lớn (2x2), khối sau đổi bên (trái, phải, trái…) cho đỡ đều đều.
-  const photos = (await repo.listPhotos(id)).map((p, i) => ({
-    ...p,
-    isCover: p.id === album.cover_id,
-    feature: i % 5 === 0,
-    featureRight: i % 10 === 5,
-  }));
-  return { album, photos };
+  const folder = cleanFolder(folderInput);
+  const all = await repo.listPhotos(id);
+  const photos = all
+    .filter((p) => inFolder(p.folder, folder))
+    .map((p) => ({ ...p, isCover: p.id === album.cover_id, displayName: displayName(p.file_name) }));
+  return { album, photos, folder, filters: folderFilters(all, folder), total: all.length };
 }
 
 export async function createAlbum(input, userId) {
@@ -77,6 +127,7 @@ export async function addPhoto(albumId, input, files = [], userId) {
   const photo = await repo.createPhoto(
     albumId,
     {
+      folder: cleanFolder(input?.folder),
       file_name: safeFileName(upload.originalname, `anh.${kind.ext}`),
       file_type: kind.type,
       file_size: upload.size,
@@ -91,8 +142,6 @@ export async function addPhoto(albumId, input, files = [], userId) {
   if (!photo) throw notFound('Không tìm thấy album này.');
   return { ok: true, data: photo };
 }
-
-const extOf = (name) => name.match(/\.[a-z0-9]{1,5}$/i)?.[0] ?? '';
 
 /**
  * Đổi tên ảnh (tên file khi tải về / trong zip). Giữ đuôi của ảnh gốc: gõ "Bình hút lộc" cho ảnh "DSC0978.JPG"
@@ -112,7 +161,7 @@ export async function renamePhoto(id, input) {
   if (!base) return invalid;
   const fileName = `${base.slice(0, 150 - ext.length)}${ext}`;
   if (!(await repo.renamePhoto(id, fileName))) throw notFound('Không tìm thấy ảnh này.');
-  return { ok: true, albumId, fileName };
+  return { ok: true, albumId, fileName, displayName: displayName(fileName) };
 }
 
 /** Xoá ảnh, trả về id album chứa nó (để quay lại đúng album). */
@@ -152,9 +201,10 @@ function uniqueName(name, used) {
  * Lần lượt từng ảnh gốc của album để ghi vào zip — mỗi lần chỉ đọc một ảnh, album lớn cũng không đầy bộ nhớ.
  * Ảnh bị xoá giữa chừng thì bỏ qua.
  */
-export async function* albumZipEntries(albumId) {
+export async function* albumZipEntries(albumId, folderInput = '') {
   const used = new Set();
-  for (const { id } of await repo.listPhotos(albumId)) {
+  const folder = cleanFolder(folderInput);
+  for (const { id } of (await repo.listPhotos(albumId)).filter((p) => inFolder(p.folder, folder))) {
     const file = await repo.findPhotoFile(id);
     if (!file) continue;
     yield { name: uniqueName(file.file_name, used), data: Buffer.from(file.data), date: appWallClock(file.created_at) };

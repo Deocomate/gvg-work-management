@@ -17,8 +17,17 @@ export async function index(req, res) {
 }
 
 export async function show(req, res) {
-  const { album, photos } = await service.getAlbumWithPhotos(req.params.id);
-  res.render('library/album', { title: album.name, album, photos, manager: isManager(req.user), maxPhotoMb: MAX_PHOTO_MB });
+  const { album, photos, folder, filters, total } = await service.getAlbumWithPhotos(req.params.id, req.query.folder);
+  res.render('library/album', {
+    title: album.name,
+    album,
+    photos,
+    folder,
+    filters,
+    total,
+    manager: isManager(req.user),
+    maxPhotoMb: MAX_PHOTO_MB,
+  });
 }
 
 // ---------- Album ----------
@@ -56,16 +65,18 @@ export async function destroy(req, res) {
   res.redirect('/library');
 }
 
-/** Tải cả album thành một file .zip, ghi dần từng ảnh ra trình duyệt. */
+/** Tải cả album (hoặc chỉ mục đang lọc, ?folder=) thành một file .zip, ghi dần từng ảnh ra trình duyệt. */
 export async function downloadAlbum(req, res) {
   const album = await service.getAlbum(req.params.id);
+  const folder = service.cleanFolder(req.query.folder);
+  const name = folder ? `${album.name} - ${folder.split('/').join(' - ')}` : album.name;
   res.set({
     'Content-Type': 'application/zip',
-    'Content-Disposition': disposition('attachment', `${service.downloadName(album.name)}.zip`),
+    'Content-Disposition': disposition('attachment', `${service.downloadName(name)}.zip`),
     'Cache-Control': 'private, no-store',
   });
   const zip = createZipWriter((chunk) => res.write(chunk));
-  for await (const entry of service.albumZipEntries(album.id)) {
+  for await (const entry of service.albumZipEntries(album.id, folder)) {
     if (res.destroyed) return; // người dùng huỷ tải giữa chừng
     if (!zip.add(entry.name, entry.data, { date: entry.date })) await once(res, 'drain');
   }
@@ -86,10 +97,18 @@ export async function addPhoto(req, res) {
   res.redirect(`/library/${albumId}`);
 }
 
-/** Đổi tên ảnh rồi quay lại album, mở sẵn đúng ảnh đó (#photo-<id>) để xem tên mới. */
+/**
+ * Đổi tên ảnh. Sửa ngay dưới ảnh (JS) thì trả JSON; gửi form thường (cửa sổ xem lớn)
+ * thì quay lại album, mở sẵn đúng ảnh đó (#photo-<id>) để xem tên mới.
+ */
 export async function renamePhoto(req, res) {
   const id = req.params.id;
   const result = await service.renamePhoto(id, req.body);
+  if (req.accepts(['html', 'json']) === 'json') {
+    return result.ok
+      ? res.json({ fileName: result.fileName, displayName: result.displayName })
+      : res.status(422).json({ error: result.errors.name });
+  }
   req.flash(result.ok ? 'success' : 'error', result.ok ? `Đã đổi tên ảnh thành "${result.fileName}".` : result.errors.name);
   res.redirect(`/library/${result.albumId}#photo-${id}`);
 }

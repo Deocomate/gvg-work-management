@@ -43,6 +43,7 @@
 
     async function sendOne(file) {
       const body = new FormData();
+      body.append('folder', form.elements.folder?.value ?? '');
       body.append('photo', file, file.name);
       const thumb = await makeThumb(file);
       if (thumb?.blob) {
@@ -120,6 +121,74 @@
       if (busy) event.preventDefault();
     });
   }
+
+  // ---------------------------------------------------------------- Sửa tên ngay dưới ảnh (quản lý)
+  // Bấm tên -> ô nhập; Enter hoặc bấm ra ngoài là lưu, Esc là huỷ. Chỉ sửa phần tên, đuôi .jpg server giữ nguyên.
+
+  async function saveCaption(tile, input, button) {
+    const name = input.value.trim();
+    const before = button.textContent;
+    if (!name || name === before) return input.replaceWith(button);
+    input.disabled = true;
+    input.classList.add('lib-caption-saving');
+    try {
+      const response = await fetch(`/library/photos/${tile.dataset.id}/rename`, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded', 'x-csrf-token': csrf() },
+        body: new URLSearchParams({ name }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Lỗi ${response.status}`);
+      button.textContent = data.displayName;
+      tile.dataset.name = data.fileName;
+      for (const a of tile.querySelectorAll('a[download]')) {
+        a.setAttribute('download', data.fileName);
+        a.setAttribute('aria-label', `Tải ảnh ${data.fileName}`);
+      }
+      tile.querySelector('img')?.setAttribute('alt', data.fileName);
+      input.replaceWith(button);
+    } catch (error) {
+      input.disabled = false;
+      input.classList.remove('lib-caption-saving');
+      input.setCustomValidity(error.message);
+      input.reportValidity();
+      input.addEventListener('input', () => input.setCustomValidity(''), { once: true });
+      input.focus();
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-lib-caption]');
+    if (!button) return;
+    const tile = button.closest('[data-lib-photo]');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.maxLength = 150;
+    input.className = 'lib-caption-input';
+    input.value = button.textContent.trim();
+    input.setAttribute('aria-label', 'Tên ảnh mới');
+    let done = false;
+    const finish = (save) => {
+      if (done) return;
+      done = true;
+      if (save) saveCaption(tile, input, button).finally(() => (done = !input.isConnected));
+      else input.replaceWith(button);
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        finish(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        finish(false);
+        button.focus();
+      }
+    });
+    input.addEventListener('blur', () => finish(true));
+    button.replaceWith(input);
+    input.focus();
+    input.select();
+  });
 
   // ---------------------------------------------------------------- Xem ảnh lớn
 
