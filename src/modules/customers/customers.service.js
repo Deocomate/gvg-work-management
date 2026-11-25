@@ -1,6 +1,7 @@
 // Nghiệp vụ Data khách hàng. Ai vào được: quản lý + nhân viên vai trò Sale.
 import { forbidden, notFound } from '#lib/errors.js';
 import { validate } from '#lib/validate.js';
+import { safeFileName } from '#lib/file-types.js';
 import * as staffRepo from '#modules/staff/staff.repo.js';
 import { todayISO } from '#lib/dates.js';
 import { CUSTOMER_INFO_FILTERS, CUSTOMER_SOURCES, CUSTOMER_STATUSES, customerSchema, detectInvoiceType, invoiceSchema, phoneDigits } from './customers.schema.js';
@@ -81,12 +82,6 @@ async function prepare(input, exceptId = 0) {
   return { ok: true, data };
 }
 
-/** Tên file an toàn để lưu/hiện: bỏ đường dẫn và ký tự điều khiển, tối đa 150 ký tự. */
-const safeFileName = (name, ext) => {
-  const base = String(name ?? '').split(/[\\/]/).pop().replace(/[\u0000-\u001f"]/g, '').trim().slice(0, 150);
-  return base || `hoa-don.${ext}`;
-};
-
 /**
  * Khối "Thêm hoá đơn": để trống giá trị và file = không thêm (ô ngày luôn có sẵn hôm nay nên không tính).
  * Trả về { ok, invoice } (invoice = null nếu không thêm) hoặc { ok: false, errors }.
@@ -100,7 +95,7 @@ export function prepareInvoice(input, files = []) {
   if (upload) {
     const kind = detectInvoiceType(upload.buffer);
     if (!kind) errors.invoice_file = 'Chỉ nhận file PDF hoặc ảnh (JPG, PNG, WEBP)';
-    else file = { name: safeFileName(upload.originalname, kind.ext), type: kind.type, size: upload.size, data: upload.buffer };
+    else file = { name: safeFileName(upload.originalname, `hoa-don.${kind.ext}`), type: kind.type, size: upload.size, data: upload.buffer };
   }
   if (Object.keys(errors).length) return { ok: false, errors };
 

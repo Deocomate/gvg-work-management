@@ -9,7 +9,7 @@
 //     ['Facebook', { v: 1500000, s: 'int' }],
 //   ] }])  -> Buffer
 // Ô: chuỗi | số | null | { v, s } với s = title | head | bold | int | dec | pct (v là tỉ lệ 0–1).
-import { deflateRawSync } from 'node:zlib';
+import { zipBuffer } from './zip.js';
 
 const STYLE_INDEX = { title: 1, head: 2, bold: 3, int: 4, dec: 5, pct: 6, boldInt: 7 };
 
@@ -95,68 +95,5 @@ export function buildXlsx(sheets) {
   sheets.forEach((s, i) => {
     files[`xl/worksheets/sheet${i + 1}.xml`] = sheetXml(s);
   });
-  return zip(files);
-}
-
-// ---------------------------------------------------------------- Đóng gói zip (định dạng của .xlsx)
-
-const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
-  let c = n;
-  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-  return c >>> 0;
-});
-
-function crc32(buf) {
-  let crc = 0xffffffff;
-  for (const byte of buf) crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function zip(files) {
-  const locals = [];
-  const centrals = [];
-  let offset = 0;
-  for (const [name, content] of Object.entries(files)) {
-    const nameBuf = Buffer.from(name, 'utf8');
-    const data = Buffer.from(content, 'utf8');
-    const packed = deflateRawSync(data);
-    const crc = crc32(data);
-
-    const local = Buffer.alloc(30);
-    local.writeUInt32LE(0x04034b50, 0);
-    local.writeUInt16LE(20, 4); // phiên bản cần để giải nén
-    local.writeUInt16LE(0x0800, 6); // tên file UTF-8
-    local.writeUInt16LE(8, 8); // nén deflate
-    local.writeUInt32LE(0, 10); // giờ/ngày sửa (không cần)
-    local.writeUInt32LE(crc, 14);
-    local.writeUInt32LE(packed.length, 18);
-    local.writeUInt32LE(data.length, 22);
-    local.writeUInt16LE(nameBuf.length, 26);
-    local.writeUInt16LE(0, 28);
-    locals.push(local, nameBuf, packed);
-
-    const central = Buffer.alloc(46);
-    central.writeUInt32LE(0x02014b50, 0);
-    central.writeUInt16LE(20, 4);
-    central.writeUInt16LE(20, 6);
-    central.writeUInt16LE(0x0800, 8);
-    central.writeUInt16LE(8, 10);
-    central.writeUInt32LE(0, 12);
-    central.writeUInt32LE(crc, 16);
-    central.writeUInt32LE(packed.length, 20);
-    central.writeUInt32LE(data.length, 24);
-    central.writeUInt16LE(nameBuf.length, 28);
-    central.writeUInt32LE(offset, 42);
-    centrals.push(central, nameBuf);
-
-    offset += local.length + nameBuf.length + packed.length;
-  }
-  const centralBuf = Buffer.concat(centrals);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(Object.keys(files).length, 8);
-  end.writeUInt16LE(Object.keys(files).length, 10);
-  end.writeUInt32LE(centralBuf.length, 12);
-  end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...locals, centralBuf, end]);
+  return zipBuffer(files);
 }

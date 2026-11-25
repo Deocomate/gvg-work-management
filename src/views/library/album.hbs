@@ -1,0 +1,99 @@
+{{> subnav/docs}}
+
+<a href="/library" class="lib-back">← Thư viện</a>
+
+<header class="lib-album-head">
+  <div class="min-w-0">
+    <h1 class="lib-album-title">{{album.name}}</h1>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    {{#if photos.length}}
+      <a href="/library/{{album.id}}/download" class="btn-primary">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+        Tải cả album
+      </a>
+    {{/if}}
+    {{#if manager}}
+      <a href="/library/{{album.id}}/edit" class="btn-ghost btn-icon" title="Đổi tên album" aria-label="Sửa album">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg>
+      </a>
+      {{> form/delete-button action=(concat "/library/" album.id "/delete") confirm="Xoá album này và TOÀN BỘ ảnh bên trong? Không khôi phục được." icon=true label="Xoá album"}}
+    {{/if}}
+  </div>
+</header>
+
+{{#if manager}}
+  {{!-- Tải ảnh lên: chọn/kéo nhiều ảnh, public/js/library.js gửi lần lượt từng ảnh kèm ảnh thu nhỏ.
+       Không có JS thì form gửi một ảnh như form thường. --}}
+  <form method="post" action="/library/{{album.id}}/photos" enctype="multipart/form-data" class="lib-drop" data-lib-upload>
+    {{> form/csrf}}
+    <label class="lib-drop-zone" data-lib-drop>
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="sr-only" data-lib-files data-lib-max-mb="{{maxPhotoMb}}">
+      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>
+      <span><strong class="text-ink">Bấm để chọn ảnh</strong> hoặc kéo thả ảnh vào đây</span>
+    </label>
+    <noscript><button type="submit" class="btn-secondary btn-sm mt-2">Tải ảnh lên</button></noscript>
+    <div class="lib-progress" data-lib-progress hidden>
+      <div class="lib-progress-bar"><span data-lib-progress-fill></span></div>
+      <p class="text-sm text-ink-soft" data-lib-progress-text></p>
+      <ul class="text-xs text-bad-300" data-lib-progress-errors></ul>
+    </div>
+  </form>
+{{/if}}
+
+{{#if photos.length}}
+  <ul class="lib-grid" data-lib-grid>
+    {{#each photos}}
+      <li class="lib-tile{{#if feature}} lib-tile-feature{{/if}}{{#if featureRight}} lib-tile-feature-right{{/if}}"
+          data-lib-photo data-id="{{id}}" data-name="{{file_name}}"{{#if isCover}} data-cover{{/if}}>
+        <button type="button" class="lib-tile-open" data-lib-open aria-label="Xem ảnh {{file_name}}">
+          <img src="/library/photos/{{id}}/thumb" alt="{{file_name}}" loading="lazy" decoding="async"{{#if width}} width="{{width}}" height="{{height}}"{{/if}}>
+        </button>
+        {{!-- Rê chuột (máy tính) hoặc chạm (điện thoại luôn hiện) -> nút tải --}}
+        <div class="lib-tile-bar">
+          <a href="/library/photos/{{id}}/file?download=1" download="{{file_name}}" class="lib-dl" title="Tải ảnh" aria-label="Tải ảnh {{file_name}}">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+          </a>
+        </div>
+      </li>
+    {{/each}}
+  </ul>
+{{else}}
+  {{#if manager}}
+    {{> empty-state title="Album chưa có ảnh" text="Bấm khung phía trên để chọn ảnh, hoặc kéo thả ảnh từ máy vào."}}
+  {{else}}
+    {{> empty-state title="Album chưa có ảnh" text="Quản lý sẽ tải ảnh lên album này."}}
+  {{/if}}
+{{/if}}
+
+{{!-- Xem ảnh lớn: public/js/library.js mở khi bấm ảnh; ← → chuyển ảnh, Esc đóng --}}
+<dialog id="lib-viewer" class="lib-viewer" aria-label="Xem ảnh">
+  <div class="lib-viewer-bar">
+    <div class="min-w-0 flex-1">
+      <p class="truncate font-medium" data-viewer-name></p>
+      <p class="text-xs opacity-70" data-viewer-count></p>
+    </div>
+    {{#if manager}}
+      <form method="post" class="inline" data-viewer-cover data-action-template="/library/{{album.id}}/cover/:id">
+        {{> form/csrf}}
+        <button type="submit" class="lib-viewer-btn">Đặt làm ảnh bìa</button>
+      </form>
+      <form method="post" class="inline" data-viewer-delete data-action-template="/library/photos/:id/delete" data-confirm="Xoá ảnh này khỏi album? Không khôi phục được.">
+        {{> form/csrf}}
+        <button type="submit" class="lib-viewer-btn lib-viewer-btn-danger">Xoá</button>
+      </form>
+    {{/if}}
+    <a href="#" download class="btn-primary btn-sm" data-viewer-download>
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+      Tải xuống
+    </a>
+    <button type="button" class="lib-viewer-btn" data-dialog-close aria-label="Đóng">✕</button>
+  </div>
+  <div class="lib-viewer-stage">
+    <button type="button" class="lib-viewer-nav lib-viewer-prev" data-viewer-prev aria-label="Ảnh trước">‹</button>
+    <img alt="" data-viewer-img>
+    <button type="button" class="lib-viewer-nav lib-viewer-next" data-viewer-next aria-label="Ảnh sau">›</button>
+  </div>
+</dialog>
+
+<script src="/js/library.js?v={{assetVersion}}" defer></script>

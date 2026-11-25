@@ -76,3 +76,26 @@ export function monthGrid(month) {
   }
   return weeks;
 }
+
+const wallClockFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: config.timezone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+/**
+ * Thời điểm SQLite (UTC) -> Date mà các trường UTC mang giờ đồng hồ theo múi giờ app.
+ * Dùng cho định dạng không có múi giờ (VD ngày giờ file trong .zip hiện đúng giờ Việt Nam).
+ */
+export function appWallClock(utcDateTime) {
+  if (!utcDateTime) return null;
+  const date = new Date(`${utcDateTime.replace(' ', 'T')}Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  const p = Object.fromEntries(wallClockFormatter.formatToParts(date).map((x) => [x.type, x.value]));
+  return new Date(Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second));
+}

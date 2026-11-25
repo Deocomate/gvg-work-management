@@ -18,7 +18,8 @@
         {{> nav-link href="/today" label="Lịch làm việc" count=todayUnfinished}}
         {{> nav-link href="/calendar" label="Chấm công"}}
         {{> nav-link href="/plan" label="Nội dung"}}
-        {{> nav-link href="/links" label="Tài liệu"}}
+        {{!-- Tài liệu gồm 2 tab: Link (/links) + Thư viện ảnh (/library) --}}
+        {{> nav-link href="/links" label="Tài liệu" active=(isActive currentPath '/library')}}
         {{!-- Quảng cáo gồm 2 tab: Hiệu quả quảng cáo (quản lý) + Data khách hàng (quản lý + Sale). Sale vào thẳng Data khách hàng. --}}
         {{#if canViewAds}}
           {{> nav-link href="/ads" label="Quảng cáo" active=(isActive currentPath '/customers')}}

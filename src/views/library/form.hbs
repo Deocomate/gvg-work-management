@@ -1,0 +1,15 @@
+{{#> page-header title=title}}
+  <a href="{{#if album}}/library/{{album.id}}{{else}}/library{{/if}}" class="btn-secondary">← {{#if album}}Album{{else}}Thư viện{{/if}}</a>
+{{/page-header}}
+
+<form method="post" action="{{#if album}}/library/{{album.id}}{{else}}/library{{/if}}" class="card card-body max-w-xl space-y-5" novalidate>
+  {{> form/csrf}}
+  {{#if errors._form}}<div class="alert-error">{{errors._form}}</div>{{/if}}
+
+  {{> form/field name="name" label="Tên album" value=values.name error=errors.name required=true autofocus=true placeholder="VD: Sản phẩm Vũ Gia, Sự kiện T11/2026"}}
+
+  <div class="flex gap-2 pt-2">
+    <button type="submit" class="btn-primary">{{#if album}}Lưu album{{else}}Tạo album{{/if}}</button>
+    <a href="{{#if album}}/library/{{album.id}}{{else}}/library{{/if}}" class="btn-ghost">Huỷ</a>
+  </div>
+</form>

@@ -805,3 +805,71 @@
   .toolbar-filters > * { flex: 1 1 0 !important; min-width: 0 !important; max-width: 12rem; margin-left: 0 !important; }
   .toolbar-filters .picker-trigger { min-width: 0; }
 }
+
+/* Tài liệu > Thư viện ảnh (views/library). Bố cục kiểu catalogue nội thất: album mới nhất là khung lớn,
+   album khác là lưới ảnh bìa có tên bên dưới; trang album là lưới tạp chí — cứ 5 ảnh có 1 ô lớn 2x2.
+   Màu theo bảng màu chung (ink/surface/line…), nên tự đổi theo giao diện sáng/tối. */
+@layer components {
+  .lib-section-title { @apply mt-10 mb-4 text-lg font-semibold tracking-tight text-ink; }
+  .lib-cover-img { @apply h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]; }
+  .lib-no-photo { @apply flex h-full w-full flex-col items-center justify-center gap-2 bg-raised text-ink-faint; }
+
+  .lib-hero { @apply glass grid overflow-hidden rounded-2xl border md:grid-cols-[3fr_2fr]; }
+  .lib-hero-media { @apply aspect-[4/3] overflow-hidden bg-raised md:aspect-auto md:min-h-80; }
+  .lib-hero-body { @apply flex flex-col justify-center gap-2 p-6 sm:p-8; }
+  .lib-hero-title { @apply text-2xl font-semibold tracking-tight text-ink sm:text-3xl; }
+  .lib-cta { @apply mt-3 inline-flex items-center gap-1 self-start border-b border-current pb-0.5 text-sm font-semibold text-ink transition group-hover:gap-2; }
+
+  .lib-albums { @apply grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 lg:grid-cols-4; }
+  .lib-album { @apply block; }
+  .lib-album-media { @apply aspect-[4/5] overflow-hidden rounded-2xl border border-line bg-raised; }
+  .lib-album-name { @apply mt-3 line-clamp-2 text-sm font-semibold text-ink group-hover:underline group-hover:underline-offset-4; }
+
+  .lib-back { @apply mb-3 inline-block text-sm font-medium text-ink-soft hover:text-ink; }
+  .lib-album-head { @apply mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5; }
+  .lib-album-title { @apply text-2xl font-semibold tracking-tight text-ink sm:text-3xl; }
+
+  .lib-drop { @apply mb-6; }
+  .lib-drop-zone {
+    @apply flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 border-dashed border-line-strong bg-surface/40 px-4 py-6 text-center text-sm text-ink-soft transition
+      hover:border-pine-400 hover:bg-surface/70 focus-within:border-pine-400;
+  }
+  .lib-drop-active { @apply border-pine-400 bg-pine-500/15; }
+  .lib-progress { @apply mt-3 space-y-2; }
+  .lib-progress-bar { @apply h-1.5 overflow-hidden rounded-full bg-raised; }
+  .lib-progress-bar > span { @apply block h-full w-0 rounded-full bg-pine-400 transition-all; }
+
+  .lib-grid { @apply grid grid-flow-dense grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4; }
+  .lib-tile { @apply relative aspect-square overflow-hidden rounded-xl bg-raised; }
+  .lib-tile-feature { @apply col-span-2 row-span-2; }
+  .lib-tile-feature-right { @apply lg:col-start-3; }
+  .lib-tile-open { @apply block h-full w-full cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pine-400; }
+  .lib-tile-open img { @apply h-full w-full object-cover transition duration-500 ease-out; }
+  .lib-tile:hover .lib-tile-open img { @apply scale-[1.04]; }
+  /* Thanh dưới ảnh: ẩn, rê chuột/tab tới thì hiện. Máy cảm ứng (không rê chuột được) luôn hiện nút tải. */
+  .lib-tile-bar {
+    @apply pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end gap-2 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2 pt-10 opacity-0 transition duration-200 sm:p-3 sm:pt-12;
+  }
+  .lib-tile:hover .lib-tile-bar, .lib-tile:focus-within .lib-tile-bar { @apply opacity-100; }
+  .lib-dl {
+    @apply pointer-events-auto inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#2a1a3c] shadow-lg transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+  }
+  @media (hover: none) {
+    .lib-tile-bar { @apply bg-none p-1.5 opacity-100; }
+    .lib-dl { @apply h-8 w-8; }
+  }
+
+  /* Xem ảnh lớn: nền tối toàn màn hình ở cả hai giao diện để ảnh nổi lên */
+  .lib-viewer { @apply m-0 h-dvh max-h-none w-full max-w-none bg-black/92 p-0 text-white backdrop:bg-black/60; }
+  .lib-viewer[open] { @apply flex flex-col; }
+  .lib-viewer-bar { @apply flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-3; }
+  .lib-viewer-btn { @apply rounded-lg px-3 py-1.5 text-xs font-medium text-white/85 transition hover:bg-white/12 hover:text-white; }
+  .lib-viewer-btn-danger { @apply text-bad-300 hover:text-bad-300; }
+  .lib-viewer-stage { @apply relative flex min-h-0 flex-1 items-center justify-center px-2 pb-4 sm:px-16; }
+  .lib-viewer-stage img { @apply max-h-full max-w-full rounded-lg object-contain shadow-2xl select-none; }
+  .lib-viewer-nav {
+    @apply absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/12 text-2xl leading-none text-white transition hover:bg-white/25;
+  }
+  .lib-viewer-prev { @apply left-2 sm:left-4; }
+  .lib-viewer-next { @apply right-2 sm:right-4; }
+}

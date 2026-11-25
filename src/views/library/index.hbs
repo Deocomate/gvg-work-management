@@ -1,0 +1,49 @@
+{{> subnav/docs}}
+{{#> page-header title="Thư viện ảnh"}}
+  {{#if manager}}<a href="/library/new" class="btn-primary">+ Tạo album</a>{{/if}}
+{{/page-header}}
+
+{{#if featured}}
+  {{!-- Album mới nhất: khung lớn ảnh bìa + chữ bên cạnh --}}
+  <a href="/library/{{featured.id}}" class="lib-hero group" data-album-card>
+    <div class="lib-hero-media">
+      {{#if featured.cover_id}}
+        <img src="/library/photos/{{featured.cover_id}}/thumb" alt="" class="lib-cover-img" decoding="async">
+      {{else}}
+        {{> library/no-photo}}
+      {{/if}}
+    </div>
+    <div class="lib-hero-body">
+      <h2 class="lib-hero-title">{{featured.name}}</h2>
+      <span class="lib-cta">Xem album <span aria-hidden="true">→</span></span>
+    </div>
+  </a>
+{{/if}}
+
+{{#if rest.length}}
+  <h2 class="lib-section-title">Tất cả album</h2>
+  <ul class="lib-albums">
+    {{#each rest}}
+      <li>
+        <a href="/library/{{id}}" class="lib-album group" data-album-card>
+          <div class="lib-album-media">
+            {{#if cover_id}}
+              <img src="/library/photos/{{cover_id}}/thumb" alt="" class="lib-cover-img" loading="lazy" decoding="async">
+            {{else}}
+              {{> library/no-photo}}
+            {{/if}}
+          </div>
+          <p class="lib-album-name">{{name}}</p>
+        </a>
+      </li>
+    {{/each}}
+  </ul>
+{{/if}}
+
+{{#unless albums.length}}
+  {{#if manager}}
+    {{> empty-state title="Chưa có album ảnh nào" text="Tạo album (VD: Sản phẩm Vũ Gia, Sự kiện T11) rồi tải ảnh lên để cả nhóm xem và tải về." actionHref="/library/new" actionLabel="+ Tạo album"}}
+  {{else}}
+    {{> empty-state title="Chưa có album ảnh nào" text="Quản lý sẽ tải ảnh sản phẩm, sự kiện… lên đây để mọi người dùng chung."}}
+  {{/if}}
+{{/unless}}

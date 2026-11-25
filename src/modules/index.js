@@ -13,6 +13,7 @@ import scheduleRoutes from './schedule/schedule.routes.js';
 import tasksRoutes from './tasks/tasks.routes.js';
 import staffRoutes from './staff/staff.routes.js';
 import linksRoutes from './links/links.routes.js';
+import libraryRoutes from './library/library.routes.js';
 import performanceRoutes from './performance/performance.routes.js';
 import customersRoutes from './customers/customers.routes.js';
 import { requireCustomerAccess } from './customers/customers.service.js';
@@ -31,6 +32,7 @@ export const modules = [
   { path: '/tasks', router: tasksRoutes, middleware: [requireAuth] },
   { path: '/staff', router: staffRoutes, middleware: [requireRole('admin')] },
   { path: '/links', router: linksRoutes, middleware: [requireAuth] }, // xem: mọi người; thêm/sửa/xoá: quản lý
+  { path: '/library', router: libraryRoutes, middleware: [requireAuth] }, // Tài liệu > Thư viện ảnh: xem/tải mọi người; thêm/xoá: quản lý
   { path: '/performance', router: performanceRoutes, middleware: [requireRole('admin')] },
   { path: '/customers', router: customersRoutes, middleware: [requireAuth, requireCustomerAccess] }, // quản lý + Sale
   { path: '/plan', router: planRoutes, middleware: [requireAuth] }, // Idea bank + lịch quay/đăng; mọi người

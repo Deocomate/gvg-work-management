@@ -1,6 +1,7 @@
 // Luật dữ liệu cho form khách hàng. Lựa chọn cố định dùng chung cho view, bộ lọc và validate.
 import { z } from 'zod';
 import { emptyToUndefined } from '#lib/validate.js';
+import { FILE_TYPES, detectFileType } from '#lib/file-types.js';
 
 export const CUSTOMER_TYPES = [
   { value: 'personal', label: 'Cá nhân' },
@@ -95,15 +96,10 @@ export const invoiceSchema = z.object({
 });
 
 // File hoá đơn nhận: PDF và ảnh chụp. Kiểm tra bằng nội dung file (không tin đuôi/tên file).
-export const INVOICE_FILE_TYPES = [
-  { type: 'application/pdf', ext: 'pdf', test: (b) => b.subarray(0, 5).toString('latin1') === '%PDF-' },
-  { type: 'image/jpeg', ext: 'jpg', test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
-  { type: 'image/png', ext: 'png', test: (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
-  { type: 'image/webp', ext: 'webp', test: (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP' },
-];
+export const INVOICE_FILE_TYPES = [FILE_TYPES.pdf, FILE_TYPES.jpeg, FILE_TYPES.png, FILE_TYPES.webp];
 
 /** Loại file thật của nội dung, hoặc null nếu không phải PDF/ảnh được nhận. */
-export const detectInvoiceType = (buffer) => INVOICE_FILE_TYPES.find((t) => buffer?.length > 12 && t.test(buffer)) ?? null;
+export const detectInvoiceType = (buffer) => detectFileType(buffer, INVOICE_FILE_TYPES);
 
 /** Chỉ giữ chữ số của số điện thoại, để so trùng và tìm kiếm ("0912.345.678" = "0912 345 678" = "+84 912 345 678"). */
 export function phoneDigits(phone) {
