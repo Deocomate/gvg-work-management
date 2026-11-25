@@ -86,6 +86,14 @@ export async function addPhoto(req, res) {
   res.redirect(`/library/${albumId}`);
 }
 
+/** Đổi tên ảnh rồi quay lại album, mở sẵn đúng ảnh đó (#photo-<id>) để xem tên mới. */
+export async function renamePhoto(req, res) {
+  const id = req.params.id;
+  const result = await service.renamePhoto(id, req.body);
+  req.flash(result.ok ? 'success' : 'error', result.ok ? `Đã đổi tên ảnh thành "${result.fileName}".` : result.errors.name);
+  res.redirect(`/library/${result.albumId}#photo-${id}`);
+}
+
 export async function destroyPhoto(req, res) {
   const albumId = await service.deletePhoto(req.params.id);
   req.flash('success', 'Đã xoá ảnh.');

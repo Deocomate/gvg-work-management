@@ -3,7 +3,7 @@ import { notFound } from '#lib/errors.js';
 import { validate } from '#lib/validate.js';
 import { detectFileType, safeFileName } from '#lib/file-types.js';
 import { appWallClock } from '#lib/dates.js';
-import { albumSchema, photoMetaSchema, PHOTO_TYPES, THUMB_TYPES, MAX_THUMB_BYTES } from './library.schema.js';
+import { albumSchema, photoMetaSchema, photoNameSchema, PHOTO_TYPES, THUMB_TYPES, MAX_THUMB_BYTES } from './library.schema.js';
 import * as repo from './library.repo.js';
 
 /** Tên gọn khoảng trắng + khoá so trùng (chữ thường, giữ dấu): "  Sự kiện   T11 " -> "sự kiện t11". */
@@ -90,6 +90,29 @@ export async function addPhoto(albumId, input, files = [], userId) {
   );
   if (!photo) throw notFound('Không tìm thấy album này.');
   return { ok: true, data: photo };
+}
+
+const extOf = (name) => name.match(/\.[a-z0-9]{1,5}$/i)?.[0] ?? '';
+
+/**
+ * Đổi tên ảnh (tên file khi tải về / trong zip). Giữ đuôi của ảnh gốc: gõ "Bình hút lộc" cho ảnh "DSC0978.JPG"
+ * thành "Bình hút lộc.JPG"; bỏ ký tự Windows không cho dùng trong tên file.
+ * Trả về { ok, albumId, fileName } hoặc { ok: false, albumId, errors: { name } }.
+ */
+export async function renamePhoto(id, input) {
+  const photo = await repo.findPhoto(id);
+  if (!photo) throw notFound('Không tìm thấy ảnh này.');
+  const albumId = photo.album_id;
+  const invalid = { ok: false, albumId, errors: { name: 'Vui lòng nhập tên ảnh' } };
+  const result = validate(photoNameSchema, input);
+  if (!result.ok) return { ...invalid, errors: result.errors };
+  const ext = extOf(photo.file_name);
+  let base = safeFileName(result.data.name.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' '), '').trim();
+  if (ext && base.toLowerCase().endsWith(ext.toLowerCase())) base = base.slice(0, -ext.length).trim();
+  if (!base) return invalid;
+  const fileName = `${base.slice(0, 150 - ext.length)}${ext}`;
+  if (!(await repo.renamePhoto(id, fileName))) throw notFound('Không tìm thấy ảnh này.');
+  return { ok: true, albumId, fileName };
 }
 
 /** Xoá ảnh, trả về id album chứa nó (để quay lại đúng album). */

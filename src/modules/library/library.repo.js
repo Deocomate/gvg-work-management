@@ -92,6 +92,11 @@ export async function createPhoto(albumId, photo, userId) {
   return findPhoto(id);
 }
 
+export async function renamePhoto(id, fileName) {
+  const { changes } = await run('UPDATE gallery_photos SET file_name = ? WHERE id = ?', [fileName, id]);
+  return changes > 0;
+}
+
 export async function removePhoto(id) {
   const { changes } = await run('DELETE FROM gallery_photos WHERE id = ?', [id]);
   return changes > 0;

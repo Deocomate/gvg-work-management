@@ -865,6 +865,11 @@
   .lib-viewer-bar { @apply flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-3; }
   .lib-viewer-btn { @apply rounded-lg px-3 py-1.5 text-xs font-medium text-white/85 transition hover:bg-white/12 hover:text-white; }
   .lib-viewer-btn-danger { @apply text-bad-300 hover:text-bad-300; }
+  .lib-viewer-btn-strong { @apply bg-white/15 text-white; }
+  .lib-viewer-rename:not([hidden]) { @apply flex min-w-0 flex-1 items-center gap-1.5; }
+  /* Đang đổi tên: thanh chỉ còn ô nhập + Lưu/Huỷ, cho điện thoại đủ chỗ */
+  .lib-viewer-bar.lib-renaming > :not(.lib-viewer-rename) { @apply !hidden; }
+  .lib-viewer-input { @apply min-w-0 flex-1 rounded-lg border border-white/25 bg-white/10 px-2.5 py-1.5 text-sm text-white outline-none focus:border-white/60; }
   .lib-viewer-stage { @apply relative flex min-h-0 flex-1 items-center justify-center px-2 pb-4 sm:px-16; }
   .lib-viewer-stage img { @apply max-h-full max-w-full rounded-lg object-contain shadow-2xl select-none; }
   .lib-viewer-nav {

@@ -133,6 +133,24 @@
   const download = viewer.querySelector('[data-viewer-download]');
   const coverForm = viewer.querySelector('[data-viewer-cover]');
   const deleteForm = viewer.querySelector('[data-viewer-delete]');
+  // Đổi tên (chỉ quản lý): ô nhập thay chỗ tên ảnh, chỉ sửa phần tên — đuôi .jpg giữ nguyên.
+  const renameForm = viewer.querySelector('[data-viewer-rename]');
+  const renameInput = viewer.querySelector('[data-viewer-rename-input]');
+  const renameExt = viewer.querySelector('[data-viewer-rename-ext]');
+  const renameOpen = viewer.querySelector('[data-viewer-rename-open]');
+  const splitExt = (name) => {
+    const m = name.match(/^(.*?)(\.[a-z0-9]{1,5})?$/i);
+    return { base: m[1] || name, ext: m[2] || '' };
+  };
+  function editing(on) {
+    if (!renameForm) return;
+    renameForm.hidden = !on;
+    renameForm.parentElement.classList.toggle('lib-renaming', on);
+    if (on) {
+      renameInput.focus();
+      renameInput.select();
+    }
+  }
   let current = 0;
 
   function show(index) {
@@ -144,8 +162,14 @@
     countEl.textContent = `${current + 1} / ${tiles.length}`;
     download.href = `/library/photos/${tile.id}/file?download=1`;
     download.setAttribute('download', tile.name);
-    for (const f of [coverForm, deleteForm]) if (f) f.action = f.dataset.actionTemplate.replace(':id', tile.id);
+    for (const f of [coverForm, deleteForm, renameForm]) if (f) f.action = f.dataset.actionTemplate.replace(':id', tile.id);
     if (coverForm) coverForm.hidden = 'cover' in tile;
+    if (renameForm) {
+      const { base, ext } = splitExt(tile.name);
+      renameInput.value = base;
+      renameExt.textContent = ext;
+      editing(false);
+    }
     // Tải trước ảnh kế tiếp cho bấm "›" là hiện ngay.
     new Image().src = `/library/photos/${tiles[(current + 1) % tiles.length].dataset.id}/thumb`;
   }
@@ -162,11 +186,24 @@
   viewer.addEventListener('click', (event) => {
     if (event.target.closest('[data-dialog-close]') || event.target.classList.contains('lib-viewer-stage')) viewer.close();
   });
+  renameOpen?.addEventListener('click', () => editing(true));
+  viewer.querySelector('[data-viewer-rename-cancel]')?.addEventListener('click', () => editing(false));
+
   viewer.addEventListener('keydown', (event) => {
+    if (event.target.closest('input')) return; // đang gõ tên ảnh: ← → để di chuyển con trỏ, không chuyển ảnh
     if (event.key === 'ArrowLeft') show(current - 1);
     if (event.key === 'ArrowRight') show(current + 1);
   });
   viewer.addEventListener('close', () => img.removeAttribute('src'));
+
+  // Vừa đổi tên xong (/library/:id#photo-<id>): mở lại đúng ảnh đó để thấy tên mới.
+  const fromHash = location.hash.match(/^#photo-(\d+)$/)?.[1];
+  const hashIndex = tiles.findIndex((t) => t.dataset.id === fromHash);
+  if (hashIndex >= 0) {
+    show(hashIndex);
+    viewer.showModal();
+    history.replaceState(null, '', location.pathname + location.search);
+  }
 
   // Vuốt ngang trên điện thoại để chuyển ảnh.
   let touchX = null;

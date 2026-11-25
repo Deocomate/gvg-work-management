@@ -74,6 +74,15 @@
       <p class="text-xs opacity-70" data-viewer-count></p>
     </div>
     {{#if manager}}
+      {{!-- Đổi tên ảnh: bấm "Đổi tên" thì ô nhập thay chỗ tên; đuôi file (.jpg) server tự giữ --}}
+      <form method="post" class="lib-viewer-rename" data-viewer-rename data-action-template="/library/photos/:id/rename" hidden>
+        {{> form/csrf}}
+        <input type="text" name="name" maxlength="150" required class="lib-viewer-input" aria-label="Tên ảnh mới" data-viewer-rename-input>
+        <span class="text-xs opacity-70" data-viewer-rename-ext></span>
+        <button type="submit" class="lib-viewer-btn lib-viewer-btn-strong">Lưu</button>
+        <button type="button" class="lib-viewer-btn" data-viewer-rename-cancel>Huỷ</button>
+      </form>
+      <button type="button" class="lib-viewer-btn" data-viewer-rename-open>Đổi tên</button>
       <form method="post" class="inline" data-viewer-cover data-action-template="/library/{{album.id}}/cover/:id">
         {{> form/csrf}}
         <button type="submit" class="lib-viewer-btn">Đặt làm ảnh bìa</button>

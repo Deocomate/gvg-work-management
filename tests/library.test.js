@@ -159,6 +159,30 @@ test('tải cả album: một file zip đủ ảnh gốc, tên file trùng đư�
   assert.ok(entries.every((e) => e.crcOk));
 });
 
+test('đổi tên ảnh: giữ đuôi file gốc, bỏ ký tự cấm, tên trống bị từ chối, nhân viên không đổi được', async () => {
+  const page = (await admin.get(`/library/${albumId}`)).text;
+  const [first] = [...page.matchAll(/data-lib-photo data-id="(\d+)"/g)].map((m) => m[1]);
+  assert.match(page, /data-viewer-rename/);
+  assert.doesNotMatch((await mai.get(`/library/${albumId}`)).text, /data-viewer-rename/);
+
+  const rename = (agent, name) => postForm(agent, `/library/photos/${first}/rename`, { name }, { from: `/library/${albumId}` });
+  const ok = await rename(admin, '  Bình hút lộc: men/lam  ');
+  assert.equal(ok.status, 302);
+  assert.equal(ok.headers.location, `/library/${albumId}#photo-${first}`);
+  assert.match((await mai.get(`/library/${albumId}`)).text, /data-name="Bình hút lộc men lam.jpg"/);
+
+  // Gõ kèm đuôi thì không bị lặp đuôi
+  await rename(admin, 'bình gốm.JPG');
+  assert.match((await mai.get(`/library/${albumId}`)).text, /data-name="bình gốm.jpg"/);
+
+  const blank = await rename(admin, ' .jpg ');
+  assert.equal(blank.status, 302);
+  assert.match((await mai.get(`/library/${albumId}`)).text, /data-name="bình gốm.jpg"/);
+
+  assert.equal((await rename(mai, 'x')).status, 403);
+  assert.equal((await postForm(admin, '/library/photos/9999/rename', { name: 'x' }, { from: `/library/${albumId}` })).status, 404);
+});
+
 test('đặt ảnh bìa, xoá ảnh, sửa và xoá album', async () => {
   const page = (await admin.get(`/library/${albumId}`)).text;
   const [first, second] = [...page.matchAll(/data-lib-photo data-id="(\d+)"/g)].map((m) => m[1]);

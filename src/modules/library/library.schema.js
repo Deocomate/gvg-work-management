@@ -7,6 +7,11 @@ export const albumSchema = z.object({
   name: z.string({ error: 'Vui lòng nhập tên album' }).trim().min(1, 'Vui lòng nhập tên album').max(120, 'Tối đa 120 ký tự'),
 });
 
+// Đổi tên ảnh (tên file khi tải về). Phần đuôi (.jpg…) do server giữ nguyên theo ảnh gốc.
+export const photoNameSchema = z.object({
+  name: z.string({ error: 'Vui lòng nhập tên ảnh' }).trim().min(1, 'Vui lòng nhập tên ảnh').max(150, 'Tối đa 150 ký tự'),
+});
+
 // Kích thước ảnh do trình duyệt đọc được lúc tải lên (để lưới ảnh giữ đúng tỉ lệ). Sai/thiếu thì bỏ qua.
 const dimension = z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(50_000).optional()).catch(undefined);
 export const photoMetaSchema = z.object({ width: dimension, height: dimension });
