@@ -1,10 +1,29 @@
 // Thư viện ảnh — trang album (src/views/library/album.hbs).
-// 1) Tải ảnh lên: chọn/kéo nhiều ảnh -> gửi lần lượt TỪNG ảnh (ảnh gốc + ảnh thu nhỏ ≤1200px tạo ngay trên máy),
-//    để lưới ảnh mở nhanh mà vẫn tải về được đúng ảnh gốc. Xong thì tải lại trang.
-// 2) Xem ảnh lớn: bấm ảnh mở <dialog id="lib-viewer">, ← → / vuốt để chuyển, có nút Tải xuống.
+// 1) Tải ảnh lên: chọn/kéo nhiều ảnh -> gửi lần lượt TỪNG ảnh (ảnh gốc + 2 ảnh thu nhỏ tạo ngay trên máy:
+//    cỡ lớn ≤1200px để xem ảnh lớn, cỡ nhỏ cạnh ngắn ≤400px cho ô lưới), để lưới ảnh mở nhanh mà vẫn
+//    tải về được đúng ảnh gốc. Xong thì tải lại trang.
+// 2) Ảnh cũ chưa có cỡ nhỏ (data-need-small): trang của quản lý lặng lẽ tạo từ ảnh cỡ lớn rồi gửi bù, từng ảnh một.
+// 3) Xem ảnh lớn: bấm ảnh mở <dialog id="lib-viewer">, ← → / vuốt để chuyển, có nút Tải xuống.
 (() => {
-  const THUMB_MAX = 1200;
+  const LARGE = { long: 1200 };
+  const SMALL = { short: 400, long: 800 }; // ô lưới vuông ~230px, màn hình nét x2 vẫn đủ
   const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
+
+  const canvasBlob = (canvas, type, quality) => new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+
+  /** Thu nhỏ ảnh đã đọc (ImageBitmap) theo giới hạn cạnh dài/cạnh ngắn -> Blob WebP (trình duyệt cũ: JPEG). */
+  async function shrink(bitmap, { long = Infinity, short = Infinity }) {
+    const { width, height } = bitmap;
+    const scale = Math.min(1, long / Math.max(width, height), short / Math.min(width, height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await canvasBlob(canvas, 'image/webp', 0.8);
+    // Trình duyệt chưa tạo được WebP (Safari cũ trả PNG) -> dùng JPEG cho nhẹ.
+    return blob && blob.type === 'image/webp' ? blob : canvasBlob(canvas, 'image/jpeg', 0.85);
+  }
+  const thumbName = (blob) => (blob.type === 'image/webp' ? 'thumb.webp' : 'thumb.jpg');
 
   // ---------------------------------------------------------------- Tải ảnh lên
 
@@ -19,23 +38,14 @@
     const maxBytes = Number(input.dataset.libMaxMb) * 1024 * 1024;
     let busy = false;
 
-    const canvasBlob = (canvas, type, quality) => new Promise((resolve) => canvas.toBlob(resolve, type, quality));
-
-    /** Ảnh thu nhỏ + kích thước thật. Trình duyệt không đọc được ảnh (VD HEIC) thì trả null, vẫn gửi ảnh gốc. */
-    async function makeThumb(file) {
+    /** 2 ảnh thu nhỏ + kích thước thật. Trình duyệt không đọc được ảnh (VD HEIC) thì trả null, vẫn gửi ảnh gốc. */
+    async function makeThumbs(file) {
       try {
         const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
         const { width, height } = bitmap;
-        const scale = Math.min(1, THUMB_MAX / Math.max(width, height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(width * scale);
-        canvas.height = Math.round(height * scale);
-        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const [large, small] = [await shrink(bitmap, LARGE), await shrink(bitmap, SMALL)];
         bitmap.close?.();
-        let blob = await canvasBlob(canvas, 'image/webp', 0.82);
-        // Trình duyệt chưa tạo được WebP (Safari cũ trả PNG) -> dùng JPEG cho nhẹ.
-        if (!blob || blob.type !== 'image/webp') blob = await canvasBlob(canvas, 'image/jpeg', 0.85);
-        return { blob, width, height };
+        return { large, small, width, height };
       } catch {
         return null;
       }
@@ -45,11 +55,12 @@
       const body = new FormData();
       body.append('folder', form.elements.folder?.value ?? '');
       body.append('photo', file, file.name);
-      const thumb = await makeThumb(file);
-      if (thumb?.blob) {
-        body.append('thumb', thumb.blob, thumb.blob.type === 'image/webp' ? 'thumb.webp' : 'thumb.jpg');
-        body.append('width', thumb.width);
-        body.append('height', thumb.height);
+      const thumbs = await makeThumbs(file);
+      if (thumbs) {
+        if (thumbs.large) body.append('thumb', thumbs.large, thumbName(thumbs.large));
+        if (thumbs.small) body.append('thumb_small', thumbs.small, thumbName(thumbs.small));
+        body.append('width', thumbs.width);
+        body.append('height', thumbs.height);
       }
       const response = await fetch(form.action, {
         method: 'POST',
@@ -189,6 +200,42 @@
     input.focus();
     input.select();
   });
+
+  // ---------------------------------------------------------------- Bù ảnh lưới cỡ nhỏ (quản lý)
+
+  // Ảnh tải lên trước khi có cỡ nhỏ: lấy ảnh cỡ lớn (thường đã có sẵn trong trình duyệt), thu nhỏ, gửi lên.
+  // Chạy sau khi trang tải xong, từng ảnh một để không tranh mạng với lưới ảnh; lỗi liền 3 lần thì dừng.
+  const needSmall = form ? [...document.querySelectorAll('[data-lib-photo][data-need-small]')] : [];
+  async function backfillSmall() {
+    let failures = 0;
+    for (const tile of needSmall) {
+      if (failures >= 3) return;
+      try {
+        const source = await fetch(`/library/photos/${tile.dataset.id}/thumb`);
+        if (!source.ok) throw new Error(source.status);
+        const bitmap = await createImageBitmap(await source.blob());
+        const small = await shrink(bitmap, SMALL);
+        bitmap.close?.();
+        const body = new FormData();
+        body.append('thumb_small', small, thumbName(small));
+        const response = await fetch(`/library/photos/${tile.dataset.id}/thumb`, {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'x-csrf-token': csrf() },
+          body,
+        });
+        if (!response.ok) throw new Error(response.status);
+        delete tile.dataset.needSmall;
+        failures = 0;
+      } catch {
+        failures += 1;
+      }
+    }
+  }
+  if (needSmall.length) {
+    const start = () => (window.requestIdleCallback ?? setTimeout)(() => backfillSmall());
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+  }
 
   // ---------------------------------------------------------------- Xem ảnh lớn
 

@@ -63,10 +63,10 @@
 {{#if photos.length}}
   <ul class="lib-grid" data-lib-grid>
     {{#each photos}}
-      <li class="lib-tile" data-lib-photo data-id="{{id}}" data-name="{{file_name}}" data-folder="{{folder}}"{{#if isCover}} data-cover{{/if}}>
+      <li class="lib-tile" data-lib-photo data-id="{{id}}" data-name="{{file_name}}" data-folder="{{folder}}"{{#if isCover}} data-cover{{/if}}{{#unless has_small}} data-need-small{{/unless}}>
         <div class="lib-tile-media">
           <button type="button" class="lib-tile-open" data-lib-open aria-label="Xem ảnh {{file_name}}">
-            <img src="/library/photos/{{id}}/thumb" alt="{{file_name}}" loading="lazy" decoding="async"{{#if width}} width="{{width}}" height="{{height}}"{{/if}}>
+            <img src="/library/photos/{{id}}/thumb?size=small" alt="{{file_name}}" loading="lazy" decoding="async"{{#if width}} width="{{width}}" height="{{height}}"{{/if}}>
           </button>
           {{!-- Rê chuột (máy tính) hoặc chạm (điện thoại luôn hiện) -> nút tải --}}
           <div class="lib-tile-bar">

@@ -83,7 +83,7 @@ export async function getAlbumWithPhotos(id, folderInput = '') {
   const all = await repo.listPhotos(id);
   const photos = all
     .filter((p) => inFolder(p.folder, folder))
-    .map((p) => ({ ...p, isCover: p.id === album.cover_id, displayName: displayName(p.file_name) }));
+    .map((p) => ({ ...p, has_small: Boolean(p.has_small), isCover: p.id === album.cover_id, displayName: displayName(p.file_name) }));
   return { album, photos, folder, filters: folderFilters(all, folder), total: all.length };
 }
 
@@ -109,6 +109,27 @@ export async function deleteAlbum(id) {
 // ---------- Ảnh ----------
 
 /**
+ * Ảnh thu nhỏ trình duyệt gửi kèm (field `field`). Sai loại/quá lớn/không có thì trả null —
+ * bỏ qua chứ không làm hỏng việc tải ảnh lên (thiếu thì lưới dùng cỡ lớn hơn).
+ */
+function thumbOf(files, field, size) {
+  const file = files.find((f) => f.fieldname === field && f.size > 0 && f.size <= MAX_THUMB_BYTES);
+  const kind = file && detectFileType(file.buffer, THUMB_TYPES);
+  return kind ? { size, type: kind.type, data: file.buffer } : null;
+}
+
+/**
+ * Bù ảnh lưới cỡ nhỏ cho ảnh tải lên trước khi có cỡ nhỏ (trang album của quản lý tự tạo từ ảnh cỡ lớn rồi gửi).
+ * Trả { ok, added } — added = false khi ảnh đã có cỡ nhỏ (giữ bản cũ).
+ */
+export async function addSmallThumb(id, files = []) {
+  if (!(await repo.findPhoto(id))) throw notFound('Không tìm thấy ảnh này.');
+  const thumb = thumbOf(files, 'thumb_small', 'small');
+  if (!thumb) return { ok: false, errors: { photo: 'Ảnh thu nhỏ không hợp lệ' } };
+  return { ok: true, added: await repo.addThumb(id, 'small', thumb) };
+}
+
+/**
  * Thêm một ảnh. files: từ multer — "photo" (ảnh gốc, bắt buộc) + "thumb" (ảnh thu nhỏ trình duyệt tạo, tuỳ chọn).
  * Trả về { ok, data: ảnh } hoặc { ok: false, errors: { photo } }.
  */
@@ -119,9 +140,8 @@ export async function addPhoto(albumId, input, files = [], userId) {
   const kind = detectFileType(upload.buffer, PHOTO_TYPES);
   if (!kind) return { ok: false, errors: { photo: 'Chỉ nhận ảnh JPG, PNG, WEBP hoặc GIF' } };
 
-  // Ảnh thu nhỏ sai loại/quá lớn thì bỏ qua (lưới dùng ảnh gốc), không làm hỏng việc tải ảnh lên.
-  const thumbFile = files.find((f) => f.fieldname === 'thumb' && f.size > 0 && f.size <= MAX_THUMB_BYTES);
-  const thumbKind = thumbFile && detectFileType(thumbFile.buffer, THUMB_TYPES);
+  // "thumb" = cỡ lớn (≤1200px, xem ảnh lớn), "thumb_small" = cỡ nhỏ (cạnh ngắn ≤400px, ô lưới).
+  const thumbs = [thumbOf(files, 'thumb', 'large'), thumbOf(files, 'thumb_small', 'small')].filter(Boolean);
   const { width, height } = validate(photoMetaSchema, input).data ?? {};
 
   const photo = await repo.createPhoto(
@@ -134,8 +154,7 @@ export async function addPhoto(albumId, input, files = [], userId) {
       width,
       height,
       data: upload.buffer,
-      thumb: thumbKind ? thumbFile.buffer : null,
-      thumb_type: thumbKind ? thumbKind.type : null,
+      thumbs,
     },
     userId,
   );
@@ -181,8 +200,9 @@ export async function getPhotoFile(id) {
   return file;
 }
 
-export async function getPhotoThumb(id) {
-  const file = await repo.findPhotoThumb(id);
+/** size: 'small' (ô lưới) | 'large' (mặc định: xem lớn, ảnh bìa nổi bật). */
+export async function getPhotoThumb(id, size) {
+  const file = await repo.findPhotoThumb(id, size === 'small' ? 'small' : 'large');
   if (!file) throw notFound('Không tìm thấy ảnh này.');
   return file;
 }

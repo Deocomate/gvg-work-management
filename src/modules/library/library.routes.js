@@ -15,6 +15,7 @@ router.get('/', controller.index);
 // Ảnh (khai báo trước /:id để "/photos" không bị hiểu là id album)
 router.get('/photos/:id/file', controller.photoFile);
 router.get('/photos/:id/thumb', controller.photoThumb);
+router.post('/photos/:id/thumb', admin, controller.addSmallThumb);
 router.post('/photos/:id/rename', admin, controller.renamePhoto);
 router.post('/photos/:id/delete', admin, controller.destroyPhoto);
 

@@ -136,8 +136,20 @@ export async function photoFile(req, res) {
   res.send(Buffer.from(file.data));
 }
 
+/**
+ * Ảnh thu nhỏ: ?size=small cho ô lưới (cạnh ngắn ≤400px), mặc định cỡ lớn (≤1200px) để xem ảnh lớn.
+ * Chưa có đúng cỡ (đang dùng tạm cỡ lớn hơn) thì trình duyệt phải hỏi lại mỗi lần (no-cache, ETag trả 304 nếu
+ * không đổi), để khi có cỡ nhỏ thì lấy ngay bản mới thay vì giữ bản tạm cả năm.
+ */
 export async function photoThumb(req, res) {
-  const file = await service.getPhotoThumb(req.params.id);
-  res.set({ 'Content-Type': file.file_type, 'Cache-Control': IMAGE_CACHE });
+  const file = await service.getPhotoThumb(req.params.id, req.query.size);
+  res.set({ 'Content-Type': file.file_type, 'Cache-Control': file.exact ? IMAGE_CACHE : 'private, no-cache' });
   res.send(Buffer.from(file.data));
+}
+
+/** Trang album của quản lý gửi bù ảnh lưới cỡ nhỏ cho ảnh cũ (public/js/library.js). */
+export async function addSmallThumb(req, res) {
+  const result = await service.addSmallThumb(req.params.id, req.files);
+  if (!result.ok) return res.status(422).json({ error: result.errors.photo });
+  res.status(result.added ? 201 : 200).json({ added: result.added });
 }

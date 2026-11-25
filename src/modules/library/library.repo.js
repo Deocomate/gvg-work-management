@@ -1,5 +1,8 @@
 // Câu SQL cho Thư viện ảnh (gallery_albums, gallery_photos).
-// Cột BLOB (data, thumb) chỉ lấy ở các hàm *File/*Thumb — danh sách không kéo nội dung ảnh lên.
+// Cột BLOB chỉ lấy ở các hàm *File/*Thumb — danh sách không kéo nội dung ảnh lên.
+// Lưu ý tốc độ (migration 028): ảnh gốc gallery_photos.data nằm giữa dòng, đọc cột đứng sau nó (folder, created_at)
+// là SQLite phải đọc lướt cả ảnh gốc. Danh sách ảnh vì vậy chỉ lấy các cột có trong chỉ mục
+// gallery_photos_album_list; ảnh thu nhỏ đọc ở bảng gallery_thumbs (không dùng cột thumb cũ).
 import { all, get, run } from '#db';
 
 // Ảnh bìa: ảnh được chọn làm bìa, chưa chọn thì ảnh đầu tiên của album.
@@ -51,28 +54,63 @@ export async function setCover(albumId, photoId) {
 
 const PHOTO_COLUMNS = 'id, album_id, folder, file_name, file_type, file_size, width, height, created_at';
 
+/** has_small = đã có ảnh lưới cỡ nhỏ (chưa có thì trang album của quản lý tạo bù). */
 export const listPhotos = (albumId) =>
-  all(`SELECT ${PHOTO_COLUMNS} FROM gallery_photos WHERE album_id = ? ORDER BY id`, [albumId]);
+  all(
+    `SELECT ${PHOTO_COLUMNS},
+       EXISTS (SELECT 1 FROM gallery_thumbs t WHERE t.photo_id = p.id AND t.size = 'small') AS has_small
+     FROM gallery_photos p INDEXED BY gallery_photos_album_list WHERE album_id = ? ORDER BY id`,
+    [albumId],
+  );
 
-export const findPhoto = (id) => get(`SELECT ${PHOTO_COLUMNS} FROM gallery_photos WHERE id = ?`, [id]);
+// album_id đứng trước ảnh gốc nên đọc nhanh; phần còn lại lấy từ chỉ mục.
+export const findPhoto = (id) =>
+  get(
+    `SELECT ${PHOTO_COLUMNS} FROM gallery_photos INDEXED BY gallery_photos_album_list
+     WHERE album_id = (SELECT album_id FROM gallery_photos WHERE id = ?) AND id = ?`,
+    [id, id],
+  );
 
 /** Ảnh gốc (có nội dung) — chỉ dùng khi xem/tải. */
 export const findPhotoFile = (id) =>
   get('SELECT id, album_id, file_name, file_type, data, created_at FROM gallery_photos WHERE id = ?', [id]);
 
-/** Ảnh thu nhỏ; ảnh không có bản thu nhỏ thì trả ảnh gốc. */
-export const findPhotoThumb = (id) =>
-  get(
-    `SELECT COALESCE(thumb, data) AS data, CASE WHEN thumb IS NULL THEN file_type ELSE thumb_type END AS file_type
-     FROM gallery_photos WHERE id = ?`,
+/**
+ * Ảnh thu nhỏ cỡ `size` ('small' | 'large'). Thiếu cỡ nhỏ thì dùng cỡ lớn; thiếu cả hai thì ảnh gốc.
+ * exact = đúng cỡ được hỏi (controller chỉ cho trình duyệt giữ lâu khi đúng cỡ).
+ */
+export async function findPhotoThumb(id, size) {
+  // Hỏi cỡ nhỏ: lấy 'small' nếu có, không thì 'large' ('small' > 'large' theo thứ tự chữ nên DESC đưa small lên trước).
+  const thumb = await get(
+    size === 'small'
+      ? `SELECT size, type, data FROM gallery_thumbs WHERE photo_id = ? ORDER BY size DESC LIMIT 1`
+      : `SELECT size, type, data FROM gallery_thumbs WHERE photo_id = ? AND size = 'large'`,
     [id],
   );
+  if (thumb) return { file_type: thumb.type, data: thumb.data, exact: thumb.size === size };
+  const original = await get('SELECT file_type, data FROM gallery_photos WHERE id = ?', [id]);
+  return original && { ...original, exact: false };
+}
 
-/** Thêm ảnh vào album (album bị xoá cùng lúc thì không thêm, trả null) và đẩy album lên đầu danh sách. */
+/** Lưu ảnh thu nhỏ một cỡ. Đã có cỡ đó (giữ bản cũ) hoặc ảnh đã bị xoá thì trả false. */
+export async function addThumb(photoId, size, { type, data }) {
+  const { changes } = await run(
+    `INSERT INTO gallery_thumbs (photo_id, size, type, data)
+     SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM gallery_photos WHERE id = ?)
+     ON CONFLICT (photo_id, size) DO NOTHING`,
+    [photoId, size, type, data, photoId],
+  );
+  return changes > 0;
+}
+
+/**
+ * Thêm ảnh vào album (album bị xoá cùng lúc thì không thêm, trả null) và đẩy album lên đầu danh sách.
+ * photo.thumbs = [{ size, type, data }]: ảnh thu nhỏ trình duyệt tạo sẵn.
+ */
 export async function createPhoto(albumId, photo, userId) {
   const { changes, id } = await run(
-    `INSERT INTO gallery_photos (album_id, folder, file_name, file_type, file_size, width, height, data, thumb, thumb_type, created_by)
-     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM gallery_albums WHERE id = ?)`,
+    `INSERT INTO gallery_photos (album_id, folder, file_name, file_type, file_size, width, height, data, created_by)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM gallery_albums WHERE id = ?)`,
     [
       albumId,
       photo.folder ?? '',
@@ -82,13 +120,12 @@ export async function createPhoto(albumId, photo, userId) {
       photo.width ?? null,
       photo.height ?? null,
       photo.data,
-      photo.thumb ?? null,
-      photo.thumb_type ?? null,
       userId ?? null,
       albumId,
     ],
   );
   if (changes === 0) return null;
+  for (const thumb of photo.thumbs ?? []) await addThumb(id, thumb.size, thumb);
   await run(`UPDATE gallery_albums SET updated_at = datetime('now') WHERE id = ?`, [albumId]);
   return findPhoto(id);
 }

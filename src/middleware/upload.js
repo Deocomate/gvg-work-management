@@ -5,7 +5,7 @@ import multer from 'multer';
 import { AppError } from '#lib/errors.js';
 
 export const MAX_UPLOAD_MB = 10;
-// Ảnh thư viện: ảnh gốc từ điện thoại/máy ảnh lớn hơn hoá đơn. Mỗi lần gửi 1 ảnh gốc + 1 ảnh thu nhỏ.
+// Ảnh thư viện: ảnh gốc từ điện thoại/máy ảnh lớn hơn hoá đơn. Mỗi lần gửi 1 ảnh gốc + 2 ảnh thu nhỏ (lớn, nhỏ).
 export const MAX_PHOTO_MB = 25;
 
 const makeParser = ({ maxMb, files }) =>
@@ -17,7 +17,7 @@ const makeParser = ({ maxMb, files }) =>
 
 const PARSERS = {
   default: { maxMb: MAX_UPLOAD_MB, files: 1, parse: makeParser({ maxMb: MAX_UPLOAD_MB, files: 1 }) },
-  photo: { maxMb: MAX_PHOTO_MB, files: 2, parse: makeParser({ maxMb: MAX_PHOTO_MB, files: 2 }) },
+  photo: { maxMb: MAX_PHOTO_MB, files: 3, parse: makeParser({ maxMb: MAX_PHOTO_MB, files: 3 }) },
 };
 
 export function upload(req, res, next) {

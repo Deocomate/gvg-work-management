@@ -19,13 +19,14 @@ const PHOTO_B = jpeg(2);
 const createAlbum = (data) => postForm(admin, '/library', data, { from: '/library/new' });
 const albumIdFrom = (res) => Number(res.headers.location.match(/^\/library\/(\d+)$/)[1]);
 
-async function uploadPhoto(agent, albumId, { buffer, name, thumb, width, height, folder }) {
+async function uploadPhoto(agent, albumId, { buffer, name, thumb, thumbSmall, width, height, folder }) {
   const token = await csrfToken(agent, '/library');
   let req = agent.post(`/library/${albumId}/photos`).set('Accept', 'application/json').set('x-csrf-token', token);
   if (folder) req = req.field('folder', folder);
   if (width) req = req.field('width', String(width)).field('height', String(height));
   if (buffer) req = req.attach('photo', buffer, name);
   if (thumb) req = req.attach('thumb', thumb, 'thumb.webp');
+  if (thumbSmall) req = req.attach('thumb_small', thumbSmall, 'thumb.webp');
   return req;
 }
 
@@ -148,6 +149,50 @@ test('tải ảnh gốc đúng tên file; ảnh thu nhỏ dùng bản nhỏ, ả
 
   assert.equal((await mai.get('/library/photos/9999/file')).status, 404);
   assert.equal((await mai.get('/library/abc')).status, 404);
+});
+
+test('ảnh lưới cỡ nhỏ: tải lên kèm cỡ nhỏ, thiếu thì dùng tạm cỡ lớn (không cache lâu), quản lý gửi bù được', async () => {
+  const id = albumIdFrom(await createAlbum({ name: 'Cỡ nhỏ' }));
+  const small = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBP'), Buffer.alloc(20, 3)]);
+  const withSmall = (await uploadPhoto(admin, id, { buffer: PHOTO_A, name: 'a.jpg', thumb: webp, thumbSmall: small })).body.id;
+  const largeOnly = (await uploadPhoto(admin, id, { buffer: PHOTO_B, name: 'b.jpg', thumb: webp })).body.id;
+
+  // Lưới dùng cỡ nhỏ; ảnh chưa có cỡ nhỏ được đánh dấu để trang của quản lý tạo bù
+  const page = (await admin.get(`/library/${id}`)).text;
+  assert.match(page, new RegExp(`src="/library/photos/${withSmall}/thumb\\?size=small"`));
+  assert.match(page, new RegExp(`data-id="${largeOnly}"[^>]*data-need-small`));
+  assert.doesNotMatch(page, new RegExp(`data-id="${withSmall}"[^>]*data-need-small`));
+
+  const exact = await mai.get(`/library/photos/${withSmall}/thumb?size=small`).buffer(true).parse(binary);
+  assert.ok(exact.body.equals(small));
+  assert.match(exact.headers['cache-control'], /immutable/);
+  // Xem ảnh lớn vẫn là cỡ lớn
+  assert.ok((await mai.get(`/library/photos/${withSmall}/thumb`).buffer(true).parse(binary)).body.equals(webp));
+
+  const temp = await mai.get(`/library/photos/${largeOnly}/thumb?size=small`).buffer(true).parse(binary);
+  assert.ok(temp.body.equals(webp));
+  assert.equal(temp.headers['cache-control'], 'private, no-cache');
+
+  // Gửi bù: nhân viên bị chặn, file sai bị từ chối, quản lý gửi được; gửi lần hai giữ bản cũ
+  const sendSmall = async (agent, photoId, buffer) => {
+    const token = await csrfToken(agent, '/library');
+    let req = agent.post(`/library/photos/${photoId}/thumb`).set('Accept', 'application/json').set('x-csrf-token', token);
+    if (buffer) req = req.attach('thumb_small', buffer, 'thumb.webp');
+    return req;
+  };
+  assert.equal((await sendSmall(mai, largeOnly, small)).status, 403);
+  assert.equal((await sendSmall(admin, largeOnly, Buffer.from('không phải ảnh'))).status, 422);
+  assert.equal((await sendSmall(admin, 9999, small)).status, 404);
+  assert.equal((await sendSmall(admin, largeOnly, small)).status, 201);
+  assert.equal((await sendSmall(admin, largeOnly, webp)).status, 200);
+  const filled = await mai.get(`/library/photos/${largeOnly}/thumb?size=small`).buffer(true).parse(binary);
+  assert.ok(filled.body.equals(small));
+  assert.match(filled.headers['cache-control'], /immutable/);
+  assert.doesNotMatch((await admin.get(`/library/${id}`)).text, /data-need-small/);
+
+  // Xoá album thì ảnh thu nhỏ đi theo
+  await postForm(admin, `/library/${id}/delete`, {}, { from: `/library/${id}` });
+  assert.equal((await mai.get(`/library/photos/${withSmall}/thumb?size=small`)).status, 404);
 });
 
 test('tải cả album: một file zip đủ ảnh gốc, tên file trùng được đánh số', async () => {
