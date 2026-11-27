@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, postForm } from './helpers.js';
 import { loginAs, loginAsAdmin } from './auth-helpers.js';
-import { addDays, todayISO } from '../src/lib/dates.js';
+import { addDays, todayISO, weekDays } from '../src/lib/dates.js';
 import { autoScriptDeadline } from '../src/modules/plan/plan.board.js';
 
 const { agent: admin } = await setup();
@@ -15,7 +15,8 @@ await loginAs(mai, { email: 'mai@test.local', password: 'mat-khau-123' });
 const { agent: nam } = await setup();
 await loginAs(nam, { email: 'nam@test.local', password: 'mat-khau-123' });
 
-const date = addDays(todayISO(), 30);
+// Thứ 2 của tuần ~30 ngày tới: ngày quay (Thứ 2) và ngày đăng (Thứ 3) luôn cùng một tuần, không phụ thuộc hôm nay là thứ mấy.
+const date = weekDays(addDays(todayISO(), 30))[0];
 const page = async (agent, query) => (await agent.get(`/today?date=${date}&${query}`)).text;
 /** Thẻ nội dung trên tab (từ id="plan-…" tới hết thẻ). */
 const cardOf = (html, title) => {
