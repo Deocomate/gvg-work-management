@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, postForm } from './helpers.js';
+import { setup, postForm, csrfToken } from './helpers.js';
 import { loginAs, loginAsAdmin } from './auth-helpers.js';
 import { todayISO, addDays, weekDays } from '../src/lib/dates.js';
 import { parseTimeRange } from '../src/modules/plan/plan.sync.js';
@@ -583,4 +583,55 @@ test('link tham khảo thêm: quá 10 link thì báo lỗi, không lưu', async 
   assert.equal(res.status, 422);
   assert.match(res.text, /Tối đa 10 link tham khảo thêm/);
   assert.equal(await cardOf(mai, 'Quá nhiều tham khảo'), null);
+});
+
+test('sửa nhanh trong cửa sổ chi tiết: từng mục lưu riêng, giữ các ô khác; báo lỗi; chỉ người có quyền', async () => {
+  await add(mai, {
+    title: 'Sửa nhanh thử', brand: 'Vũ Gia', description: 'Mô tả cũ', script: 'https://docs.google.com/x',
+    extra_reference_urls: 'https://example.com/ref2', shoot_date: addDays(today, 2), shoot_time: '9h00',
+  });
+  const id = await idOf('Sửa nhanh thử');
+  const quick = async (agent, data) => {
+    const _csrf = await csrfToken(agent, '/plan');
+    return agent.post(`/plan/${id}/field`).type('form').set('Accept', 'application/json').send({ ...data, _csrf });
+  };
+
+  // Người có quyền: cửa sổ có các ô sửa nhanh; người khác thì không
+  const own = (await mai.get(`/plan/${id}?modal=1`)).text;
+  for (const field of ['description', 'shoot', 'post', 'owner', 'script', 'reference', 'note']) {
+    assert.match(own, new RegExp(`name="field" value="${field}"`));
+  }
+  assert.doesNotMatch((await nam.get(`/plan/${id}?modal=1`)).text, /data-quick-form/);
+  assert.equal((await quick(nam, { field: 'note', note: 'Hack' })).status, 403);
+
+  const namId = await userId('Trần Nam');
+  assert.deepEqual((await quick(mai, { field: 'description', description: 'Mô tả mới' })).body, { ok: true });
+  assert.equal((await quick(mai, { field: 'note', note: 'Nhớ mang đèn' })).status, 200);
+  assert.equal((await quick(mai, { field: 'owner', owner_id: namId })).status, 200);
+  assert.equal((await quick(mai, { field: 'reference', reference_url: 'https://www.tiktok.com/@mau/video/9' })).status, 200);
+  assert.equal((await quick(mai, { field: 'post', post_date: addDays(today, 5) })).status, 200);
+
+  const page = (await admin.get(`/plan/${id}`)).text;
+  assert.match(page, /Mô tả mới/);
+  assert.match(page, /Nhớ mang đèn/);
+  assert.match(page, /Trần Nam/);
+  assert.match(page, /href="https:\/\/www\.tiktok\.com\/@mau\/video\/9"/);
+  // Các ô không sửa vẫn giữ nguyên
+  assert.match(page, /9h00/);
+  assert.match(page, /href="https:\/\/docs\.google\.com\/x"/);
+  assert.match(page, /Link tham khảo 2/);
+
+  // Ngày đăng trước ngày quay -> lỗi, không lưu; mục lạ -> lỗi
+  const bad = await quick(mai, { field: 'post', post_date: today });
+  assert.equal(bad.status, 422);
+  assert.match(bad.body.error, /Ngày đăng phải sau hoặc cùng ngày quay/);
+  assert.equal((await quick(mai, { field: 'title', title: 'Đổi tên' })).status, 422);
+  assert.equal((await quick(mai, { field: '__proto__' })).status, 422);
+  assert.match((await admin.get(`/plan/${id}`)).text, /Sửa nhanh thử/);
+
+  // Bỏ trống = xoá giá trị; gửi form thường (tắt JS) -> quay về trang chi tiết
+  const plain = await postForm(mai, `/plan/${id}/field`, { field: 'note', note: '' }, { from: '/plan' });
+  assert.equal(plain.status, 302);
+  assert.match(plain.headers.location, new RegExp(`^/plan/${id}[?]back=`));
+  assert.doesNotMatch((await admin.get(`/plan/${id}`)).text, /Nhớ mang đèn/);
 });

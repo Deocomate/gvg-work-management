@@ -17,6 +17,7 @@ router.post('/', controller.create);
 router.get('/:id', controller.show);
 router.get('/:id/edit', controller.editForm);
 router.post('/:id', controller.update);
+router.post('/:id/field', controller.quickEdit); // sửa nhanh từng mục trong cửa sổ chi tiết
 router.post('/:id/status', controller.setStatus);
 router.post('/:id/tick', controller.tick); // tab Lịch đăng / Lịch quay / Kịch bản trên Lịch làm việc
 router.post('/:id/script-deadline', controller.scriptDeadline);

@@ -171,11 +171,14 @@ export async function create(req, res) {
 export async function show(req, res) {
   const plan = service.decorate(await service.getPlan(req.params.id), req.user);
   const modal = Boolean(req.query.modal);
+  // Có quyền sửa -> các mục bấm vào là sửa nhanh được; cần danh sách người để chọn người phụ trách.
+  const owners = plan.canEdit ? await staffOptions() : [];
   res.render('plan/show', {
     ...(modal && { layout: false }),
     modal,
     title: plan.title,
     plan,
+    ownerOptions: owners.map((o) => ({ ...o, value: String(o.value) })),
     back: safeBack(req.query.back, '/plan'),
   });
 }
@@ -201,6 +204,20 @@ export async function update(req, res) {
   }
   req.flash('success', 'Đã lưu thay đổi.');
   res.redirect(safeBack(req.body.back, afterSave(result.data)));
+}
+
+/**
+ * Sửa nhanh một mục trong cửa sổ chi tiết (field = description | shoot | post | owner | script | reference | note).
+ * Gọi từ JS (public/js/plan-detail.js) -> trả JSON; gửi form thường -> quay lại trang chi tiết.
+ */
+export async function quickEdit(req, res) {
+  const id = req.params.id;
+  const result = await service.quickUpdate(id, req.body.field, req.body, req.user);
+  if (req.accepts(['html', 'json']) === 'json') {
+    return result.ok ? res.json({ ok: true }) : res.status(422).json({ error: result.errors.field });
+  }
+  req.flash(result.ok ? 'success' : 'error', result.ok ? 'Đã lưu thay đổi.' : result.errors.field);
+  res.redirect(`/plan/${id}?back=${encodeURIComponent(safeBack(req.body.back, '/plan'))}`);
 }
 
 export async function setStatus(req, res) {

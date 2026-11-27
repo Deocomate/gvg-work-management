@@ -356,6 +356,35 @@ export async function updatePlan(id, input, user) {
   return { ok: true, data: plan };
 }
 
+// Sửa nhanh ngay trong cửa sổ chi tiết: mỗi lần chỉ đổi một mục, các ô khác giữ nguyên.
+export const QUICK_FIELDS = {
+  description: ['description'],
+  shoot: ['shoot_date', 'shoot_time'],
+  post: ['post_date'],
+  owner: ['owner_id'],
+  script: ['script'],
+  reference: ['reference_url'],
+  note: ['note'],
+};
+
+export async function quickUpdate(id, group, input, user) {
+  const fields = Object.hasOwn(QUICK_FIELDS, group) ? QUICK_FIELDS[group] : null;
+  if (!fields) return { ok: false, errors: { field: 'Mục này không sửa nhanh được.' } };
+  const existing = await getEditablePlan(id, user);
+  // Kiểm tra lại cả bản ghi (VD ngày đăng phải sau ngày quay); null -> '' để luật "ô trống" áp dụng như form.
+  const merged = Object.fromEntries(Object.entries(existing).map(([k, v]) => [k, v ?? '']));
+  for (const f of fields) merged[f] = typeof input[f] === 'string' ? input[f] : '';
+  const result = prepare(merged);
+  if (!result.ok) {
+    const message = fields.map((f) => result.errors[f]).find(Boolean) ?? Object.values(result.errors)[0];
+    return { ok: false, errors: { field: message } };
+  }
+  const plan = await repo.update(id, result.data);
+  if (!plan) throw notFound('Không tìm thấy nội dung này.');
+  await syncPlan(id);
+  return { ok: true, data: plan };
+}
+
 export async function changeStatus(id, status, user) {
   const plan = await getEditablePlan(id, user);
   if (!STATUS[status]) return { ok: false, errors: { status: 'Trạng thái không hợp lệ' } };

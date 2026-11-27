@@ -1,0 +1,47 @@
+{{!--
+  Một mục bấm-vào-là-sửa trong cửa sổ chi tiết Plan (views/plan/show.hbs; JS: public/js/plan-detail.js).
+  Khối bên trong = phần hiển thị. Không có quyền sửa -> chỉ hiện phần hiển thị.
+  Dùng: {{#> plan/quick field="post" label="ngày đăng" plan=plan back=back}}…hiển thị…{{/plan/quick}}
+  field: description | shoot | post | owner | script | reference | note (khớp QUICK_FIELDS trong plan.service.js)
+--}}
+{{#if plan.canEdit}}
+  <div class="plan-quick" data-quick>
+    <div class="plan-quick-view" data-quick-open role="button" tabindex="0" title="Bấm để sửa {{label}}">
+      <div class="min-w-0 flex-1">{{> @partial-block}}</div>
+      <svg class="plan-quick-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>
+    </div>
+    <form method="post" action="/plan/{{plan.id}}/field" class="plan-quick-form" data-quick-form hidden>
+      {{> form/csrf}}
+      <input type="hidden" name="field" value="{{field}}">
+      <input type="hidden" name="back" value="{{back}}">
+      {{#if (eq field "description")}}
+        <textarea name="description" rows="4" maxlength="3000" class="input" aria-label="Mô tả chung" placeholder="Tóm tắt kịch bản: hook, các cảnh chính, lời thoại…">{{plan.description}}</textarea>
+      {{else if (eq field "shoot")}}
+        <div class="grid gap-2">
+          <input type="date" name="shoot_date" value="{{plan.shoot_date}}" class="input" aria-label="Ngày quay" data-clear-label="Chưa chốt">
+          <input type="text" name="shoot_time" value="{{plan.shoot_time}}" maxlength="40" class="input" aria-label="Khung giờ quay" placeholder="Giờ, VD: 15h00 - 15h30">
+        </div>
+      {{else if (eq field "post")}}
+        <input type="date" name="post_date" value="{{plan.post_date}}" class="input" aria-label="Ngày đăng" data-clear-label="Chưa chốt">
+      {{else if (eq field "owner")}}
+        <select name="owner_id" class="input" aria-label="Người phụ trách">
+          <option value="">Chưa giao</option>
+          {{#each @root.ownerOptions}}<option value="{{this.value}}" {{selected this.value ../plan.owner_id}}>{{this.label}}</option>{{/each}}
+        </select>
+      {{else if (eq field "script")}}
+        <textarea name="script" rows="3" maxlength="5000" class="input" aria-label="Kịch bản" placeholder="Link Google Docs, hoặc viết thẳng kịch bản">{{plan.script}}</textarea>
+      {{else if (eq field "reference")}}
+        <input type="text" name="reference_url" value="{{plan.reference_url}}" maxlength="2000" class="input" aria-label="Link tham khảo" placeholder="https://… (hoặc ghi tên video)">
+      {{else if (eq field "note")}}
+        <textarea name="note" rows="3" maxlength="3000" class="input" aria-label="Ghi chú" placeholder="Ghi chú thêm">{{plan.note}}</textarea>
+      {{/if}}
+      <p class="field-error" data-quick-error hidden></p>
+      <div class="flex items-center gap-2">
+        <button type="submit" class="btn-primary btn-sm">Lưu</button>
+        <button type="button" class="btn-ghost btn-sm" data-quick-cancel>Huỷ</button>
+      </div>
+    </form>
+  </div>
+{{else}}
+  {{> @partial-block}}
+{{/if}}

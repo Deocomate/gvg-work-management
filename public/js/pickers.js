@@ -482,10 +482,18 @@
     if (event.target.form?.querySelector('[data-show-when]')) applyShowWhen(event.target.form);
   });
 
-  document.querySelectorAll('select').forEach(enhanceSelect);
-  document.querySelectorAll('input[type="date"]').forEach(enhanceDate);
-  document.querySelectorAll('input[type="time"]').forEach(enhanceTime);
-  document.querySelectorAll('form').forEach((form) => {
-    if (form.querySelector('[data-show-when]')) applyShowWhen(form);
-  });
+  // Vẽ lại các ô trong một vùng. Gọi lại được cho phần HTML chèn sau (VD popup chi tiết Plan: window.enhancePickers(dialog)).
+  function enhanceAll(root) {
+    root.querySelectorAll('select:not([data-picker-done])').forEach((select) => {
+      select.dataset.pickerDone = '';
+      enhanceSelect(select);
+    });
+    root.querySelectorAll('input[type="date"]').forEach(enhanceDate);
+    root.querySelectorAll('input[type="time"]').forEach(enhanceTime);
+    root.querySelectorAll('form').forEach((form) => {
+      if (form.querySelector('[data-show-when]')) applyShowWhen(form);
+    });
+  }
+  enhanceAll(document);
+  window.enhancePickers = enhanceAll;
 })();

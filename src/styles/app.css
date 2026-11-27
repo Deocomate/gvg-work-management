@@ -513,6 +513,12 @@
   .plan-detail > section + section { @apply border-t border-line pt-4; }
   .plan-detail-grid dt { @apply text-xs text-ink-faint; }
   .plan-detail-grid dd { @apply mt-0.5 text-ink; }
+  /* Bấm-vào-là-sửa trong cửa sổ chi tiết (partials/plan/quick.hbs) */
+  .plan-quick-view { @apply -mx-2 flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-ink/5 focus-visible:bg-ink/5 focus-visible:outline-none; }
+  .plan-quick-pencil { @apply mt-0.5 size-3.5 shrink-0 text-ink-faint opacity-0 transition-opacity; }
+  .plan-quick-view:hover .plan-quick-pencil, .plan-quick-view:focus-visible .plan-quick-pencil { @apply opacity-100; }
+  .plan-quick-form { @apply space-y-2; }
+  .plan-quick-form[hidden] { @apply hidden; }
 
   /* Lịch tuần: mỗi brand một hàng 7 cột trên máy tính; điện thoại xếp dọc, ẩn ngày trống */
   .plan-week-head { @apply hidden gap-2 px-3 text-center text-xs text-ink-faint lg:grid lg:grid-cols-7; }
