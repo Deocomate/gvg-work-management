@@ -26,7 +26,7 @@ export function delta(cur, prev, { neutral = false, lowerIsBetter = false } = {}
   return { text, tone: neutral ? 'same' : good ? 'up' : 'down' };
 }
 
-const weekLabel = (from, to) => `${formatDayVN(from).slice(0, 5)} – ${formatDayVN(to)}`;
+const weekLabel = (from, to) => `${formatDayVN(from).slice(0, 5)} - ${formatDayVN(to)}`;
 
 function presentAds(ads, prevAds) {
   if (!ads?.configured) return ads;
