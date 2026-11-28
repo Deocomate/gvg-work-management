@@ -72,7 +72,6 @@ function present(report) {
     prevLabel: weekLabel(report.prevWeek.from, report.prevWeek.to),
     kpis: [
       { label: 'Video đã đăng', value: posted.value, sub: 'đã đăng / lên lịch', delta: posted.delta },
-      { label: 'Video đã quay', value: `${t.shot}/${t.shootPlanned}`, sub: 'đã quay / lên lịch', delta: delta(t.shot, prevContent.shot) },
       { label: 'Khách mới', value: num(customers.newCustomers), sub: 'nhập vào Data khách hàng', delta: delta(customers.newCustomers, prevCustomers.newCustomers) },
       { label: 'Doanh thu', value: money(customers.revenue), sub: `${customers.invoiceCount} hoá đơn`, delta: delta(customers.revenue, prevCustomers.revenue) },
     ],
