@@ -188,3 +188,41 @@ test('kế hoạch tuần tới: thêm nhiều dòng, bỏ dòng trống, báo l
   assert.match(unzipEntry(res.body, 'xl/workbook.xml'), /Kế hoạch/);
   assert.match(unzipEntry(res.body, 'xl/worksheets/sheet5.xml'), /Quay 3 video Klayy \(sửa\)/);
 });
+
+test('kế hoạch tự lấy từ Lịch làm việc, gộp việc lặp lại, tự đánh dấu Xong theo lịch', async () => {
+  const week = addDays(monday, 28);
+  const next = addDays(week, 7);
+  const vyId = Number((await admin.get('/staff')).text.split('<tr>').slice(1).find((r) => r.includes('Ngô Vy')).match(/\/staff\/(\d+)\/edit/)[1]);
+  for (const date of [addDays(next, 1), addDays(next, 3)]) {
+    await postForm(admin, '/tasks', { title: 'Chụp ảnh sản phẩm Klayy', assignee_id: vyId, date, repeat: 'none', brand: 'Klayy' }, { from: '/tasks/new' });
+  }
+
+  await admin.get('/today'); // đọc hết thông báo 'Đã thêm việc…' còn chờ
+  // Chưa lưu: báo cáo và form điền sẵn từ lịch, 2 ngày gộp một dòng
+  const report = (await admin.get(`/reports?date=${week}`)).text;
+  assert.match(report, /Lấy từ Lịch làm việc tuần tới/);
+  assert.equal(report.split('Chụp ảnh sản phẩm Klayy').length - 1, 1);
+  const form = (await admin.get(`/reports/edit?date=${week}`)).text;
+  const taskIds = form.match(/name="plan_task_ids" value="([\d,]+)"/)[1];
+  assert.equal(taskIds.split(',').length, 2);
+  assert.match(form, /value="2 ngày"/);
+
+  await postForm(admin, '/reports', { date: week, plan_id: '', plan_task_ids: taskIds, plan_title: 'Chụp ảnh sản phẩm Klayy', plan_target: '20 ảnh', plan_owner_id: String(vyId), plan_brand: 'Klayy', plan_due_date: addDays(next, 3) }, { from: '/reports/edit' });
+
+  // Tuần sau: chưa xong -> xong 1/2 ngày -> Xong khi cả 2 việc xong
+  assert.match((await admin.get(`/reports?date=${next}`)).text, /xong 0\/1/);
+  const ids = taskIds.split(',');
+  await postForm(admin, `/tasks/${ids[0]}/status`, { status: 'done' }, { from: '/today' });
+  assert.match((await admin.get(`/reports?date=${next}`)).text, /Chưa xong<\/span> <span[^>]*>1\/2/);
+  await postForm(admin, `/tasks/${ids[1]}/status`, { status: 'done' }, { from: '/today' });
+  assert.match((await admin.get(`/reports?date=${next}`)).text, /xong 1\/1/);
+  // Form tuần sau: dòng từ lịch không tick tay được
+  assert.match((await admin.get(`/reports/edit?date=${next}`)).text, /disabled aria-label="Tự theo Lịch làm việc"/);
+
+  // "Lấy thêm từ Lịch làm việc": việc mới giao thêm được thêm vào, việc đã có không lặp lại
+  await postForm(admin, '/tasks', { title: 'Viết caption', assignee_id: vyId, date: addDays(next, 2), repeat: 'none' }, { from: '/tasks/new' });
+  const added = (await admin.get(`/reports/edit?date=${week}&add=calendar`)).text;
+  assert.match(added, /Đã thêm 1 việc từ Lịch làm việc/);
+  assert.match(added, /value="Viết caption"/);
+  assert.equal(added.split('value="Chụp ảnh sản phẩm Klayy"').length - 1, 1);
+});

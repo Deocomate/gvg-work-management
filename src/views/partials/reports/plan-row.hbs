@@ -3,10 +3,12 @@
      Dùng: {{> reports/plan-row row=this ownerOptions=… brandOptions=… min=… max=…}}; trong <template> thì không truyền row. --}}
 <div class="grid gap-2 rounded-xl border border-line bg-surface/60 p-3 sm:grid-cols-2 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] lg:items-start" data-row>
   <input type="hidden" name="plan_id" value="{{row.id}}">
+  <input type="hidden" name="plan_task_ids" value="{{row.task_ids}}">
   <div class="sm:col-span-2 lg:col-span-1">
     <input type="text" name="plan_title" value="{{row.title}}" maxlength="300" placeholder="Việc cần làm — VD: Quay 3 video Klayy"
       aria-label="Việc cần làm" class="input{{#if row.errors.title}} input-error{{/if}}"{{#if row.errors.title}} aria-invalid="true"{{/if}}>
     {{#if row.errors.title}}<p class="field-error">{{row.errors.title}}</p>{{/if}}
+    {{#if row.fromCalendar}}<p class="hint">Từ Lịch làm việc — tự đánh dấu Xong khi việc trên lịch xong</p>{{/if}}
   </div>
   <div>
     <input type="text" name="plan_target" value="{{row.target}}" maxlength="300" placeholder="Mục tiêu — VD: 50k view"

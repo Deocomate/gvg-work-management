@@ -97,7 +97,7 @@
           {{#each social}}
             <tr>
               <td><span class="{{badge}}">{{brand}}</span></td>
-              <td>{{channel}}</td>
+              <td>{{channel}}{{#if autoNote}} <span class="text-xs text-ink-faint" title="{{autoNote}}">· tự lấy</span>{{/if}}</td>
               <td class="text-right tabular-nums">{{f.followers}}</td>
               <td class="text-right tabular-nums {{#if (eq gainTone 'up')}}text-ok-300{{else if (eq gainTone 'down')}}text-bad-300{{else}}text-ink-faint{{/if}}">{{#if gain}}{{gain}}{{else}}—{{/if}}</td>
               <td class="text-right tabular-nums">{{f.views}} {{> reports/delta d=viewsDelta}}</td>
@@ -158,8 +158,9 @@
 <section class="card card-body mt-6" aria-labelledby="r-prev-plan">
   <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
     <h2 id="r-prev-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần này <span class="text-sm font-normal text-ink-faint">— xong {{prevPlanDone}}/{{prevPlanItems.length}}</span></h2>
-    <a href="/reports/edit?date={{from}}#prev-plan" class="text-xs text-ink-faint hover:underline" data-export-skip>Đánh dấu xong</a>
+    {{#unless prevPlanFromCalendar}}<a href="/reports/edit?date={{from}}#prev-plan" class="text-xs text-ink-faint hover:underline" data-export-skip>Đánh dấu xong</a>{{/unless}}
   </div>
+  {{#if prevPlanFromCalendar}}<p class="mb-3 text-xs text-ink-faint">Lấy từ Lịch làm việc tuần này (tuần trước chưa lập kế hoạch). Kết quả theo trạng thái việc trên lịch.</p>{{/if}}
   <div class="table-wrap">
     <table class="table">
       <thead><tr><th>Việc cần làm</th><th>Mục tiêu</th><th>Phụ trách</th><th>Brand</th><th>Hạn</th><th>Kết quả</th></tr></thead>
@@ -171,7 +172,7 @@
             <td class="whitespace-nowrap">{{owner_name}}</td>
             <td>{{#if brand}}<span class="{{badge}}">{{brand}}</span>{{/if}}</td>
             <td class="whitespace-nowrap tabular-nums">{{#if due_date}}{{formatDay due_date}}{{/if}}</td>
-            <td>{{#if done}}<span class="badge-green">Xong</span>{{else}}<span class="badge-gray">Chưa xong</span>{{/if}}</td>
+            <td class="whitespace-nowrap">{{#if done}}<span class="badge-green">Xong</span>{{else}}<span class="badge-gray">Chưa xong</span>{{/if}}{{#if progress}} <span class="text-xs text-ink-faint">{{progress}}</span>{{/if}}</td>
           </tr>
         {{/each}}
       </tbody>
@@ -186,6 +187,7 @@
     <h2 id="r-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần tới <span class="text-sm font-normal text-ink-faint">{{nextLabel}}</span></h2>
     <a href="/reports/edit?date={{from}}#plan" class="text-xs text-ink-faint hover:underline" data-export-skip>Sửa kế hoạch</a>
   </div>
+  {{#if planFromCalendar}}<p class="mb-3 text-xs text-ink-faint">Lấy từ Lịch làm việc tuần tới. Bấm "Sửa kế hoạch" để thêm mục tiêu, bớt việc rồi lưu.</p>{{/if}}
   {{#if planItems.length}}
     <div class="table-wrap">
       <table class="table">

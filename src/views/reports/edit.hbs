@@ -8,7 +8,13 @@
 
   <section id="social" class="card card-body mb-6" aria-labelledby="e-social">
     <h2 id="e-social" class="text-lg font-semibold text-ink">Chỉ số kênh mạng xã hội</h2>
-    <p class="mt-1 mb-4 text-sm text-ink-faint">Xem trong TikTok Studio / Meta Business Suite / YouTube Studio rồi điền. Kênh không dùng thì để trống. Follower nhập tổng cuối tuần — báo cáo tự tính số tăng so với tuần trước.</p>
+    <p class="mt-1 mb-4 text-sm text-ink-faint">
+      {{#if socialConnected}}Ô viền xanh = số tự lấy từ Facebook / Instagram / TikTok / YouTube (follower chỉ lấy cho tuần đang diễn ra) — sửa được, bấm Lưu để chốt số.
+      Kênh chưa kết nối thì xem trong TikTok Studio / Meta Business Suite / YouTube Studio rồi điền.
+      {{else}}Chưa kết nối tài khoản mạng xã hội nên cần nhập tay: xem trong TikTok Studio / Meta Business Suite / YouTube Studio rồi điền.
+      Muốn tự lấy số, người quản trị máy chủ thêm SOCIAL_ACCOUNTS và token (xem .env.example).{{/if}}
+      Kênh không dùng thì để trống. Follower nhập tổng cuối tuần — báo cáo tự tính số tăng so với tuần trước.
+    </p>
     <div class="grid gap-6 xl:grid-cols-3">
       {{#each brands}}
         <div>
@@ -23,7 +29,7 @@
                     {{#each cells}}
                       <td class="min-w-24">
                         <input type="text" inputmode="numeric" name="{{name}}" value="{{value}}" aria-label="{{label}}"
-                          class="input py-1 text-right tabular-nums{{#if error}} input-error{{/if}}"{{#if error}} aria-invalid="true" title="{{error}}"{{/if}}>
+                          class="input py-1 text-right tabular-nums{{#if error}} input-error{{/if}}{{#if auto}} ring-1 ring-ok-400/60{{/if}}"{{#if error}} aria-invalid="true" title="{{error}}"{{else if auto}} title="Tự lấy từ nền tảng — sửa được"{{/if}}>
                         {{#if error}}<p class="field-error">{{error}}</p>{{/if}}
                       </td>
                     {{/each}}
@@ -50,14 +56,18 @@
     <section id="prev-plan" class="card card-body mb-6" aria-labelledby="e-prev-plan">
       <input type="hidden" name="prev_plan_shown" value="1">
       <h2 id="e-prev-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần này</h2>
-      <p class="mt-1 mb-3 text-sm text-ink-faint">Đã đề ra ở báo cáo tuần trước. Tick những việc đã xong.</p>
+      <p class="mt-1 mb-3 text-sm text-ink-faint">Đã đề ra ở báo cáo tuần trước. Việc lấy từ Lịch làm việc tự đánh dấu Xong; việc gõ tay thì tick ở đây.</p>
       <ul class="space-y-2">
         {{#each prevPlanItems}}
           <li>
             <label class="flex items-start gap-3 text-sm">
-              <input type="checkbox" name="prev_plan_done" value="{{id}}" class="mt-1" {{checked done}}>
+              {{#if auto}}
+                <input type="checkbox" class="mt-1" {{checked done}} disabled aria-label="Tự theo Lịch làm việc">
+              {{else}}
+                <input type="checkbox" name="prev_plan_done" value="{{id}}" class="mt-1" {{checked done}}>
+              {{/if}}
               <span><span class="text-ink">{{title}}</span>
-                <span class="text-xs text-ink-faint">{{#if target}} · {{target}}{{/if}}{{#if owner_name}} · {{owner_name}}{{/if}}{{#if due_date}} · hạn {{formatDay due_date}}{{/if}}</span></span>
+                <span class="text-xs text-ink-faint">{{#if target}} · {{target}}{{/if}}{{#if owner_name}} · {{owner_name}}{{/if}}{{#if due_date}} · hạn {{formatDay due_date}}{{/if}}{{#if auto}} · tự theo Lịch làm việc{{#if progress}} ({{progress}} ngày xong){{/if}}{{/if}}</span></span>
             </label>
           </li>
         {{/each}}
@@ -67,13 +77,19 @@
 
   <section id="plan" class="card card-body mb-6" aria-labelledby="e-plan">
     <h2 id="e-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần tới <span class="text-sm font-normal text-ink-faint">{{nextLabel}}</span></h2>
-    <p class="mt-1 mb-4 text-sm text-ink-faint">Mỗi dòng một việc. Dòng để trống thì bỏ qua. Báo cáo tuần sau sẽ hiện lại danh sách này để đánh dấu xong.</p>
+    <p class="mt-1 mb-4 text-sm text-ink-faint">
+      {{#if planFromCalendar}}Đã điền sẵn các việc giao tuần tới trên Lịch làm việc — sửa, thêm mục tiêu hoặc bỏ bớt rồi bấm Lưu.{{else}}Mỗi dòng một việc. Dòng để trống thì bỏ qua.{{/if}}
+      Báo cáo tuần sau hiện lại danh sách này để xem đã xong chưa.
+    </p>
     <div data-row-list data-max="30">
       <div class="space-y-2" data-rows>
         {{#each planRows}}{{> reports/plan-row row=this ownerOptions=@root.ownerOptions brandOptions=@root.brandOptions min=@root.nextWeek.from max=@root.nextWeek.to}}{{/each}}
       </div>
       <template data-row-template>{{> reports/plan-row ownerOptions=ownerOptions brandOptions=brandOptions min=nextWeek.from max=nextWeek.to}}</template>
-      <button type="button" class="btn-ghost btn-sm mt-2" data-row-add>+ Thêm việc</button>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <button type="button" class="btn-ghost btn-sm" data-row-add>+ Thêm việc</button>
+        <a href="/reports/edit?date={{from}}&add=calendar#plan" class="btn-ghost btn-sm" title="Thêm các việc đã giao tuần tới trên Lịch làm việc mà kế hoạch chưa có">+ Lấy thêm từ Lịch làm việc</a>
+      </div>
     </div>
     <div class="mt-4">
       {{> form/textarea name="next_plan" label="Ghi chú thêm" value=values.next_plan error=errors.next_plan rows=3 placeholder="VD: Ưu tiên video Klayy cho đợt sale 12/12"}}

@@ -150,3 +150,7 @@ export async function savePlanTasks({ updates = [], creates = [], deletes = [] }
 }
 
 export const removeForPlan = (planId) => run('DELETE FROM tasks WHERE plan_id = ?', [planId]);
+
+/** Trạng thái của nhiều việc theo id (Báo cáo tuần: kế hoạch lấy từ lịch tự tính Xong). Việc đã xoá thì không có trong kết quả. */
+export const statusByIds = (ids) =>
+  ids.length ? all('SELECT id, status FROM tasks WHERE id IN (SELECT value FROM json_each(?))', [JSON.stringify(ids)]) : Promise.resolve([]);

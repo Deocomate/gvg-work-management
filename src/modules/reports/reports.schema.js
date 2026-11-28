@@ -27,5 +27,10 @@ export const planItemSchema = z.object({
   owner_id: z.preprocess(emptyToUndefined, z.coerce.number({ error: 'Người phụ trách không hợp lệ' }).int().positive().optional()),
   brand: optionalText(50, 'Brand'),
   due_date: z.preprocess(emptyToUndefined, z.iso.date({ error: 'Ngày không hợp lệ' }).optional()),
+  // Dòng lấy từ Lịch làm việc: các id việc, ô ẩn dạng "12,13"
+  task_ids: z.preprocess(
+    (v) => (typeof v === 'string' ? v.split(',').map((x) => Number(x.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50) : []),
+    z.array(z.number()),
+  ),
 });
 export const MAX_PLAN_ITEMS = 30;

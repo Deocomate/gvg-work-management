@@ -83,6 +83,7 @@ function present(report) {
       badge: brandInfo(s.brand)?.badge ?? 'badge-gray',
       f: { followers: num(s.followers), views: num(s.views), engagements: num(s.engagements) },
       gain: s.followerGain == null ? '' : `${s.followerGain >= 0 ? '+' : ''}${int.format(s.followerGain)}`,
+      autoNote: s.autoFields.length ? 'Số tự lấy từ nền tảng' : '',
       gainTone: s.followerGain == null ? 'none' : s.followerGain > 0 ? 'up' : s.followerGain < 0 ? 'down' : 'same',
       viewsDelta: delta(s.views, s.prev?.views),
       engagementsDelta: delta(s.engagements, s.prev?.engagements),
@@ -121,6 +122,8 @@ const planRowView = (row = {}) => ({
   owner_id: row.owner_id ?? '',
   brand: row.brand ?? '',
   due_date: row.due_date ?? '',
+  task_ids: (row.taskIds ?? []).join(','), // dòng lấy từ Lịch làm việc
+  fromCalendar: Boolean(row.taskIds?.length),
   errors: row.errors ?? {},
 });
 
@@ -146,7 +149,13 @@ function formView(form, errors = {}, ownerOptions = []) {
         ...ch,
         cells: service.METRICS.map((m) => {
           const name = service.statField(i, ch.value, m.value);
-          return { name, label: `${m.label} ${ch.label} ${b.label}`, value: form.values[name] ?? '', error: errors[name] };
+          return {
+            name,
+            label: `${m.label} ${ch.label} ${b.label}`,
+            value: form.values[name] ?? '',
+            error: errors[name],
+            auto: (form.autoCells ?? []).includes(name), // điền sẵn từ nền tảng
+          };
         }),
       })),
     })),
@@ -155,7 +164,12 @@ function formView(form, errors = {}, ownerOptions = []) {
 
 export async function edit(req, res) {
   const date = parseDate(req.query.date);
-  const [form, owners] = await Promise.all([service.getWeekForm(date), staffOptions()]);
+  const addFromCalendar = req.query.add === 'calendar';
+  const [form, owners] = await Promise.all([service.getWeekForm(date, { addFromCalendar }), staffOptions()]);
+  if (addFromCalendar) {
+    const message = form.planAdded ? `Đã thêm ${form.planAdded} việc từ Lịch làm việc — bấm Lưu để giữ.` : 'Lịch làm việc tuần tới không có việc nào mới.';
+    res.locals.flash = [...res.locals.flash, { type: 'info', message }];
+  }
   res.render('reports/edit', formView(form, {}, owners));
 }
 
@@ -166,7 +180,7 @@ export async function save(req, res) {
     const [form, owners] = await Promise.all([service.getWeekForm(date), staffOptions()]);
     // Vẽ lại đúng những gì người dùng vừa nhập (kể cả ô tick Xong của tuần trước)
     const ticked = new Set([req.body.prev_plan_done ?? []].flat().map(String));
-    const prevPlanItems = form.prevPlanItems.map((p) => ({ ...p, done: ticked.has(String(p.id)) ? 1 : 0 }));
+    const prevPlanItems = form.prevPlanItems.map((p) => (p.auto ? p : { ...p, done: ticked.has(String(p.id)) }));
     return res
       .status(422)
       .render('reports/edit', formView({ ...form, values: { ...form.values, ...req.body }, planRows: result.planRows, prevPlanItems }, result.errors, owners));

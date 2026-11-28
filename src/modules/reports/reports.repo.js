@@ -14,11 +14,13 @@ export const listSocial = (weekStart) =>
 /** Kế hoạch viết trong báo cáo tuần `weekStart` (áp dụng cho tuần sau đó). */
 export const listPlanItems = (weekStart) =>
   all(
-    `SELECT p.id, p.title, p.target, p.owner_id, p.brand, p.due_date, p.done, u.name AS owner_name
+    `SELECT p.id, p.title, p.target, p.owner_id, p.brand, p.due_date, p.done, p.task_ids, u.name AS owner_name
      FROM weekly_plan_items p LEFT JOIN users u ON u.id = p.owner_id
      WHERE p.week_start = ? ORDER BY p.position, p.id`,
     [weekStart],
   );
+
+const taskIdsJson = (p) => (p.task_ids?.length ? JSON.stringify(p.task_ids) : null);
 
 /**
  * Lưu cả tuần trong một transaction:
@@ -50,13 +52,13 @@ export function saveWeek(weekStart, { highlights, issues, next_plan }, stats, us
       p.id
         ? {
             // week_start trong WHERE: id gửi lên từ form không sửa được dòng của tuần khác
-            sql: `UPDATE weekly_plan_items SET title = ?, target = ?, owner_id = ?, brand = ?, due_date = ?, position = ?
+            sql: `UPDATE weekly_plan_items SET title = ?, target = ?, owner_id = ?, brand = ?, due_date = ?, task_ids = ?, position = ?
                   WHERE id = ? AND week_start = ?`,
-            args: [p.title, p.target ?? null, p.owner_id ?? null, p.brand ?? null, p.due_date ?? null, position, p.id, weekStart],
+            args: [p.title, p.target ?? null, p.owner_id ?? null, p.brand ?? null, p.due_date ?? null, taskIdsJson(p), position, p.id, weekStart],
           }
         : {
-            sql: `INSERT INTO weekly_plan_items (week_start, title, target, owner_id, brand, due_date, position) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            args: [weekStart, p.title, p.target ?? null, p.owner_id ?? null, p.brand ?? null, p.due_date ?? null, position],
+            sql: `INSERT INTO weekly_plan_items (week_start, title, target, owner_id, brand, due_date, task_ids, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [weekStart, p.title, p.target ?? null, p.owner_id ?? null, p.brand ?? null, p.due_date ?? null, taskIdsJson(p), position],
           },
     ),
     // Chỉ khi form có hiện danh sách tuần trước (prevWeekStart) — không thì giữ nguyên

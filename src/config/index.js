@@ -57,6 +57,20 @@ export const config = Object.freeze({
         : crypto.createHmac('sha256', env.SESSION_SECRET ?? DEV_SECRET).update('payroll-secret').digest('hex')),
     dbFile: env.PAYROLL_DB_FILE || 'data/payroll.db',
   }),
+  // Báo cáo tuần: chỉ số kênh mạng xã hội lấy thẳng từ nền tảng (không có thì nhập tay).
+  // SOCIAL_ACCOUNTS = "Brand:kênh:id, …" — kênh: facebook (ID Trang) | instagram (ID tài khoản IG doanh nghiệp)
+  //   | tiktok (business_id của tài khoản TikTok doanh nghiệp) | youtube (ID kênh UC…).
+  social: Object.freeze({
+    accounts: list(env.SOCIAL_ACCOUNTS)
+      .map((item) => {
+        const [brand, channel, ...rest] = item.split(':').map((x) => x.trim());
+        return { brand, channel: (channel || '').toLowerCase(), id: rest.join(':') };
+      })
+      .filter((a) => a.brand && a.channel && a.id),
+    metaToken: env.META_PAGE_ACCESS_TOKEN || env.META_ACCESS_TOKEN || undefined,
+    tiktokToken: env.TIKTOK_BUSINESS_ACCESS_TOKEN || undefined,
+    youtubeKey: env.YOUTUBE_API_KEY || undefined,
+  }),
   // [vibe:config]
 });
 
