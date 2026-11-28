@@ -1,6 +1,7 @@
-{{!-- Báo cáo tuần marketing. Cả báo cáo nằm trong #weekly-report để nút Tải PDF / PNG chụp lại (public/js/export-image.js);
+{{!-- Báo cáo tuần marketing. Cả báo cáo nằm trong #weekly-report để nút Tải PDF / PNG chụp lại (public/js/export-image.js;
+      PNG theo giao diện đang dùng, PDF luôn nền trắng giao diện sáng — data-export-pdf="light");
       phần có data-export-skip (nút, chuyển tuần) không vào file. --}}
-<div id="weekly-report" data-filename="{{exportFilename}}" data-export-breaks="section, tbody tr" data-export-bg="page" data-export-width="1100">
+<div id="weekly-report" data-filename="{{exportFilename}}" data-export-breaks="section, tbody tr" data-export-bg="page" data-export-pdf="light" data-export-width="1100">
 {{#> page-header title="Báo cáo tuần marketing" subtitle=label}}
   <div class="flex flex-wrap items-center gap-2" data-export-skip>
     <a href="/reports/edit?date={{from}}" class="btn-primary btn-sm">Nhập số kênh & nhận xét</a>

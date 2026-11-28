@@ -6,6 +6,7 @@
 // Link trong PDF là ảnh nên không bấm được — muốn bấm link thì dùng nút "In / Lưu PDF".
 // Tuỳ chọn trên khung: data-export-skip (bỏ phần tử khi chụp), data-export-bg="page" (nền theo giao diện sáng/tối),
 // data-export-width="1100" (tạm giãn khung khi chụp để bảng rộng không bị cắt).
+// data-export-pdf="light" (Báo cáo tuần): PDF luôn chụp bằng giao diện sáng trên nền trắng cho dễ in, dù màn hình đang tối.
 // Nút có data-export-preview: tạo file xong mở cửa sổ xem trước (PDF hiện từng trang A4), bấm "Tải xuống" mới lưu.
 
 // style.margin = 0: khung căn giữa bằng margin auto (phiếu công việc) sẽ bị html-to-image chép nguyên lề
@@ -28,7 +29,28 @@ function pageBackground() {
   }
   return '#ffffff';
 }
-const captureFor = (target) => (target.dataset.exportBg === 'page' ? { ...CAPTURE, backgroundColor: pageBackground() } : CAPTURE);
+const captureFor = (target, kind) =>
+  target.dataset.exportBg === 'page' && !(kind === 'pdf' && target.dataset.exportPdf === 'light')
+    ? { ...CAPTURE, backgroundColor: pageBackground() }
+    : CAPTURE;
+
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+/** Tạm chuyển cả trang sang giao diện sáng trong lúc chụp (cùng cách public/js/theme.js đặt), xong trả lại như cũ. */
+async function withLightTheme(run) {
+  const root = document.documentElement;
+  const before = { theme: root.dataset.theme, dark: root.classList.contains('dark') };
+  root.dataset.theme = 'light';
+  root.classList.remove('dark');
+  await nextFrame();
+  try {
+    return await run();
+  } finally {
+    if (before.theme) root.dataset.theme = before.theme;
+    else delete root.dataset.theme;
+    root.classList.toggle('dark', before.dark);
+  }
+}
 const A4_W = 595.28;
 const A4_H = 841.89;
 const MARGIN = 28;
@@ -124,7 +146,8 @@ function jpegsToPdf(pages) {
 }
 
 async function toPdf(target) {
-  const canvas = await window.htmlToImage.toCanvas(target, captureFor(target));
+  const capture = captureFor(target, 'pdf');
+  const canvas = await window.htmlToImage.toCanvas(target, capture);
   const scale = canvas.width / target.getBoundingClientRect().width;
   const pageHeight = Math.floor(((A4_H - MARGIN * 2) / (A4_W - MARGIN * 2)) * canvas.width);
   const parts = target.dataset.exportBreaks ? slices(canvas.height, pageHeight, breakPoints(target, scale)) : [[0, canvas.height]];
@@ -133,7 +156,7 @@ async function toPdf(target) {
     piece.width = canvas.width;
     piece.height = to - from;
     const ctx = piece.getContext('2d');
-    ctx.fillStyle = captureFor(target).backgroundColor;
+    ctx.fillStyle = capture.backgroundColor;
     ctx.fillRect(0, 0, piece.width, piece.height);
     ctx.drawImage(canvas, 0, from, canvas.width, piece.height, 0, 0, canvas.width, piece.height);
     const dataUrl = piece.toDataURL('image/jpeg', 0.92);
@@ -238,7 +261,8 @@ document.addEventListener('click', async (event) => {
   button.textContent = 'Đang tạo…';
   try {
     const preview = button.hasAttribute('data-export-preview');
-    const file = await withExportWidth(target, () => (kind === 'pdf' ? toPdf(target) : toPng(target, { preview })));
+    const make = () => withExportWidth(target, () => (kind === 'pdf' ? toPdf(target) : toPng(target, { preview })));
+    const file = kind === 'pdf' && target.dataset.exportPdf === 'light' ? await withLightTheme(make) : await make();
     const filename = `${target.dataset.filename || 'tai-ve'}.${kind}`;
     if (preview) showPreview(file, kind, filename);
     else save(file.blob, filename);
