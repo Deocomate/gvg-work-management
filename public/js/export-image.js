@@ -37,6 +37,23 @@ async function withLightTheme(run) {
     root.classList.toggle('dark', before.dark);
   }
 }
+/**
+ * File tải về phải hiện đủ nội dung, không có thanh cuộn: lúc chụp, bảng/khung cuộn (VD .table-wrap overflow-x-auto)
+ * được tạm để overflow: visible. Bản chụp vẽ chữ lại bằng font dự phòng (skipFonts) nên có thể rộng hơn trên màn hình
+ * vài px -> nếu để auto thì ảnh có thanh cuộn và mất phần bị tràn. Chụp xong trả lại như cũ.
+ */
+async function withoutScrollbars(target, run) {
+  const changed = [target, ...target.querySelectorAll('*')]
+    .filter((el) => /auto|scroll/.test(getComputedStyle(el).overflowX + getComputedStyle(el).overflowY))
+    .map((el) => ({ el, before: el.style.overflow }));
+  for (const { el } of changed) el.style.overflow = 'visible';
+  try {
+    return await run();
+  } finally {
+    for (const { el, before } of changed) el.style.overflow = before;
+  }
+}
+
 const A4_W = 595.28;
 const A4_H = 841.89;
 const MARGIN = 28;
@@ -247,7 +264,7 @@ document.addEventListener('click', async (event) => {
   try {
     const preview = button.hasAttribute('data-export-preview');
     const make = () => withExportWidth(target, () => (kind === 'pdf' ? toPdf(target) : toPng(target, { preview })));
-    const file = await withLightTheme(make);
+    const file = await withLightTheme(() => withoutScrollbars(target, make));
     const filename = `${target.dataset.filename || 'tai-ve'}.${kind}`;
     if (preview) showPreview(file, kind, filename);
     else save(file.blob, filename);
