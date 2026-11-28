@@ -38,11 +38,45 @@
   </section>
 
   <section id="notes" class="card card-body mb-6" aria-labelledby="e-notes">
-    <h2 id="e-notes" class="mb-4 text-lg font-semibold text-ink">Nhận xét & kế hoạch</h2>
-    <div class="grid gap-4 md:grid-cols-3">
-      {{> form/textarea name="highlights" label="Điểm nổi bật" value=values.highlights error=errors.highlights rows=6 placeholder="VD: Video bình hoa Vũ Gia đạt 120k view, inbox tăng mạnh"}}
-      {{> form/textarea name="issues" label="Vấn đề gặp phải" value=values.issues error=errors.issues rows=6 placeholder="VD: Trễ 2 buổi quay GSXD do thời tiết"}}
-      {{> form/textarea name="next_plan" label="Kế hoạch tuần tới" value=values.next_plan error=errors.next_plan rows=6 placeholder="VD: Chạy thử 2 mẫu quảng cáo mới cho Klayy"}}
+    <h2 id="e-notes" class="mb-4 text-lg font-semibold text-ink">Nhận xét</h2>
+    <div class="grid gap-4 md:grid-cols-2">
+      {{> form/textarea name="highlights" label="Điểm nổi bật" value=values.highlights error=errors.highlights rows=5 placeholder="VD: Video bình hoa Vũ Gia đạt 120k view, inbox tăng mạnh"}}
+      {{> form/textarea name="issues" label="Vấn đề gặp phải" value=values.issues error=errors.issues rows=5 placeholder="VD: Trễ 2 buổi quay GSXD do thời tiết"}}
+    </div>
+  </section>
+
+  {{#if prevPlanItems.length}}
+    {{!-- Kế hoạch đã đề ra ở báo cáo tuần trước: tick việc đã xong --}}
+    <section id="prev-plan" class="card card-body mb-6" aria-labelledby="e-prev-plan">
+      <input type="hidden" name="prev_plan_shown" value="1">
+      <h2 id="e-prev-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần này</h2>
+      <p class="mt-1 mb-3 text-sm text-ink-faint">Đã đề ra ở báo cáo tuần trước. Tick những việc đã xong.</p>
+      <ul class="space-y-2">
+        {{#each prevPlanItems}}
+          <li>
+            <label class="flex items-start gap-3 text-sm">
+              <input type="checkbox" name="prev_plan_done" value="{{id}}" class="mt-1" {{checked done}}>
+              <span><span class="text-ink">{{title}}</span>
+                <span class="text-xs text-ink-faint">{{#if target}} · {{target}}{{/if}}{{#if owner_name}} · {{owner_name}}{{/if}}{{#if due_date}} · hạn {{formatDay due_date}}{{/if}}</span></span>
+            </label>
+          </li>
+        {{/each}}
+      </ul>
+    </section>
+  {{/if}}
+
+  <section id="plan" class="card card-body mb-6" aria-labelledby="e-plan">
+    <h2 id="e-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần tới <span class="text-sm font-normal text-ink-faint">{{nextLabel}}</span></h2>
+    <p class="mt-1 mb-4 text-sm text-ink-faint">Mỗi dòng một việc. Dòng để trống thì bỏ qua. Báo cáo tuần sau sẽ hiện lại danh sách này để đánh dấu xong.</p>
+    <div data-row-list data-max="30">
+      <div class="space-y-2" data-rows>
+        {{#each planRows}}{{> reports/plan-row row=this ownerOptions=@root.ownerOptions brandOptions=@root.brandOptions min=@root.nextWeek.from max=@root.nextWeek.to}}{{/each}}
+      </div>
+      <template data-row-template>{{> reports/plan-row ownerOptions=ownerOptions brandOptions=brandOptions min=nextWeek.from max=nextWeek.to}}</template>
+      <button type="button" class="btn-ghost btn-sm mt-2" data-row-add>+ Thêm việc</button>
+    </div>
+    <div class="mt-4">
+      {{> form/textarea name="next_plan" label="Ghi chú thêm" value=values.next_plan error=errors.next_plan rows=3 placeholder="VD: Ưu tiên video Klayy cho đợt sale 12/12"}}
     </div>
   </section>
 

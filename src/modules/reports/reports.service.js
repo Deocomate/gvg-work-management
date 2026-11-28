@@ -13,7 +13,7 @@ import * as plansRepo from '#modules/plan/plan.repo.js';
 import * as customersRepo from '#modules/customers/customers.repo.js';
 import { CUSTOMER_SOURCES } from '#modules/customers/customers.schema.js';
 import * as adsService from '#modules/ads/ads.service.js';
-import { notesSchema, statNumber } from './reports.schema.js';
+import { MAX_PLAN_ITEMS, notesSchema, planItemSchema, statNumber } from './reports.schema.js';
 import * as repo from './reports.repo.js';
 
 export const canViewReports = (user) => user?.role === 'admin';
@@ -66,6 +66,9 @@ export function contentStats(plans, { from, to }) {
     posts: posts
       .map((p) => ({ id: p.id, title: p.title, brand: p.brand || '', post_date: p.post_date, posted: p.status === 'posted', owner: p.poster_name || p.owner_name || '' }))
       .sort((a, b) => a.post_date.localeCompare(b.post_date) || a.title.localeCompare(b.title, 'vi')),
+    shoots: shoots
+      .map((p) => ({ id: p.id, title: p.title, brand: p.brand || '', shoot_date: p.shoot_date, shoot_time: p.shoot_time || '', shot: isShot(p), owner: p.shooter_name || p.owner_name || '' }))
+      .sort((a, b) => a.shoot_date.localeCompare(b.shoot_date) || a.title.localeCompare(b.title, 'vi')),
   };
 }
 
@@ -147,9 +150,11 @@ export async function getWeekReport(date) {
   const today = todayISO();
   const week = weekOf(date);
   const prevWeek = weekOf(addDays(week.from, -7));
-  const [plans, prevPlans, customers, prevCustomers, ads, prevAds, notes, social, prevSocial] = await Promise.all([
+  const nextWeek = weekOf(addDays(week.from, 7));
+  const [plans, prevPlans, nextPlans, customers, prevCustomers, ads, prevAds, notes, social, prevSocial, planItems, prevPlanItems] = await Promise.all([
     plansRepo.listForRange(week),
     plansRepo.listForRange(prevWeek),
+    plansRepo.listForRange(nextWeek),
     customerStats(week),
     customerStats(prevWeek),
     adsStats(week, today),
@@ -157,6 +162,8 @@ export async function getWeekReport(date) {
     repo.findNotes(week.from),
     repo.listSocial(week.from),
     repo.listSocial(prevWeek.from),
+    repo.listPlanItems(week.from),
+    repo.listPlanItems(prevWeek.from),
   ]);
   return {
     ...week,
@@ -173,6 +180,10 @@ export async function getWeekReport(date) {
     prevAds,
     notes: notes ?? {},
     social: socialRows(social, prevSocial),
+    nextWeek,
+    nextContent: contentStats(nextPlans, nextWeek),
+    planItems, // Kế hoạch tuần tới (viết ở báo cáo này)
+    prevPlanItems, // Kế hoạch đã đề ra ở báo cáo tuần trước -> kết quả tuần này
   };
 }
 
@@ -184,14 +195,46 @@ export const statField = (brandIndex, channel, metric) => `s_${brandIndex}_${cha
 /** Dữ liệu cho form: values = { highlights, …, s_0_tiktok_followers: 1200, … }. */
 export async function getWeekForm(date) {
   const week = weekOf(date);
-  const [notes, social] = await Promise.all([repo.findNotes(week.from), repo.listSocial(week.from)]);
+  const [notes, social, planItems, prevPlanItems] = await Promise.all([
+    repo.findNotes(week.from),
+    repo.listSocial(week.from),
+    repo.listPlanItems(week.from),
+    repo.listPlanItems(addDays(week.from, -7)),
+  ]);
   const values = { highlights: notes?.highlights ?? '', issues: notes?.issues ?? '', next_plan: notes?.next_plan ?? '' };
   for (const s of social) {
     const i = BRANDS.findIndex((b) => b.value === s.brand);
     if (i < 0) continue;
     for (const m of METRICS) values[statField(i, s.channel, m.value)] = s[m.value] ?? '';
   }
-  return { ...week, values };
+  return { ...week, nextWeek: weekOf(addDays(week.from, 7)), values, planItems, prevPlanItems };
+}
+
+const asList = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
+
+/**
+ * Các dòng Kế hoạch tuần tới từ form (ô cùng tên lặp lại: plan_title, plan_target…, thứ tự khớp nhau).
+ * Dòng trống hết thì bỏ. Trả { items, rows (để vẽ lại form khi lỗi), errors: { plan_<i>_<ô>: … } }.
+ */
+export function parsePlanRows(input) {
+  const fields = ['id', 'title', 'target', 'owner_id', 'brand', 'due_date'];
+  const cols = Object.fromEntries(fields.map((f) => [f, asList(input[`plan_${f}`])]));
+  const count = Math.min(cols.title.length, MAX_PLAN_ITEMS);
+  const rows = [];
+  const items = [];
+  const errors = {};
+  for (let i = 0; i < count; i++) {
+    const row = Object.fromEntries(fields.map((f) => [f, typeof cols[f][i] === 'string' ? cols[f][i] : '']));
+    if (!['title', 'target', 'owner_id', 'brand', 'due_date'].some((f) => row[f].trim())) continue;
+    const index = rows.length;
+    rows.push(row);
+    const parsed = validate(planItemSchema, row);
+    if (!parsed.ok) {
+      for (const [field, message] of Object.entries(parsed.errors)) errors[`plan_${index}_${field}`] = message;
+      row.errors = parsed.errors;
+    } else items.push(parsed.data);
+  }
+  return { items, rows, errors };
 }
 
 /** Kiểm tra + lưu form. Trả { ok, errors } — errors theo tên ô. */
@@ -212,7 +255,12 @@ export async function saveWeek(date, input, userId) {
       if (METRICS.some((m) => row[m.value] != null)) stats.push(row);
     }
   });
-  if (Object.keys(errors).length) return { ok: false, errors };
-  await repo.saveWeek(week.from, notes.data, stats, userId);
+  const plan = parsePlanRows(input);
+  Object.assign(errors, plan.errors);
+  if (Object.keys(errors).length) return { ok: false, errors, planRows: plan.rows };
+  // Tuần trước: chỉ cập nhật Xong khi form có hiện danh sách đó (ô ẩn prev_plan_shown)
+  const prevWeekStart = input.prev_plan_shown ? addDays(week.from, -7) : null;
+  const doneIds = asList(input.prev_plan_done).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  await repo.saveWeek(week.from, notes.data, stats, userId, { plans: plan.items, prevWeekStart, doneIds });
   return { ok: true, errors: {} };
 }

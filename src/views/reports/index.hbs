@@ -137,26 +137,99 @@
   {{/if}}
 </section>
 
-{{!-- 7. Nhận xét & kế hoạch (nhập tay) --}}
+{{!-- 7. Nhận xét (nhập tay) --}}
 <section class="card card-body mt-6" aria-labelledby="r-notes">
   <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-    <h2 id="r-notes" class="text-lg font-semibold text-ink">Nhận xét & kế hoạch</h2>
+    <h2 id="r-notes" class="text-lg font-semibold text-ink">Nhận xét</h2>
     {{#if notes.updated_at}}<p class="text-xs text-ink-faint">Cập nhật {{formatDate notes.updated_at}}{{#if notes.updated_by_name}} · {{notes.updated_by_name}}{{/if}}</p>{{/if}}
   </div>
   {{#if hasNotes}}
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-4 md:grid-cols-2">
       <div><h3 class="mb-1 text-sm font-medium text-ok-300">Điểm nổi bật</h3><p class="whitespace-pre-line text-sm text-ink-soft">{{#if notes.highlights}}{{notes.highlights}}{{else}}—{{/if}}</p></div>
       <div><h3 class="mb-1 text-sm font-medium text-bad-300">Vấn đề gặp phải</h3><p class="whitespace-pre-line text-sm text-ink-soft">{{#if notes.issues}}{{notes.issues}}{{else}}—{{/if}}</p></div>
-      <div><h3 class="mb-1 text-sm font-medium text-sun-300">Kế hoạch tuần tới</h3><p class="whitespace-pre-line text-sm text-ink-soft">{{#if notes.next_plan}}{{notes.next_plan}}{{else}}—{{/if}}</p></div>
     </div>
   {{else}}
     <p class="text-sm text-ink-faint">Chưa có nhận xét. <a href="/reports/edit?date={{from}}#notes" class="underline" data-export-skip>Viết nhận xét</a></p>
   {{/if}}
 </section>
 
+{{!-- 8. Kết quả kế hoạch đã đề ra ở báo cáo tuần trước --}}
+{{#if prevPlanItems.length}}
+<section class="card card-body mt-6" aria-labelledby="r-prev-plan">
+  <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="r-prev-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần này <span class="text-sm font-normal text-ink-faint">— xong {{prevPlanDone}}/{{prevPlanItems.length}}</span></h2>
+    <a href="/reports/edit?date={{from}}#prev-plan" class="text-xs text-ink-faint hover:underline" data-export-skip>Đánh dấu xong</a>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Việc cần làm</th><th>Mục tiêu</th><th>Phụ trách</th><th>Brand</th><th>Hạn</th><th>Kết quả</th></tr></thead>
+      <tbody>
+        {{#each prevPlanItems}}
+          <tr>
+            <td class="min-w-48">{{title}}</td>
+            <td class="min-w-32 text-ink-soft">{{target}}</td>
+            <td class="whitespace-nowrap">{{owner_name}}</td>
+            <td>{{#if brand}}<span class="{{badge}}">{{brand}}</span>{{/if}}</td>
+            <td class="whitespace-nowrap tabular-nums">{{#if due_date}}{{formatDay due_date}}{{/if}}</td>
+            <td>{{#if done}}<span class="badge-green">Xong</span>{{else}}<span class="badge-gray">Chưa xong</span>{{/if}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{/if}}
+
+{{!-- 9. Kế hoạch tuần tới: việc nhập tay + video đã lên lịch ở Nội dung --}}
+<section class="card card-body mt-6" aria-labelledby="r-plan">
+  <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="r-plan" class="text-lg font-semibold text-ink">Kế hoạch tuần tới <span class="text-sm font-normal text-ink-faint">{{nextLabel}}</span></h2>
+    <a href="/reports/edit?date={{from}}#plan" class="text-xs text-ink-faint hover:underline" data-export-skip>Sửa kế hoạch</a>
+  </div>
+  {{#if planItems.length}}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Việc cần làm</th><th>Mục tiêu</th><th>Phụ trách</th><th>Brand</th><th>Hạn</th></tr></thead>
+        <tbody>
+          {{#each planItems}}
+            <tr>
+              <td class="min-w-48 font-medium text-ink">{{title}}</td>
+              <td class="min-w-32 text-ink-soft">{{target}}</td>
+              <td class="whitespace-nowrap">{{owner_name}}</td>
+              <td>{{#if brand}}<span class="{{badge}}">{{brand}}</span>{{/if}}</td>
+              <td class="whitespace-nowrap tabular-nums">{{#if due_date}}{{formatDay due_date}}{{/if}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{else}}
+    <p class="text-sm text-ink-faint">Chưa có kế hoạch. <a href="/reports/edit?date={{from}}#plan" class="underline" data-export-skip>Lập kế hoạch</a></p>
+  {{/if}}
+  {{#if notes.next_plan}}<p class="mt-3 whitespace-pre-line text-sm text-ink-soft">{{notes.next_plan}}</p>{{/if}}
+
+  {{#if (or nextShoots.length nextPosts.length)}}
+    <h3 class="mt-5 mb-2 text-sm font-medium text-ink-soft">Video đã lên lịch ở mục Nội dung</h3>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <p class="mb-1 text-xs text-ink-faint">Quay ({{nextShoots.length}})</p>
+        <ul class="space-y-1 text-sm">
+          {{#each nextShoots}}<li class="flex flex-wrap items-center gap-2"><span class="w-20 tabular-nums text-ink-faint">{{formatDay shoot_date}}</span>{{#if brand}}<span class="{{badge}}">{{brand}}</span>{{/if}}<span class="text-ink">{{title}}</span>{{#if owner}}<span class="text-xs text-ink-faint">· {{owner}}</span>{{/if}}</li>{{else}}<li class="text-ink-faint">Chưa có lịch quay</li>{{/each}}
+        </ul>
+      </div>
+      <div>
+        <p class="mb-1 text-xs text-ink-faint">Đăng ({{nextPosts.length}})</p>
+        <ul class="space-y-1 text-sm">
+          {{#each nextPosts}}<li class="flex flex-wrap items-center gap-2"><span class="w-20 tabular-nums text-ink-faint">{{formatDay post_date}}</span>{{#if brand}}<span class="{{badge}}">{{brand}}</span>{{/if}}<span class="text-ink">{{title}}</span>{{#if owner}}<span class="text-xs text-ink-faint">· {{owner}}</span>{{/if}}</li>{{else}}<li class="text-ink-faint">Chưa có lịch đăng</li>{{/each}}
+        </ul>
+      </div>
+    </div>
+  {{/if}}
+</section>
+
 <p class="mt-4 text-xs text-ink-faint">
   Số tự động: <b>Nội dung</b> (video có ngày đăng / ngày quay trong tuần, không tính bài Bỏ / On hold), <b>Quảng cáo</b> (Facebook + TikTok), <b>Data khách hàng</b> (khách nhập trong tuần, hoá đơn có ngày trong tuần).
-  Kênh mạng xã hội và nhận xét do quản lý nhập tay.
+  Kênh mạng xã hội, nhận xét và kế hoạch do quản lý nhập tay.
 </p>
 </div>
 

@@ -1,9 +1,9 @@
 import { config } from '#config';
 import { BRANDS, brandInfo } from '#lib/brands.js';
-import { formatDayVN } from '#lib/dates.js';
-import { buildXlsx } from '#lib/xlsx.js';
 import { parseDate } from '#modules/schedule/schedule.service.js';
+import { staffOptions } from '#modules/staff/staff.service.js';
 import * as service from './reports.service.js';
+import { weekLabel } from './reports.export.js';
 
 const int = new Intl.NumberFormat(config.locale, { maximumFractionDigits: 0 });
 const dec = new Intl.NumberFormat(config.locale, { maximumFractionDigits: 2 });
@@ -26,7 +26,6 @@ export function delta(cur, prev, { neutral = false, lowerIsBetter = false } = {}
   return { text, tone: neutral ? 'same' : good ? 'up' : 'down' };
 }
 
-const weekLabel = (from, to) => `${formatDayVN(from).slice(0, 5)} - ${formatDayVN(to)}`;
 
 function presentAds(ads, prevAds) {
   if (!ads?.configured) return ads;
@@ -61,6 +60,8 @@ function presentAds(ads, prevAds) {
   };
 }
 
+const withBadge = (row) => ({ ...row, badge: brandInfo(row.brand)?.badge ?? 'badge-gray' });
+
 /** Dữ liệu đã định dạng sẵn cho view. */
 function present(report) {
   const { content, prevContent, customers, prevCustomers } = report;
@@ -87,7 +88,15 @@ function present(report) {
       engagementsDelta: delta(s.engagements, s.prev?.engagements),
     })),
     revenueText: money(customers.revenue),
-    hasNotes: Boolean(report.notes.highlights || report.notes.issues || report.notes.next_plan),
+    hasNotes: Boolean(report.notes.highlights || report.notes.issues),
+    // Kế hoạch tuần tới
+    nextLabel: weekLabel(report.nextWeek.from, report.nextWeek.to),
+    planItems: report.planItems.map(withBadge),
+    nextPosts: report.nextContent.posts.map(withBadge),
+    nextShoots: report.nextContent.shoots.map(withBadge),
+    // Kết quả kế hoạch đã đề ra tuần trước
+    prevPlanItems: report.prevPlanItems.map(withBadge),
+    prevPlanDone: report.prevPlanItems.filter((p) => p.done).length,
   };
 }
 
@@ -103,10 +112,29 @@ export async function index(req, res) {
 
 // ---------------------------------------------------------------- Nhập tay
 
-function formView(form, errors = {}) {
+const BLANK_PLAN_ROWS = 3; // form mở lần đầu có sẵn vài dòng trống để gõ luôn
+
+const planRowView = (row = {}) => ({
+  id: row.id ?? '',
+  title: row.title ?? '',
+  target: row.target ?? '',
+  owner_id: row.owner_id ?? '',
+  brand: row.brand ?? '',
+  due_date: row.due_date ?? '',
+  errors: row.errors ?? {},
+});
+
+function formView(form, errors = {}, ownerOptions = []) {
+  const rows = (form.planRows ?? form.planItems).map(planRowView);
+  if (!form.planRows && !rows.length) for (let i = 0; i < BLANK_PLAN_ROWS; i++) rows.push(planRowView());
   return {
     title: 'Nhập báo cáo tuần',
     ...form,
+    nextLabel: weekLabel(form.nextWeek.from, form.nextWeek.to),
+    planRows: rows,
+    ownerOptions,
+    brandOptions: BRANDS.map((b) => ({ value: b.value, label: b.label })),
+    prevPlanItems: form.prevPlanItems.map(withBadge),
     label: weekLabel(form.from, form.to),
     errors,
     channels: service.CHANNELS,
@@ -127,109 +155,23 @@ function formView(form, errors = {}) {
 
 export async function edit(req, res) {
   const date = parseDate(req.query.date);
-  res.render('reports/edit', formView(await service.getWeekForm(date)));
+  const [form, owners] = await Promise.all([service.getWeekForm(date), staffOptions()]);
+  res.render('reports/edit', formView(form, {}, owners));
 }
 
 export async function save(req, res) {
   const date = parseDate(req.body.date);
   const result = await service.saveWeek(date, req.body, req.user.id);
   if (!result.ok) {
-    const form = await service.getWeekForm(date);
-    return res.status(422).render('reports/edit', formView({ ...form, values: { ...form.values, ...req.body } }, result.errors));
+    const [form, owners] = await Promise.all([service.getWeekForm(date), staffOptions()]);
+    // Vẽ lại đúng những gì người dùng vừa nhập (kể cả ô tick Xong của tuần trước)
+    const ticked = new Set([req.body.prev_plan_done ?? []].flat().map(String));
+    const prevPlanItems = form.prevPlanItems.map((p) => ({ ...p, done: ticked.has(String(p.id)) ? 1 : 0 }));
+    return res
+      .status(422)
+      .render('reports/edit', formView({ ...form, values: { ...form.values, ...req.body }, planRows: result.planRows, prevPlanItems }, result.errors, owners));
   }
   req.flash('success', 'Đã lưu báo cáo tuần.');
   res.redirect(`/reports?date=${service.weekOf(date).from}`);
 }
 
-// ---------------------------------------------------------------- Xuất Excel
-
-const head = (labels) => labels.map((v) => ({ v, s: 'head' }));
-const n = (v, s = 'int') => ({ v: v ?? null, s });
-const change = (cur, prev) => ({ v: cur != null && prev != null && prev !== 0 ? (cur - prev) / prev : null, s: 'pct' });
-
-/** File Excel 4 trang: Tổng quan · Nội dung · Kênh MXH · Nhận xét. */
-export function buildWorkbook(report, now = new Date()) {
-  const exportedAt = new Intl.DateTimeFormat(config.locale, { dateStyle: 'short', timeStyle: 'short', timeZone: config.timezone }).format(now);
-  const intro = [
-    [{ v: `Báo cáo tuần marketing ${weekLabel(report.from, report.to)}`, s: 'title' }],
-    [`So với tuần ${weekLabel(report.prevWeek.from, report.prevWeek.to)} · Xuất lúc ${exportedAt}`],
-    [],
-  ];
-  const { content: c, prevContent: pc, customers: cu, prevCustomers: pcu } = report;
-
-  const summary = [
-    ...intro,
-    head(['Chỉ số', 'Tuần này', 'Tuần trước', 'Thay đổi']),
-    ['Video lên lịch đăng', n(c.total.planned), n(pc.planned), change(c.total.planned, pc.planned)],
-    ['Video đã đăng', n(c.total.posted), n(pc.posted), change(c.total.posted, pc.posted)],
-    ['Video lên lịch quay', n(c.total.shootPlanned), n(pc.shootPlanned), change(c.total.shootPlanned, pc.shootPlanned)],
-    ['Video đã quay', n(c.total.shot), n(pc.shot), change(c.total.shot, pc.shot)],
-    ['Khách mới', n(cu.newCustomers), n(pcu.newCustomers), change(cu.newCustomers, pcu.newCustomers)],
-    ['Số hoá đơn', n(cu.invoiceCount), n(pcu.invoiceCount), change(cu.invoiceCount, pcu.invoiceCount)],
-    ['Doanh thu (đ)', n(cu.revenue), n(pcu.revenue), change(cu.revenue, pcu.revenue)],
-  ];
-  if (report.ads?.configured) {
-    for (const p of report.ads.platforms) {
-      const t = p.totals;
-      const pt = report.prevAds?.platforms?.find((x) => x.key === p.key)?.totals;
-      if (!t) {
-        summary.push([`${p.label}: chưa lấy được số liệu${p.error ? ` — ${p.error}` : ''}`]);
-        continue;
-      }
-      summary.push(
-        [`${p.label} — chi tiêu (${p.currency})`, n(t.spend), n(pt?.spend), change(t.spend, pt?.spend)],
-        [`${p.label} — kết quả`, n(t.results), n(pt?.results), change(t.results, pt?.results)],
-        [`${p.label} — chi phí / kết quả`, n(t.costPerResult), n(pt?.costPerResult), change(t.costPerResult, pt?.costPerResult)],
-        [`${p.label} — hiển thị`, n(t.impressions), n(pt?.impressions), change(t.impressions, pt?.impressions)],
-        [`${p.label} — CTR`, { v: t.ctr == null ? null : t.ctr / 100, s: 'pct' }, { v: pt?.ctr == null ? null : pt.ctr / 100, s: 'pct' }, change(t.ctr, pt?.ctr)],
-      );
-    }
-  } else if (report.ads && !report.ads.configured) {
-    summary.push(['Quảng cáo: chưa kết nối Facebook / TikTok']);
-  }
-  if (cu.bySource.length) {
-    summary.push([], head(['Khách mới theo nguồn', 'Số khách']), ...cu.bySource.map((s) => [s.label, n(s.count)]));
-  }
-
-  const contentSheet = [
-    ...intro,
-    head(['Brand', 'Lên lịch đăng', 'Đã đăng', 'Lên lịch quay', 'Đã quay']),
-    ...c.byBrand.map((b) => [b.brand, n(b.planned), n(b.posted), n(b.shootPlanned), n(b.shot)]),
-    [{ v: 'Tổng', s: 'bold' }, n(c.total.planned, 'boldInt'), n(c.total.posted, 'boldInt'), n(c.total.shootPlanned, 'boldInt'), n(c.total.shot, 'boldInt')],
-    [],
-    head(['Ngày đăng', 'Video', 'Brand', 'Người đăng', 'Trạng thái']),
-    ...c.posts.map((p) => [formatDayVN(p.post_date), p.title, p.brand, p.owner, p.posted ? 'Đã đăng' : 'Chưa đăng']),
-  ];
-
-  const social = [
-    ...intro,
-    head(['Brand', 'Kênh', 'Follower', 'Follower tăng', 'Lượt xem', 'Lượt xem tuần trước', 'Tương tác', 'Tương tác tuần trước']),
-    ...report.social.map((s) => [
-      s.brand, s.channel, n(s.followers), n(s.followerGain), n(s.views), n(s.prev?.views), n(s.engagements), n(s.prev?.engagements),
-    ]),
-  ];
-  if (!report.social.length) social.push(['Chưa nhập chỉ số kênh cho tuần này']);
-
-  const notes = [
-    ...intro,
-    [{ v: 'Điểm nổi bật', s: 'head' }], [report.notes.highlights || '—'], [],
-    [{ v: 'Vấn đề gặp phải', s: 'head' }], [report.notes.issues || '—'], [],
-    [{ v: 'Kế hoạch tuần tới', s: 'head' }], [report.notes.next_plan || '—'],
-  ];
-
-  return buildXlsx([
-    { name: 'Tổng quan', rows: summary, widths: [38, 16, 16, 12] },
-    { name: 'Nội dung', rows: contentSheet, widths: [14, 50, 14, 18, 12] },
-    { name: 'Kênh MXH', rows: social, widths: [14, 12, 12, 14, 12, 20, 12, 22] },
-    { name: 'Nhận xét', rows: notes, widths: [100] },
-  ]);
-}
-
-export async function exportXlsx(req, res) {
-  const date = parseDate(req.query.date);
-  const report = await service.getWeekReport(date);
-  res
-    .type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    .attachment(`bao-cao-tuan-${report.from}.xlsx`)
-    .send(buildWorkbook(report));
-}

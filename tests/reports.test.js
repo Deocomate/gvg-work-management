@@ -87,7 +87,7 @@ test('nhập chỉ số kênh + nhận xét, sai số thì báo lỗi, lưu xong
   assert.match((await admin.get(`/reports/edit?date=${monday}`)).text, /name="s_0_tiktok_followers" value="1250"/);
 });
 
-test('xuất Excel có 4 trang và đủ số liệu', async () => {
+test('xuất Excel có đủ trang và đủ số liệu', async () => {
   const res = await admin.get(`/reports/export.xlsx?date=${monday}`).buffer(true).parse((r, cb) => {
     const chunks = [];
     r.on('data', (c) => chunks.push(c));
@@ -96,10 +96,11 @@ test('xuất Excel có 4 trang và đủ số liệu', async () => {
   assert.equal(res.status, 200);
   assert.match(res.headers['content-disposition'], new RegExp(`bao-cao-tuan-${monday}\\.xlsx`));
   const workbook = unzipEntry(res.body, 'xl/workbook.xml');
-  for (const name of ['Tổng quan', 'Nội dung', 'Kênh MXH', 'Nhận xét']) assert.match(workbook, new RegExp(name));
+  for (const name of ['Tổng quan', 'Nội dung', 'Kênh MXH', 'Nhận xét', 'Kế hoạch']) assert.match(workbook, new RegExp(name));
   assert.match(unzipEntry(res.body, 'xl/worksheets/sheet2.xml'), /Video bình hoa/);
   assert.match(unzipEntry(res.body, 'xl/worksheets/sheet3.xml'), /<v>1250<\/v>/);
-  assert.match(unzipEntry(res.body, 'xl/worksheets/sheet4.xml'), /Quay thêm 3 video/);
+  assert.match(unzipEntry(res.body, 'xl/worksheets/sheet4.xml'), /Video bình hoa lên xu hướng/);
+  assert.match(unzipEntry(res.body, 'xl/worksheets/sheet5.xml'), /Quay thêm 3 video/); // ghi chú kế hoạch
 });
 
 test('contentStats: bỏ bài Bỏ, đếm đã quay theo việc quay / đã đăng', () => {
@@ -129,4 +130,61 @@ test('socialRows + delta: tính tăng follower và so với tuần trước', ()
   assert.equal(delta(10, 5, { neutral: true }).tone, 'same');
   assert.equal(delta(3, 0).text, '▲ từ 0');
   assert.equal(delta(null, 3).tone, 'none');
+});
+
+test('kế hoạch tuần tới: thêm nhiều dòng, bỏ dòng trống, báo lỗi thiếu tên việc, tuần sau tick xong', async () => {
+  const week1 = addDays(monday, -14);
+  const week2 = addDays(monday, -7);
+
+  // Dòng có mục tiêu mà thiếu tên việc -> lỗi, giữ nguyên dữ liệu đã nhập
+  const bad = await postForm(admin, '/reports', { date: week1, plan_id: ['', ''], plan_title: ['', 'Chạy quảng cáo Klayy'], plan_target: ['50k view', ''], plan_owner_id: ['', ''], plan_brand: ['', 'Klayy'], plan_due_date: ['', ''] }, { from: '/reports/edit' });
+  assert.equal(bad.status, 422);
+  assert.match(bad.text, /Nhập việc cần làm/);
+  assert.match(bad.text, /value="Chạy quảng cáo Klayy"/);
+
+  const ok = await postForm(
+    admin,
+    '/reports',
+    {
+      date: week1,
+      plan_id: ['', '', ''],
+      plan_title: ['Quay 3 video Klayy', '', 'Chạy quảng cáo Klayy'],
+      plan_target: ['3 video', '', ''],
+      plan_owner_id: ['', '', ''],
+      plan_brand: ['Klayy', '', 'Klayy'],
+      plan_due_date: [addDays(week1, 9), '', ''],
+    },
+    { from: '/reports/edit' },
+  );
+  assert.equal(ok.status, 302);
+  const page1 = (await admin.get(`/reports?date=${week1}`)).text;
+  assert.match(page1, /Kế hoạch tuần tới/);
+  assert.match(page1, /Quay 3 video Klayy/);
+  assert.match(page1, /Chạy quảng cáo Klayy/);
+
+  // Báo cáo tuần sau hiện lại kế hoạch để tick xong
+  const form2 = (await admin.get(`/reports/edit?date=${week2}`)).text;
+  const ids = [...form2.matchAll(/name="prev_plan_done" value="(\d+)"/g)].map((m) => m[1]);
+  assert.equal(ids.length, 2);
+  await postForm(admin, '/reports', { date: week2, prev_plan_shown: '1', prev_plan_done: ids[0] }, { from: '/reports/edit' });
+  const page2 = (await admin.get(`/reports?date=${week2}`)).text;
+  assert.match(page2, /xong 1\/2/);
+
+  // Sửa kế hoạch tuần 1: bỏ một dòng, dòng còn lại giữ trạng thái Xong
+  const form1 = (await admin.get(`/reports/edit?date=${week1}`)).text;
+  const keepId = form1.match(/name="plan_id" value="(\d+)"/)[1];
+  await postForm(admin, '/reports', { date: week1, plan_id: keepId, plan_title: 'Quay 3 video Klayy (sửa)', plan_target: '', plan_owner_id: '', plan_brand: '', plan_due_date: '' }, { from: '/reports/edit' });
+  const after = (await admin.get(`/reports?date=${week2}`)).text;
+  assert.match(after, /Quay 3 video Klayy \(sửa\)/);
+  assert.doesNotMatch(after, /Chạy quảng cáo Klayy/);
+  assert.match(after, /xong 1\/1/);
+
+  // Excel có trang Kế hoạch
+  const res = await admin.get(`/reports/export.xlsx?date=${week1}`).buffer(true).parse((r, cb) => {
+    const chunks = [];
+    r.on('data', (c) => chunks.push(c));
+    r.on('end', () => cb(null, Buffer.concat(chunks)));
+  });
+  assert.match(unzipEntry(res.body, 'xl/workbook.xml'), /Kế hoạch/);
+  assert.match(unzipEntry(res.body, 'xl/worksheets/sheet5.xml'), /Quay 3 video Klayy \(sửa\)/);
 });

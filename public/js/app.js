@@ -161,6 +161,27 @@ document.addEventListener('click', (event) => {
 });
 document.querySelectorAll('[data-ref-list]').forEach(renumberRefs);
 
+// <div data-row-list data-max="30"> (form Báo cáo tuần — Kế hoạch tuần tới): "+ Thêm việc" chép một dòng từ
+// <template data-row-template> vào [data-rows]; nút [data-row-remove] bỏ dòng. Đủ data-max dòng thì ẩn nút thêm.
+function syncRowList(list) {
+  list.querySelector('[data-row-add]').hidden = list.querySelectorAll('[data-rows] [data-row]').length >= Number(list.dataset.max || 30);
+}
+document.addEventListener('click', (event) => {
+  const list = event.target.closest('[data-row-list]');
+  if (!list) return;
+  if (event.target.closest('[data-row-add]')) {
+    const row = list.querySelector('[data-row-template]').content.firstElementChild.cloneNode(true);
+    list.querySelector('[data-rows]').append(row);
+    window.enhancePickers?.(row); // vẽ ô chọn ngày / danh sách cho dòng mới (public/js/pickers.js)
+    syncRowList(list);
+    row.querySelector('input[type="text"]')?.focus();
+  } else if (event.target.closest('[data-row-remove]')) {
+    event.target.closest('[data-row]').remove();
+    syncRowList(list);
+  }
+});
+document.querySelectorAll('[data-row-list]').forEach(syncRowList);
+
 // <div data-auto-reload="900"> (trang Quảng cáo): tự tải lại trang sau N giây để số liệu luôn mới.
 // Chỉ tải lại khi tab đang mở trước mặt — tab ẩn thì đợi người dùng quay lại mới tải.
 document.querySelectorAll('[data-auto-reload]').forEach((el) => {

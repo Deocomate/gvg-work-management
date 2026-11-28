@@ -1,0 +1,30 @@
+{{!-- Một dòng Kế hoạch tuần tới trong form báo cáo tuần. Các ô cùng tên lặp lại theo từng dòng (plan_title, plan_target…),
+     server ghép lại theo thứ tự (reports.service.js parsePlanRows). Dòng trống cả dòng thì bỏ qua.
+     Dùng: {{> reports/plan-row row=this ownerOptions=… brandOptions=… min=… max=…}}; trong <template> thì không truyền row. --}}
+<div class="grid gap-2 rounded-xl border border-line bg-surface/60 p-3 sm:grid-cols-2 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] lg:items-start" data-row>
+  <input type="hidden" name="plan_id" value="{{row.id}}">
+  <div class="sm:col-span-2 lg:col-span-1">
+    <input type="text" name="plan_title" value="{{row.title}}" maxlength="300" placeholder="Việc cần làm — VD: Quay 3 video Klayy"
+      aria-label="Việc cần làm" class="input{{#if row.errors.title}} input-error{{/if}}"{{#if row.errors.title}} aria-invalid="true"{{/if}}>
+    {{#if row.errors.title}}<p class="field-error">{{row.errors.title}}</p>{{/if}}
+  </div>
+  <div>
+    <input type="text" name="plan_target" value="{{row.target}}" maxlength="300" placeholder="Mục tiêu — VD: 50k view"
+      aria-label="Mục tiêu" class="input{{#if row.errors.target}} input-error{{/if}}">
+    {{#if row.errors.target}}<p class="field-error">{{row.errors.target}}</p>{{/if}}
+  </div>
+  <select name="plan_owner_id" aria-label="Người phụ trách" class="input">
+    <option value="">Phụ trách</option>
+    {{#each ownerOptions}}<option value="{{value}}" {{selected value ../row.owner_id}}>{{label}}</option>{{/each}}
+  </select>
+  <select name="plan_brand" aria-label="Brand" class="input">
+    <option value="">Brand</option>
+    {{#each brandOptions}}<option value="{{value}}" {{selected value ../row.brand}}>{{label}}</option>{{/each}}
+  </select>
+  <div>
+    <input type="date" name="plan_due_date" value="{{row.due_date}}" min="{{min}}" max="{{max}}" aria-label="Hạn" data-clear-label="Không hạn"
+      class="input{{#if row.errors.due_date}} input-error{{/if}}">
+    {{#if row.errors.due_date}}<p class="field-error">{{row.errors.due_date}}</p>{{/if}}
+  </div>
+  <button type="button" class="btn-ghost btn-sm justify-self-end" data-row-remove aria-label="Bỏ dòng này" title="Bỏ dòng này">✕</button>
+</div>
