@@ -571,6 +571,12 @@
   .preview-bar { @apply flex items-center gap-2 border-b border-line px-3 py-2; }
   .preview-frame { @apply w-full flex-1 bg-white; }
   .preview-tip { @apply border-t border-line px-3 py-1.5 text-xs text-ink-faint; }
+  /* Xem trước file xuất (public/js/export-image.js, nút có data-export-preview): trang A4 nền trắng như giấy */
+  .export-preview-body { @apply flex-1 space-y-4 overflow-auto bg-black/20 p-4; }
+  .export-preview-page { @apply mx-auto max-w-3xl; }
+  .export-preview-page img { @apply block w-full rounded shadow-lg; }
+  .export-preview-a4 img { @apply bg-white p-[4.7%]; } /* lề ~28pt / 595pt như file PDF */
+  .export-preview-caption { @apply mt-1 text-center text-xs text-ink-faint; }
 
   /* Popup + thẻ chi tiết khách hàng (customers/show.hbs). Thẻ luôn nền giấy trắng để ảnh/PDF tải về dễ đọc. */
   .customer-dialog { @apply m-auto w-[calc(100%-2rem)] max-w-2xl bg-transparent p-0 text-ink backdrop:bg-black/50 backdrop:backdrop-blur-md; }

@@ -112,6 +112,7 @@
 - Báo cáo tuần không lưu số tự động (tính lại mỗi lần mở) để luôn khớp với Nội dung/Quảng cáo/Data khách hàng; chỉ lưu phần nhập tay. Lưu form = ghi đè cả tuần trong một transaction (xoá chỉ số cũ rồi thêm lại).
 
 ## Nhật ký thay đổi
+- 2026-11-28 — Báo cáo tuần: bấm PDF / Ảnh PNG mở cửa sổ **xem trước** (PDF hiện từng trang A4) rồi mới "Tải xuống". Dùng chung được: thêm `data-export-preview` vào nút `data-export` bất kỳ (public/js/export-image.js). Ảnh xem trước dạng data: vì CSP chặn blob:.
 - 2026-11-28 — Báo cáo tuần: thêm Kế hoạch tuần tới (danh sách việc + mục tiêu + phụ trách + hạn, migration 030), báo cáo tuần sau tick xong; bỏ ô Video đã quay, khung Nội dung theo brand; dòng tuần chỉ ghi "23/11 - 29/11/2026".
 - 2026-11-28 — Thêm Báo cáo tuần marketing (`/reports`, chỉ quản lý): số nội dung/quảng cáo/khách hàng tự lấy, nhập tay chỉ số kênh MXH + nhận xét, xuất Excel/PDF/PNG. Bố cục theo mẫu báo cáo tuần phổ biến: tổng quan KPI so với tuần trước → theo kênh → nội dung đã làm → vấn đề & kế hoạch.
 - 2026-11-27 — Sửa test Lịch đăng/Lịch quay (tests/website.test.js) bị lỗi vào một số ngày: ngày thử = hôm nay + 30 rơi vào Chủ nhật thì ngày đăng (hôm sau) sang tuần khác. Giờ lấy Thứ 2 của tuần đó. App không lỗi.

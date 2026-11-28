@@ -6,6 +6,7 @@
 // Link trong PDF là ảnh nên không bấm được — muốn bấm link thì dùng nút "In / Lưu PDF".
 // Tuỳ chọn trên khung: data-export-skip (bỏ phần tử khi chụp), data-export-bg="page" (nền theo giao diện sáng/tối),
 // data-export-width="1100" (tạm giãn khung khi chụp để bảng rộng không bị cắt).
+// Nút có data-export-preview: tạo file xong mở cửa sổ xem trước (PDF hiện từng trang A4), bấm "Tải xuống" mới lưu.
 
 // style.margin = 0: khung căn giữa bằng margin auto (phiếu công việc) sẽ bị html-to-image chép nguyên lề
 // tính ra (VD 380px trên màn rộng) vào ảnh -> nội dung lệch phải, mất nửa phiếu. Bỏ lề ngoài khi chụp.
@@ -135,12 +136,75 @@ async function toPdf(target) {
     ctx.fillStyle = captureFor(target).backgroundColor;
     ctx.fillRect(0, 0, piece.width, piece.height);
     ctx.drawImage(canvas, 0, from, canvas.width, piece.height, 0, 0, canvas.width, piece.height);
-    return { bytes: dataUrlBytes(piece.toDataURL('image/jpeg', 0.92)), width: piece.width, height: piece.height };
+    const dataUrl = piece.toDataURL('image/jpeg', 0.92);
+    return { bytes: dataUrlBytes(dataUrl), width: piece.width, height: piece.height, dataUrl };
   });
-  return jpegsToPdf(pages);
+  return { blob: jpegsToPdf(pages), previews: pages.map((page) => page.dataUrl) };
 }
 
-const toPng = (target) => window.htmlToImage.toBlob(target, captureFor(target));
+// Ảnh xem trước dạng data: (CSP img-src chỉ cho 'self' và data:, chặn blob:)
+const blobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+async function toPng(target, { preview = false } = {}) {
+  const blob = await window.htmlToImage.toBlob(target, captureFor(target));
+  return { blob, previews: preview ? [await blobToDataUrl(blob)] : [] };
+}
+
+// ---------------------------------------------------------------- Cửa sổ xem trước (data-export-preview)
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+/** Mở cửa sổ xem trước file vừa tạo; đóng là gỡ khỏi trang. */
+function showPreview({ blob, previews }, kind, filename) {
+  const dialog = el('dialog', 'preview-dialog');
+  dialog.setAttribute('aria-label', 'Xem trước file xuất');
+  const box = el('div', 'preview-box');
+  const bar = el('div', 'preview-bar');
+  const title = el('p', 'min-w-0 flex-1 truncate text-sm font-medium text-ink',
+    kind === 'pdf' ? `Xem trước PDF · ${previews.length} trang A4` : 'Xem trước ảnh PNG');
+  const download = el('button', 'btn-primary btn-sm', '⬇ Tải xuống');
+  download.type = 'button';
+  const close = el('button', 'btn-ghost btn-sm', 'Đóng');
+  close.type = 'button';
+  bar.append(title, download, close);
+
+  const body = el('div', 'export-preview-body');
+  previews.forEach((src, i) => {
+    const page = el('figure', kind === 'pdf' ? 'export-preview-page export-preview-a4' : 'export-preview-page');
+    const img = el('img');
+    img.src = src;
+    img.alt = kind === 'pdf' ? `Trang ${i + 1}` : 'Ảnh xuất';
+    page.append(img);
+    if (kind === 'pdf') page.append(el('figcaption', 'export-preview-caption', `Trang ${i + 1}/${previews.length}`));
+    body.append(page);
+  });
+  const tip = el('p', 'preview-tip', kind === 'pdf'
+    ? 'File PDF khổ A4 dọc; báo cáo dài tự chia trang, cắt giữa các dòng. Link trong file không bấm được.'
+    : 'Ảnh PNG giữ nguyên giao diện sáng/tối đang dùng — hợp để gửi Zalo.');
+  box.append(bar, body, tip);
+  dialog.append(box);
+  document.body.append(dialog);
+
+  download.addEventListener('click', () => save(blob, filename));
+  close.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close(); // bấm ra ngoài khung
+  });
+  dialog.addEventListener('close', () => dialog.remove());
+  dialog.showModal();
+  download.focus();
+}
 
 /**
  * Khung có data-export-width="1100": tạm giãn khung đúng bề rộng đó khi chụp, để bảng rộng (trang Quảng cáo)
@@ -173,8 +237,11 @@ document.addEventListener('click', async (event) => {
   button.disabled = true;
   button.textContent = 'Đang tạo…';
   try {
-    const blob = await withExportWidth(target, () => (kind === 'pdf' ? toPdf(target) : toPng(target)));
-    save(blob, `${target.dataset.filename || 'tai-ve'}.${kind}`);
+    const preview = button.hasAttribute('data-export-preview');
+    const file = await withExportWidth(target, () => (kind === 'pdf' ? toPdf(target) : toPng(target, { preview })));
+    const filename = `${target.dataset.filename || 'tai-ve'}.${kind}`;
+    if (preview) showPreview(file, kind, filename);
+    else save(file.blob, filename);
   } catch (error) {
     console.error(error);
     window.alert('Không tạo được file, thử lại nhé.');
