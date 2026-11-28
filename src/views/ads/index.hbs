@@ -1,7 +1,7 @@
 {{> subnav/ads}}
 {{!-- Cả báo cáo nằm trong #ads-report để nút "Tải PDF" chụp lại (public/js/export-image.js);
       phần có data-export-skip (nút, ô chọn ngày) không vào file. --}}
-<div id="ads-report" data-filename="{{exportFilename}}" data-export-breaks="section, tbody tr" data-export-bg="page" data-export-width="1100">
+<div id="ads-report" data-filename="{{exportFilename}}" data-export-breaks="section, tbody tr" data-export-width="1100">
 {{#> page-header title="Báo cáo quảng cáo" subtitle=(concat rangeText " · Chỉ quản lý xem được")}}
   <div class="flex flex-wrap items-center gap-2" data-export-skip>
     {{#if anyConfigured}}
