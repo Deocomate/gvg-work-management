@@ -49,7 +49,10 @@
 
 {{!-- 4. Quảng cáo --}}
 <section class="card card-body mt-6" aria-labelledby="r-ads">
-  <h2 id="r-ads" class="mb-3 text-lg font-semibold text-ink">Quảng cáo</h2>
+  <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="r-ads" class="text-lg font-semibold text-ink">Quảng cáo</h2>
+    <a href="/reports/edit?date={{from}}#ads" class="text-xs text-ink-faint hover:underline" data-export-skip>Nhập tay</a>
+  </div>
   {{#unless ads}}
     <p class="text-sm text-ink-faint">Tuần chưa bắt đầu nên chưa có số liệu quảng cáo.</p>
   {{else if (not ads.configured)}}
@@ -65,7 +68,7 @@
     <div class="grid gap-4 md:grid-cols-2">
       {{#each ads.platforms}}
         <div>
-          <h3 class="mb-2 text-sm font-medium text-ink-soft">{{label}}</h3>
+          <h3 class="mb-2 text-sm font-medium text-ink-soft">{{label}}{{#if manual}} <span class="text-xs font-normal text-ink-faint">· nhập tay</span>{{/if}}</h3>
           {{#if rows}}
             <table class="table">
               <tbody>
@@ -76,6 +79,7 @@
             </table>
           {{else}}
             <p class="text-sm text-bad-300">Chưa lấy được số liệu{{#if error}}: {{error}}{{/if}}</p>
+            <p class="mt-1 text-sm text-ink-faint" data-export-skip><a href="/reports/edit?date={{@root.from}}#ads" class="underline">Nhập tay số quảng cáo</a> để hiện ở đây.</p>
           {{/if}}
         </div>
       {{/each}}

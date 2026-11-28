@@ -142,6 +142,15 @@ function formView(form, errors = {}, ownerOptions = []) {
     errors,
     channels: service.CHANNELS,
     metrics: service.METRICS,
+    adMetrics: service.AD_METRICS,
+    // Ô nhập tay số quảng cáo: mỗi nền tảng một hàng
+    adRows: service.AD_PLATFORMS.map((p) => ({
+      ...p,
+      cells: service.AD_METRICS.map((m) => {
+        const name = service.adField(p.value, m.value);
+        return { name, label: `${m.label} ${p.label}`, value: form.values[name] ?? '', error: errors[name] };
+      }),
+    })),
     // Lưới ô số: mỗi brand một bảng, mỗi kênh một hàng, mỗi chỉ số một cột
     brands: BRANDS.map((b, i) => ({
       ...b,

@@ -74,6 +74,7 @@
 | ads_cache | số liệu quảng cáo lưu tạm: cache_key (nền tảng:từ:đến), payload JSON đã chuẩn hoá, fetched_at (migration 019) |
 | weekly_reports | Báo cáo tuần — phần nhận xét: week_start (Thứ 2, khoá), highlights, issues, next_plan, người/lúc cập nhật (migration 029) |
 | weekly_social_stats | Báo cáo tuần — chỉ số kênh nhập tay: week_start + brand + channel (khoá), followers, views, engagements (trống = không theo dõi) |
+| weekly_ad_stats | Báo cáo tuần — số quảng cáo nhập tay: week_start + platform (meta/tiktok, khoá), spend (đ), results, impressions, clicks (migration 032). Có dòng thì báo cáo dùng thay số tự lấy của nền tảng đó |
 | weekly_plan_items | Báo cáo tuần — kế hoạch tuần tới: week_start (tuần VIẾT báo cáo, áp dụng cho tuần sau), title, target, owner_id, brand, due_date, done (chỉ dùng cho dòng gõ tay), task_ids (JSON id việc trên lịch, migration 031), position (migration 030) |
 <!-- [vibe:tables] -->
 
@@ -112,6 +113,7 @@
 - Báo cáo tuần không lưu số tự động (tính lại mỗi lần mở) để luôn khớp với Nội dung/Quảng cáo/Data khách hàng; chỉ lưu phần nhập tay. Lưu form = ghi đè cả tuần trong một transaction (xoá chỉ số cũ rồi thêm lại).
 
 ## Nhật ký thay đổi
+- 2026-11-28 — Báo cáo tuần: thêm phần **Quảng cáo (nhập tay)** trong form (`/reports/edit#ads`): chi tiêu, kết quả, hiển thị, click liên kết cho Facebook & Instagram / TikTok (migration 032). Nền tảng có số nhập tay thì báo cáo + Excel dùng số đó (ghi "nhập tay"), tự tính chi phí/kết quả và CTR; dùng khi token API hết hạn hoặc chưa kết nối. Khối Quảng cáo có link "Nhập tay", chỗ báo lỗi có link tới form.
 - 2026-11-28 — Báo cáo tuần tự lấy thông tin: (1) Kế hoạch tuần tới chưa lưu thì điền sẵn việc đã giao tuần tới trên Lịch làm việc (trừ việc Quay/Đăng từ Nội dung; việc lặp gộp một dòng "N ngày"), nút "+ Lấy thêm từ Lịch làm việc"; (2) dòng lấy từ lịch nhớ `task_ids` (migration 031) -> báo cáo tuần sau tự đánh dấu Xong theo việc trên lịch (x/y ngày), dòng gõ tay vẫn tick; tuần trước không lập kế hoạch thì "Kế hoạch tuần này" lấy luôn việc trên lịch; (3) chỉ số kênh MXH tự lấy từ Facebook (followers_count, page_media_view, page_post_engagements), Instagram (followers_count, views, total_interactions), TikTok doanh nghiệp (/business/get/), YouTube (số người đăng ký) khi đặt SOCIAL_ACCOUNTS + token (xem .env.example) — ô trống mới điền, số nhập tay luôn ưu tiên, follower chỉ lấy cho tuần đang diễn ra. Chưa thử với tài khoản thật (chưa có token).
 - 2026-11-28 — Mọi file PNG / PDF xuất từ app (Báo cáo tuần, Quảng cáo, phiếu công việc, thẻ khách hàng) luôn nền trắng giao diện sáng: export-image.js tạm đổi theme sang sáng khi chụp rồi trả lại. Bỏ tuỳ chọn `data-export-bg="page"`.
 - 2026-11-28 — Báo cáo tuần: bấm PDF / Ảnh PNG mở cửa sổ **xem trước** (PDF hiện từng trang A4) rồi mới "Tải xuống". Dùng chung được: thêm `data-export-preview` vào nút `data-export` bất kỳ (public/js/export-image.js). Ảnh xem trước dạng data: vì CSP chặn blob:.

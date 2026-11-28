@@ -43,6 +43,33 @@
     </div>
   </section>
 
+  <section id="ads" class="card card-body mb-6" aria-labelledby="e-ads">
+    <h2 id="e-ads" class="text-lg font-semibold text-ink">Quảng cáo (nhập tay)</h2>
+    <p class="mt-1 mb-4 text-sm text-ink-faint">
+      Chỉ cần điền khi báo cáo không tự lấy được số (token hết hạn, chưa kết nối). Xem trong Trình quản lý quảng cáo / TikTok Ads Manager, chọn đúng ngày của tuần rồi điền.
+      Nền tảng nào có số ở đây thì báo cáo dùng số này thay cho số tự lấy. Để trống hết = dùng số tự lấy.
+    </p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Nền tảng</th>{{#each adMetrics}}<th class="text-right">{{label}}</th>{{/each}}</tr></thead>
+        <tbody>
+          {{#each adRows}}
+            <tr>
+              <td class="whitespace-nowrap">{{label}}</td>
+              {{#each cells}}
+                <td class="min-w-28">
+                  <input type="text" inputmode="numeric" name="{{name}}" value="{{value}}" aria-label="{{label}}"
+                    class="input py-1 text-right tabular-nums{{#if error}} input-error{{/if}}"{{#if error}} aria-invalid="true" title="{{error}}"{{/if}}>
+                  {{#if error}}<p class="field-error">{{error}}</p>{{/if}}
+                </td>
+              {{/each}}
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="notes" class="card card-body mb-6" aria-labelledby="e-notes">
     <h2 id="e-notes" class="mb-4 text-lg font-semibold text-ink">Nhận xét</h2>
     <div class="grid gap-4 md:grid-cols-2">

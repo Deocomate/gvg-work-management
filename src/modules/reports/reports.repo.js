@@ -11,6 +11,9 @@ export const findNotes = (weekStart) =>
 export const listSocial = (weekStart) =>
   all('SELECT brand, channel, followers, views, engagements FROM weekly_social_stats WHERE week_start = ?', [weekStart]);
 
+export const listAds = (weekStart) =>
+  all('SELECT platform, spend, results, impressions, clicks FROM weekly_ad_stats WHERE week_start = ?', [weekStart]);
+
 /** Kế hoạch viết trong báo cáo tuần `weekStart` (áp dụng cho tuần sau đó). */
 export const listPlanItems = (weekStart) =>
   all(
@@ -28,7 +31,7 @@ const taskIdsJson = (p) => (p.task_ids?.length ? JSON.stringify(p.task_ids) : nu
  * - kế hoạch tuần tới: sửa dòng có id (giữ trạng thái Xong), thêm dòng mới, xoá dòng đã bỏ;
  * - kế hoạch tuần trước (prevWeekStart): cập nhật Xong / chưa xong theo doneIds.
  */
-export function saveWeek(weekStart, { highlights, issues, next_plan }, stats, userId, { plans = [], prevWeekStart, doneIds = [] } = {}) {
+export function saveWeek(weekStart, { highlights, issues, next_plan }, stats, userId, { plans = [], prevWeekStart, doneIds = [], ads = [] } = {}) {
   const keptIds = plans.filter((p) => p.id).map((p) => p.id);
   return transaction([
     {
@@ -42,6 +45,11 @@ export function saveWeek(weekStart, { highlights, issues, next_plan }, stats, us
     ...stats.map((s) => ({
       sql: `INSERT INTO weekly_social_stats (week_start, brand, channel, followers, views, engagements) VALUES (?, ?, ?, ?, ?, ?)`,
       args: [weekStart, s.brand, s.channel, s.followers ?? null, s.views ?? null, s.engagements ?? null],
+    })),
+    { sql: 'DELETE FROM weekly_ad_stats WHERE week_start = ?', args: [weekStart] },
+    ...ads.map((a) => ({
+      sql: 'INSERT INTO weekly_ad_stats (week_start, platform, spend, results, impressions, clicks) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [weekStart, a.platform, a.spend ?? null, a.results ?? null, a.impressions ?? null, a.clicks ?? null],
     })),
     // Danh sách id truyền dạng JSON (json_each) thay vì ghép chuỗi ? vào câu SQL
     {

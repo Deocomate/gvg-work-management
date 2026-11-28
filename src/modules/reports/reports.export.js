@@ -37,16 +37,17 @@ export function buildWorkbook(report, now = new Date()) {
     for (const p of report.ads.platforms) {
       const t = p.totals;
       const pt = report.prevAds?.platforms?.find((x) => x.key === p.key)?.totals;
+      const label = p.manual ? `${p.label} (nhập tay)` : p.label;
       if (!t) {
         summary.push([`${p.label}: chưa lấy được số liệu${p.error ? ` — ${p.error}` : ''}`]);
         continue;
       }
       summary.push(
-        [`${p.label} — chi tiêu (${p.currency})`, n(t.spend), n(pt?.spend), change(t.spend, pt?.spend)],
-        [`${p.label} — kết quả`, n(t.results), n(pt?.results), change(t.results, pt?.results)],
-        [`${p.label} — chi phí / kết quả`, n(t.costPerResult), n(pt?.costPerResult), change(t.costPerResult, pt?.costPerResult)],
-        [`${p.label} — hiển thị`, n(t.impressions), n(pt?.impressions), change(t.impressions, pt?.impressions)],
-        [`${p.label} — CTR`, { v: t.ctr == null ? null : t.ctr / 100, s: 'pct' }, { v: pt?.ctr == null ? null : pt.ctr / 100, s: 'pct' }, change(t.ctr, pt?.ctr)],
+        [`${label} — chi tiêu (${p.currency})`, n(t.spend), n(pt?.spend), change(t.spend, pt?.spend)],
+        [`${label} — kết quả`, n(t.results), n(pt?.results), change(t.results, pt?.results)],
+        [`${label} — chi phí / kết quả`, n(t.costPerResult), n(pt?.costPerResult), change(t.costPerResult, pt?.costPerResult)],
+        [`${label} — hiển thị`, n(t.impressions), n(pt?.impressions), change(t.impressions, pt?.impressions)],
+        [`${label} — CTR`, { v: t.ctr == null ? null : t.ctr / 100, s: 'pct' }, { v: pt?.ctr == null ? null : pt.ctr / 100, s: 'pct' }, change(t.ctr, pt?.ctr)],
       );
     }
   } else if (report.ads && !report.ads.configured) {

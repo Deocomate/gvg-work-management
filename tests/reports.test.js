@@ -5,7 +5,7 @@ import { inflateRawSync } from 'node:zlib';
 import { setup, postForm } from './helpers.js';
 import { loginAs, loginAsAdmin } from './auth-helpers.js';
 import { addDays, todayISO, weekDays } from '../src/lib/dates.js';
-import { contentStats, socialRows } from '../src/modules/reports/reports.service.js';
+import { applyManualAds, contentStats, socialRows } from '../src/modules/reports/reports.service.js';
 import { delta } from '../src/modules/reports/reports.controller.js';
 
 const today = todayISO();
@@ -225,4 +225,52 @@ test('kế hoạch tự lấy từ Lịch làm việc, gộp việc lặp lại,
   assert.match(added, /Đã thêm 1 việc từ Lịch làm việc/);
   assert.match(added, /value="Viết caption"/);
   assert.equal(added.split('value="Chụp ảnh sản phẩm Klayy"').length - 1, 1);
+});
+
+test('nhập tay số quảng cáo: báo lỗi số sai, lưu xong hiện thay dòng lỗi, có chi phí / kết quả', async () => {
+  const bad = await postForm(admin, '/reports', { date: monday, a_meta_spend: '-5' }, { from: '/reports/edit' });
+  assert.equal(bad.status, 422);
+  assert.match(bad.text, /Không được âm/);
+
+  const ok = await postForm(
+    admin,
+    '/reports',
+    { date: monday, a_meta_spend: '2.399.640', a_meta_results: '206', a_meta_impressions: '29467', a_meta_clicks: '709' },
+    { from: '/reports/edit' },
+  );
+  assert.equal(ok.status, 302);
+
+  const page = (await admin.get(`/reports?date=${monday}`)).text;
+  assert.match(page, /Facebook &amp; Instagram <span[^>]*>· nhập tay/);
+  assert.match(page, /2\.399\.640 ₫/);
+  assert.match(page, /11\.649 ₫/); // 2.399.640 / 206 làm tròn
+  assert.match((await admin.get(`/reports/edit?date=${monday}`)).text, /name="a_meta_spend" value="2399640"/);
+
+  // Xoá hết ô = quay lại số tự lấy
+  await postForm(admin, '/reports', { date: monday }, { from: '/reports/edit' });
+  assert.doesNotMatch((await admin.get(`/reports?date=${monday}`)).text, /· nhập tay/);
+});
+
+test('applyManualAds: nhập tay thay số tự lấy, giữ nền tảng khác, tính tổng chung', () => {
+  const auto = {
+    configured: true,
+    platforms: [
+      { key: 'meta', label: 'Facebook & Instagram', currency: 'VND', error: 'token hết hạn', totals: null },
+      { key: 'tiktok', label: 'TikTok', currency: 'VND', error: null, totals: { spend: 100_000, results: 10, clicks: 5 } },
+    ],
+    combined: null,
+  };
+  assert.equal(applyManualAds(auto, []), auto);
+  const merged = applyManualAds(auto, [{ platform: 'meta', spend: 300_000, results: 20, impressions: 1000, clicks: 30 }]);
+  const meta = merged.platforms.find((p) => p.key === 'meta');
+  assert.equal(meta.manual, true);
+  assert.equal(meta.error, null);
+  assert.equal(meta.totals.costPerResult, 15_000);
+  assert.equal(meta.totals.ctr, 3);
+  assert.deepEqual(merged.combined, { currency: 'VND', spend: 400_000, results: 30, clicks: 35, costPerResult: 400_000 / 30 });
+  // Chưa kết nối API vẫn hiện số nhập tay
+  const offline = applyManualAds({ configured: false }, [{ platform: 'tiktok', spend: 50_000, results: null, impressions: null, clicks: null }]);
+  assert.equal(offline.configured, true);
+  assert.deepEqual(offline.platforms.map((p) => p.key), ['tiktok']);
+  assert.equal(offline.platforms[0].totals.costPerResult, null);
 });

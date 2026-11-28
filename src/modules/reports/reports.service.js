@@ -15,6 +15,7 @@ import * as plansRepo from '#modules/plan/plan.repo.js';
 import * as customersRepo from '#modules/customers/customers.repo.js';
 import { CUSTOMER_SOURCES } from '#modules/customers/customers.schema.js';
 import * as adsService from '#modules/ads/ads.service.js';
+import { PLATFORMS } from '#modules/ads/ads.providers.js';
 import { notesSchema, statNumber } from './reports.schema.js';
 import { parsePlanRows, planRowsFor, suggestFromCalendar, withResults, withTaskIds } from './reports.plan.js';
 import * as repo from './reports.repo.js';
@@ -114,6 +115,54 @@ async function adsStats({ from, to }, today) {
   };
 }
 
+// Nhập tay khi không tự lấy được (token hết hạn, chưa kết nối API). Tiền theo VND.
+export const AD_PLATFORMS = Object.values(PLATFORMS).map((p) => ({ value: p.key, label: p.label }));
+export const AD_METRICS = [
+  { value: 'spend', label: 'Chi tiêu (đ)' },
+  { value: 'results', label: 'Kết quả' },
+  { value: 'impressions', label: 'Lượt hiển thị' },
+  { value: 'clicks', label: 'Click liên kết' },
+];
+/** Tên ô trong form: a_<nền tảng>_<chỉ số>. */
+export const adField = (platform, metric) => `a_${platform}_${metric}`;
+
+/** Số nhập tay -> cùng dạng totals với số tự lấy (thêm chi phí / kết quả, CTR). */
+function manualTotals(m) {
+  return {
+    spend: m.spend,
+    results: m.results,
+    impressions: m.impressions,
+    clicks: m.clicks,
+    costPerResult: m.spend != null && m.results ? m.spend / m.results : null,
+    ctr: m.clicks != null && m.impressions ? (m.clicks / m.impressions) * 100 : null,
+  };
+}
+
+/**
+ * Gộp số nhập tay vào số tự lấy: nền tảng nào có nhập tay thì dùng số nhập tay (kể cả khi API lỗi
+ * hoặc chưa kết nối). Không có dòng nhập tay nào thì giữ nguyên `ads`.
+ */
+export function applyManualAds(ads, manual) {
+  if (!manual.length) return ads;
+  const auto = ads?.configured ? ads.platforms : [];
+  const platforms = Object.values(PLATFORMS)
+    .map((p) => {
+      const m = manual.find((x) => x.platform === p.key);
+      if (m) return { key: p.key, label: p.label, currency: 'VND', error: null, manual: true, totals: manualTotals(m) };
+      return auto.find((a) => a.key === p.key) ?? null;
+    })
+    .filter(Boolean);
+  const withData = platforms.filter((p) => p.totals);
+  const sameCurrency = new Set(withData.map((p) => p.currency)).size === 1;
+  const sum = (field) => withData.reduce((s, p) => s + (p.totals[field] ?? 0), 0);
+  const combined =
+    withData.length > 1 && sameCurrency
+      ? { currency: withData[0].currency, spend: sum('spend'), results: sum('results'), clicks: sum('clicks') }
+      : null;
+  if (combined) combined.costPerResult = combined.results ? combined.spend / combined.results : null;
+  return { configured: true, platforms, combined };
+}
+
 // ---------------------------------------------------------------- Kênh MXH (nhập tay)
 
 const statKey = (brand, channel) => `${brand}|${channel}`;
@@ -156,7 +205,7 @@ export async function getWeekReport(date) {
   const week = weekOf(date);
   const prevWeek = weekOf(addDays(week.from, -7));
   const nextWeek = weekOf(addDays(week.from, 7));
-  const [plans, prevPlans, nextPlans, customers, prevCustomers, ads, prevAds, notes, social, prevSocial, planItems, prevPlanItems, autoSocial, prevAutoSocial] = await Promise.all([
+  const [plans, prevPlans, nextPlans, customers, prevCustomers, ads, prevAds, notes, social, prevSocial, planItems, prevPlanItems, autoSocial, prevAutoSocial, manualAds, prevManualAds] = await Promise.all([
     plansRepo.listForRange(week),
     plansRepo.listForRange(prevWeek),
     plansRepo.listForRange(nextWeek),
@@ -171,6 +220,8 @@ export async function getWeekReport(date) {
     repo.listPlanItems(prevWeek.from),
     fetchWeek(week, today),
     fetchWeek(prevWeek, today),
+    repo.listAds(week.from),
+    repo.listAds(prevWeek.from),
   ]);
   return {
     ...week,
@@ -183,8 +234,8 @@ export async function getWeekReport(date) {
     prevContent: contentStats(prevPlans, prevWeek).total,
     customers,
     prevCustomers,
-    ads,
-    prevAds,
+    ads: applyManualAds(ads, manualAds),
+    prevAds: applyManualAds(prevAds, prevManualAds),
     notes: notes ?? {},
     social: socialRows(mergeStats(social, autoSocial), mergeStats(prevSocial, prevAutoSocial)),
     socialConnected: connectedAccounts().length > 0,
@@ -222,12 +273,13 @@ export const statField = (brandIndex, channel, metric) => `s_${brandIndex}_${cha
  */
 export async function getWeekForm(date, { addFromCalendar = false } = {}) {
   const week = weekOf(date);
-  const [notes, saved, planItems, prevPlanItems, auto] = await Promise.all([
+  const [notes, saved, planItems, prevPlanItems, auto, ads] = await Promise.all([
     repo.findNotes(week.from),
     repo.listSocial(week.from),
     repo.listPlanItems(week.from),
     repo.listPlanItems(addDays(week.from, -7)),
     fetchWeek(week, todayISO()),
+    repo.listAds(week.from),
   ]);
   const social = mergeStats(saved, auto);
   const autoCells = []; // tên các ô điền sẵn từ nền tảng
@@ -240,6 +292,7 @@ export async function getWeekForm(date, { addFromCalendar = false } = {}) {
       if (s.autoFields.includes(m.value)) autoCells.push(statField(i, s.channel, m.value));
     }
   }
+  for (const a of ads) for (const m of AD_METRICS) values[adField(a.platform, m.value)] = a[m.value] ?? '';
   const nextWeek = weekOf(addDays(week.from, 7));
   const plan = await planRowsFor(planItems.map(withTaskIds), nextWeek, { addFromCalendar });
   return {
@@ -276,12 +329,23 @@ export async function saveWeek(date, input, userId) {
       if (METRICS.some((m) => row[m.value] != null)) stats.push(row);
     }
   });
+  const ads = [];
+  for (const p of AD_PLATFORMS) {
+    const row = { platform: p.value };
+    for (const m of AD_METRICS) {
+      const name = adField(p.value, m.value);
+      const parsed = statNumber.safeParse(input[name]);
+      if (parsed.success) row[m.value] = parsed.data;
+      else errors[name] = parsed.error.issues[0].message;
+    }
+    if (AD_METRICS.some((m) => row[m.value] != null)) ads.push(row);
+  }
   const plan = parsePlanRows(input);
   Object.assign(errors, plan.errors);
   if (Object.keys(errors).length) return { ok: false, errors, planRows: plan.rows };
   // Tuần trước: chỉ cập nhật Xong khi form có hiện danh sách đó (ô ẩn prev_plan_shown)
   const prevWeekStart = input.prev_plan_shown ? addDays(week.from, -7) : null;
   const doneIds = asList(input.prev_plan_done).map(Number).filter((n) => Number.isInteger(n) && n > 0);
-  await repo.saveWeek(week.from, notes.data, stats, userId, { plans: plan.items, prevWeekStart, doneIds });
+  await repo.saveWeek(week.from, notes.data, stats, userId, { plans: plan.items, prevWeekStart, doneIds, ads });
   return { ok: true, errors: {} };
 }
