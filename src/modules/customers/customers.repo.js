@@ -149,3 +149,18 @@ export async function remove(id) {
   const { changes } = await run('DELETE FROM customers WHERE id = ?', [id]);
   return changes > 0;
 }
+
+/**
+ * Cho Báo cáo tuần: khách nhập trong khoảng thời điểm UTC [fromUtc, toUtc) — service tự lọc lại theo ngày giờ VN.
+ * Chỉ lấy vài cột, không cần hoá đơn.
+ */
+export const listCreatedBetween = (fromUtc, toUtc) =>
+  all('SELECT id, source, status, created_at FROM customers WHERE created_at >= ? AND created_at < ?', [fromUtc, toUtc]);
+
+/** Cho Báo cáo tuần: số hoá đơn + tổng giá trị có ngày hoá đơn trong [from, to] (YYYY-MM-DD). */
+export const invoiceTotalsBetween = (from, to) =>
+  get(
+    `SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total, COUNT(DISTINCT customer_id) AS customers
+     FROM customer_invoices WHERE invoice_date BETWEEN ? AND ?`,
+    [from, to],
+  );

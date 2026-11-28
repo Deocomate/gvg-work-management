@@ -1,0 +1,187 @@
+{{!-- Báo cáo tuần marketing. Cả báo cáo nằm trong #weekly-report để nút Tải PDF / PNG chụp lại (public/js/export-image.js);
+      phần có data-export-skip (nút, chuyển tuần) không vào file. --}}
+<div id="weekly-report" data-filename="{{exportFilename}}" data-export-breaks="section, tbody tr" data-export-bg="page" data-export-width="1100">
+{{#> page-header title="Báo cáo tuần marketing" subtitle=(concat "Tuần " label " · so với tuần " prevLabel)}}
+  <div class="flex flex-wrap items-center gap-2" data-export-skip>
+    <a href="/reports/edit?date={{from}}" class="btn-primary btn-sm">Nhập số kênh & nhận xét</a>
+    <a href="/reports/export.xlsx?date={{from}}" class="btn-secondary btn-sm" download title="Tổng quan, nội dung, kênh MXH, nhận xét — mở bằng Excel / Google Sheets">⬇ Excel</a>
+    <button type="button" class="btn-secondary btn-sm" data-export="pdf" data-export-target="#weekly-report" title="Tải báo cáo thành file PDF">⬇ PDF</button>
+    <button type="button" class="btn-secondary btn-sm" data-export="png" data-export-target="#weekly-report" title="Tải báo cáo thành ảnh để gửi Zalo">⬇ Ảnh PNG</button>
+  </div>
+{{/page-header}}
+
+<div class="mb-5 flex flex-wrap items-center gap-2" data-export-skip>
+  <a href="/reports?date={{prev}}" class="btn-secondary btn-sm">‹ Tuần trước</a>
+  {{#unless isThisWeek}}<a href="/reports?date={{today}}" class="btn-ghost btn-sm">Tuần này</a>{{/unless}}
+  <a href="/reports?date={{next}}" class="btn-secondary btn-sm">Tuần sau ›</a>
+</div>
+
+{{!-- 1. Tổng quan --}}
+<section class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Tổng quan tuần">
+  {{#each kpis}}
+    <div class="card p-4">
+      <p class="text-xs text-ink-faint">{{label}}</p>
+      <p class="mt-1 text-2xl font-semibold text-ink tabular-nums">{{value}}</p>
+      <p class="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint"><span>{{sub}}</span>{{> reports/delta d=delta}}</p>
+    </div>
+  {{/each}}
+</section>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  {{!-- 2. Nội dung theo brand --}}
+  <section class="card card-body" aria-labelledby="r-content">
+    <h2 id="r-content" class="mb-3 text-lg font-semibold text-ink">Nội dung theo brand</h2>
+    {{#if contentBrands.length}}
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Brand</th><th class="text-right">Đã đăng / lịch</th><th class="text-right">Đã quay / lịch</th></tr></thead>
+          <tbody>
+            {{#each contentBrands}}
+              <tr>
+                <td><span class="{{badge}}">{{brand}}</span></td>
+                <td class="text-right tabular-nums">{{posted}}/{{planned}}</td>
+                <td class="text-right tabular-nums">{{shot}}/{{shootPlanned}}</td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{else}}
+      <p class="text-sm text-ink-faint">Tuần này chưa có video nào lên lịch đăng hoặc quay.</p>
+    {{/if}}
+  </section>
+
+  {{!-- 3. Khách hàng & doanh thu --}}
+  <section class="card card-body" aria-labelledby="r-customers">
+    <h2 id="r-customers" class="mb-3 text-lg font-semibold text-ink">Khách hàng & doanh thu</h2>
+    <div class="grid grid-cols-3 gap-3">
+      <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Khách mới</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{customers.newCustomers}}</p></div>
+      <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Hoá đơn</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{customers.invoiceCount}}</p><p class="text-xs text-ink-faint">{{customers.buyers}} khách mua</p></div>
+      <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Doanh thu</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{revenueText}}</p></div>
+    </div>
+    {{#if customers.bySource.length}}
+      <h3 class="mt-4 mb-2 text-sm font-medium text-ink-soft">Khách mới theo nguồn</h3>
+      <ul class="space-y-1 text-sm">
+        {{#each customers.bySource}}
+          <li class="flex justify-between gap-3"><span class="text-ink-soft">{{label}}</span><span class="font-medium text-ink tabular-nums">{{count}}</span></li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </section>
+</div>
+
+{{!-- 4. Quảng cáo --}}
+<section class="card card-body mt-6" aria-labelledby="r-ads">
+  <h2 id="r-ads" class="mb-3 text-lg font-semibold text-ink">Quảng cáo</h2>
+  {{#unless ads}}
+    <p class="text-sm text-ink-faint">Tuần chưa bắt đầu nên chưa có số liệu quảng cáo.</p>
+  {{else if (not ads.configured)}}
+    <p class="text-sm text-ink-faint">Chưa kết nối Facebook / TikTok — xem hướng dẫn ở mục Quảng cáo.</p>
+  {{else}}
+    {{#if ads.combined}}
+      <div class="mb-4 grid grid-cols-3 gap-3">
+        <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Tổng chi tiêu</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{ads.combined.spend}}</p>{{> reports/delta d=ads.combined.spendDelta}}</div>
+        <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Tổng kết quả</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{ads.combined.results}}</p>{{> reports/delta d=ads.combined.resultsDelta}}</div>
+        <div class="rounded-xl border border-line bg-surface/60 p-3"><p class="text-xs text-ink-faint">Chi phí / kết quả</p><p class="mt-1 text-lg font-semibold text-ink tabular-nums">{{ads.combined.costPerResult}}</p>{{> reports/delta d=ads.combined.costDelta}}</div>
+      </div>
+    {{/if}}
+    <div class="grid gap-4 md:grid-cols-2">
+      {{#each ads.platforms}}
+        <div>
+          <h3 class="mb-2 text-sm font-medium text-ink-soft">{{label}}</h3>
+          {{#if rows}}
+            <table class="table">
+              <tbody>
+                {{#each rows}}
+                  <tr><td class="text-ink-soft">{{label}}</td><td class="text-right font-medium tabular-nums">{{value}}</td><td class="w-24 text-right">{{> reports/delta d=delta}}</td></tr>
+                {{/each}}
+              </tbody>
+            </table>
+          {{else}}
+            <p class="text-sm text-bad-300">Chưa lấy được số liệu{{#if error}}: {{error}}{{/if}}</p>
+          {{/if}}
+        </div>
+      {{/each}}
+    </div>
+  {{/unless}}
+</section>
+
+{{!-- 5. Kênh mạng xã hội (nhập tay) --}}
+<section class="card card-body mt-6" aria-labelledby="r-social">
+  <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="r-social" class="text-lg font-semibold text-ink">Kênh mạng xã hội</h2>
+    <a href="/reports/edit?date={{from}}#social" class="text-xs text-ink-faint hover:underline" data-export-skip>Sửa số</a>
+  </div>
+  {{#if social.length}}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Brand</th><th>Kênh</th><th class="text-right">Follower</th><th class="text-right">Tăng</th><th class="text-right">Lượt xem</th><th class="text-right">Tương tác</th></tr></thead>
+        <tbody>
+          {{#each social}}
+            <tr>
+              <td><span class="{{badge}}">{{brand}}</span></td>
+              <td>{{channel}}</td>
+              <td class="text-right tabular-nums">{{f.followers}}</td>
+              <td class="text-right tabular-nums {{#if (eq gainTone 'up')}}text-ok-300{{else if (eq gainTone 'down')}}text-bad-300{{else}}text-ink-faint{{/if}}">{{#if gain}}{{gain}}{{else}}—{{/if}}</td>
+              <td class="text-right tabular-nums">{{f.views}} {{> reports/delta d=viewsDelta}}</td>
+              <td class="text-right tabular-nums">{{f.engagements}} {{> reports/delta d=engagementsDelta}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{else}}
+    <p class="text-sm text-ink-faint">Chưa nhập chỉ số kênh cho tuần này. <a href="/reports/edit?date={{from}}#social" class="underline" data-export-skip>Nhập ngay</a></p>
+  {{/if}}
+</section>
+
+{{!-- 6. Video trong tuần --}}
+<section class="card card-body mt-6" aria-labelledby="r-posts">
+  <h2 id="r-posts" class="mb-3 text-lg font-semibold text-ink">Video đăng trong tuần</h2>
+  {{#if posts.length}}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Ngày</th><th>Video</th><th>Brand</th><th>Người đăng</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          {{#each posts}}
+            <tr>
+              <td class="whitespace-nowrap tabular-nums">{{formatDay post_date}}</td>
+              <td class="min-w-56">{{title}}</td>
+              <td>{{#if brand}}<span class="{{badge}}">{{brand}}</span>{{/if}}</td>
+              <td class="whitespace-nowrap">{{owner}}</td>
+              <td>{{#if posted}}<span class="badge-green">Đã đăng</span>{{else}}<span class="badge-gray">Chưa đăng</span>{{/if}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{else}}
+    <p class="text-sm text-ink-faint">Không có video nào lên lịch đăng tuần này.</p>
+  {{/if}}
+</section>
+
+{{!-- 7. Nhận xét & kế hoạch (nhập tay) --}}
+<section class="card card-body mt-6" aria-labelledby="r-notes">
+  <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="r-notes" class="text-lg font-semibold text-ink">Nhận xét & kế hoạch</h2>
+    {{#if notes.updated_at}}<p class="text-xs text-ink-faint">Cập nhật {{formatDate notes.updated_at}}{{#if notes.updated_by_name}} · {{notes.updated_by_name}}{{/if}}</p>{{/if}}
+  </div>
+  {{#if hasNotes}}
+    <div class="grid gap-4 md:grid-cols-3">
+      <div><h3 class="mb-1 text-sm font-medium text-ok-300">Điểm nổi bật</h3><p class="whitespace-pre-line text-sm text-ink-soft">{{#if notes.highlights}}{{notes.highlights}}{{else}}—{{/if}}</p></div>
+      <div><h3 class="mb-1 text-sm font-medium text-bad-300">Vấn đề gặp phải</h3><p class="whitespace-pre-line text-sm text-ink-soft">{{#if notes.issues}}{{notes.issues}}{{else}}—{{/if}}</p></div>
+      <div><h3 class="mb-1 text-sm font-medium text-sun-300">Kế hoạch tuần tới</h3><p class="whitespace-pre-line text-sm text-ink-soft">{{#if notes.next_plan}}{{notes.next_plan}}{{else}}—{{/if}}</p></div>
+    </div>
+  {{else}}
+    <p class="text-sm text-ink-faint">Chưa có nhận xét. <a href="/reports/edit?date={{from}}#notes" class="underline" data-export-skip>Viết nhận xét</a></p>
+  {{/if}}
+</section>
+
+<p class="mt-4 text-xs text-ink-faint">
+  Số tự động: <b>Nội dung</b> (video có ngày đăng / ngày quay trong tuần, không tính bài Bỏ / On hold), <b>Quảng cáo</b> (Facebook + TikTok), <b>Data khách hàng</b> (khách nhập trong tuần, hoá đơn có ngày trong tuần).
+  Kênh mạng xã hội và nhận xét do quản lý nhập tay.
+</p>
+</div>
+
+<script src="/vendor/html-to-image.js?v={{assetVersion}}" defer></script>
+<script src="/js/export-image.js?v={{assetVersion}}" defer></script>

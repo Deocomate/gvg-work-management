@@ -5,6 +5,7 @@
 import { forbidden } from '#lib/errors.js';
 import { findUserById } from '#modules/auth/auth.service.js';
 import { canViewAds } from '#modules/ads/ads.service.js';
+import { canViewReports } from '#modules/reports/reports.service.js';
 
 export async function loadUser(req, res, next) {
   const userId = req.session.userId;
@@ -12,6 +13,7 @@ export async function loadUser(req, res, next) {
   if (userId && !req.user) req.session.userId = null; // user đã bị xoá
   res.locals.currentUser = req.user;
   res.locals.canViewAds = canViewAds(req.user); // hiện menu Quảng cáo
+  res.locals.canViewReports = canViewReports(req.user); // hiện menu Báo cáo
   next();
 }
 

@@ -1,0 +1,2 @@
+{{!-- So với tuần trước. Dùng: {{> reports/delta d=delta}} (d = { text, tone } từ reports.controller.js delta()) --}}
+{{#if d.text}}<span class="whitespace-nowrap text-xs font-medium {{#if (eq d.tone 'up')}}text-ok-300{{else if (eq d.tone 'down')}}text-bad-300{{else}}text-ink-faint{{/if}}">{{d.text}}</span>{{/if}}

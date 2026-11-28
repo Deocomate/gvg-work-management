@@ -1,0 +1,53 @@
+{{#> page-header title="Nhập báo cáo tuần" subtitle=(concat "Tuần " label " · số nội dung, quảng cáo, khách hàng tự lấy — chỉ cần nhập phần dưới")}}
+  <a href="/reports?date={{from}}" class="btn-ghost btn-sm">‹ Về báo cáo</a>
+{{/page-header}}
+
+<form method="post" action="/reports" novalidate>
+  {{> form/csrf}}
+  <input type="hidden" name="date" value="{{from}}">
+
+  <section id="social" class="card card-body mb-6" aria-labelledby="e-social">
+    <h2 id="e-social" class="text-lg font-semibold text-ink">Chỉ số kênh mạng xã hội</h2>
+    <p class="mt-1 mb-4 text-sm text-ink-faint">Xem trong TikTok Studio / Meta Business Suite / YouTube Studio rồi điền. Kênh không dùng thì để trống. Follower nhập tổng cuối tuần — báo cáo tự tính số tăng so với tuần trước.</p>
+    <div class="grid gap-6 xl:grid-cols-3">
+      {{#each brands}}
+        <div>
+          <h3 class="mb-2"><span class="{{badge}}">{{label}}</span></h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Kênh</th>{{#each @root.metrics}}<th class="text-right">{{label}}</th>{{/each}}</tr></thead>
+              <tbody>
+                {{#each rows}}
+                  <tr>
+                    <td class="whitespace-nowrap">{{label}}</td>
+                    {{#each cells}}
+                      <td class="min-w-24">
+                        <input type="text" inputmode="numeric" name="{{name}}" value="{{value}}" aria-label="{{label}}"
+                          class="input py-1 text-right tabular-nums{{#if error}} input-error{{/if}}"{{#if error}} aria-invalid="true" title="{{error}}"{{/if}}>
+                        {{#if error}}<p class="field-error">{{error}}</p>{{/if}}
+                      </td>
+                    {{/each}}
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <section id="notes" class="card card-body mb-6" aria-labelledby="e-notes">
+    <h2 id="e-notes" class="mb-4 text-lg font-semibold text-ink">Nhận xét & kế hoạch</h2>
+    <div class="grid gap-4 md:grid-cols-3">
+      {{> form/textarea name="highlights" label="Điểm nổi bật" value=values.highlights error=errors.highlights rows=6 placeholder="VD: Video bình hoa Vũ Gia đạt 120k view, inbox tăng mạnh"}}
+      {{> form/textarea name="issues" label="Vấn đề gặp phải" value=values.issues error=errors.issues rows=6 placeholder="VD: Trễ 2 buổi quay GSXD do thời tiết"}}
+      {{> form/textarea name="next_plan" label="Kế hoạch tuần tới" value=values.next_plan error=errors.next_plan rows=6 placeholder="VD: Chạy thử 2 mẫu quảng cáo mới cho Klayy"}}
+    </div>
+  </section>
+
+  <div class="flex gap-2">
+    <button type="submit" class="btn-primary">Lưu báo cáo</button>
+    <a href="/reports?date={{from}}" class="btn-ghost">Huỷ</a>
+  </div>
+</form>
