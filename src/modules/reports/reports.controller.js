@@ -75,7 +75,6 @@ function present(report) {
       { label: 'Khách mới', value: num(customers.newCustomers), sub: 'nhập vào Data khách hàng', delta: delta(customers.newCustomers, prevCustomers.newCustomers) },
       { label: 'Doanh thu', value: money(customers.revenue), sub: `${customers.invoiceCount} hoá đơn`, delta: delta(customers.revenue, prevCustomers.revenue) },
     ],
-    contentBrands: content.byBrand.map((b) => ({ ...b, badge: brandInfo(b.brand)?.badge ?? 'badge-gray' })),
     posts: content.posts.map((p) => ({ ...p, badge: brandInfo(p.brand)?.badge ?? 'badge-gray' })),
     ads: presentAds(report.ads, report.prevAds),
     social: report.social.map((s) => ({

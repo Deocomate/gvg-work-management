@@ -27,30 +27,7 @@
   {{/each}}
 </section>
 
-<div class="grid gap-6 lg:grid-cols-2">
-  {{!-- 2. Nội dung theo brand --}}
-  <section class="card card-body" aria-labelledby="r-content">
-    <h2 id="r-content" class="mb-3 text-lg font-semibold text-ink">Nội dung theo brand</h2>
-    {{#if contentBrands.length}}
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>Brand</th><th class="text-right">Đã đăng / lịch</th><th class="text-right">Đã quay / lịch</th></tr></thead>
-          <tbody>
-            {{#each contentBrands}}
-              <tr>
-                <td><span class="{{badge}}">{{brand}}</span></td>
-                <td class="text-right tabular-nums">{{posted}}/{{planned}}</td>
-                <td class="text-right tabular-nums">{{shot}}/{{shootPlanned}}</td>
-              </tr>
-            {{/each}}
-          </tbody>
-        </table>
-      </div>
-    {{else}}
-      <p class="text-sm text-ink-faint">Tuần này chưa có video nào lên lịch đăng hoặc quay.</p>
-    {{/if}}
-  </section>
-
+<div>
   {{!-- 3. Khách hàng & doanh thu --}}
   <section class="card card-body" aria-labelledby="r-customers">
     <h2 id="r-customers" class="mb-3 text-lg font-semibold text-ink">Khách hàng & doanh thu</h2>
